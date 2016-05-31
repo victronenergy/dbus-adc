@@ -7,29 +7,29 @@ CONFIG += link_pkgconfig
 
 equals(target,ccgx) {
     CONFIG(debug, debug|release) {
-        TARGET = obj/ccgx-linux-arm-gnueabi-debug/gps_dbus
+        TARGET = obj/ccgx-linux-arm-gnueabi-debug/dbus-adc
         target.sources = obj/ccgx-linux-arm-gnueabi-debug
-        target.path += /opt/gps
+        target.path += /opt/adc
     }
     CONFIG(release, debug|release) {
-        TARGET = obj/ccgx-linux-arm-gnueabi-release/gps_dbus
+        TARGET = obj/ccgx-linux-arm-gnueabi-release/dbus-adc
         target.sources = obj/ccgx-linux-arm-gnueabi-release
-        target.path += /opt/color-control/gps
+        target.path += /opt/color-control/adc
     }
-    target.files = gps_dbus
+    target.files = dbus-adc
 } else {
     CONFIG(debug, debug|release) {
-        TARGET = obj/pc-linux-i686-unknown-debug/gps_dbus
+        TARGET = obj/pc-linux-i686-unknown-debug/dbus-adc
         target.sources = obj/pc-linux-i686-unknown-debug
     }
     CONFIG(release, debug|release) {
-        TARGET = obj/pc-linux-i686-unknown-release/gps_dbus
+        TARGET = obj/pc-linux-i686-unknown-release/dbus-adc
         target.sources = obj/pc-linux-i686-unknown-release
     }
 
     INCLUDEPATH += src/platform/pc
 
-    target.files = gps_dbus
+    target.files = dbus-adc
     target.path += /root
 }
 
@@ -49,12 +49,15 @@ SOURCES += \
     ext/velib/src/utils/ve_arg.c \
     ext/velib/task/task/main_libevent.c \
     ext/velib/task/task/platform_init.c \
-    src/gps.c \
-    src/gps_fh.c \
     src/platform/pc/console.c \
     src/platform/pc/serial_hal_pc.c \
     src/task.c \
     src/values_dbus_service.c \
+    src/adc.c \
+    src/sensors.c \
+    ext/velib/src/types/ve_values.c \
+    ext/velib/src/types/ve_dbus_item_consumer.c \
+    src/platform/pc/serial_hal_pc.c
 
 OTHER_FILES += \
     Makefile \
@@ -66,17 +69,18 @@ OTHER_FILES += \
 
 HEADERS += \
     inc/dev_reg.h \
-    inc/gps.h \
-    inc/serial_hal.h \
     inc/values.h \
     inc/velib/velib_config_app_common.h \
     inc/version.h \
     src/platform/pc/velib/velib_config_app.h \
+    inc/adc.h \
+    inc/serial_hal.h \
+    inc/sensors.h \
+    inc/task.h
 
 
 DEFINES += \
     CFG_WITH_LIBEVENT DEBUG
-
 unix {
     DEFINES += DBUS
     PKGCONFIG += dbus-1 libevent libevent_pthreads

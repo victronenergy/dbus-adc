@@ -32,12 +32,16 @@
 # define CFG_WITH_PTHREADS					1
 #endif
 
-#define CFG_WITH_STRING						1
-#define CFG_WITH_TASK						1
-#define CFG_WITH_VE_ITEM					1
-#define CFG_WITH_VE_DBUS_ITEM				1
-#define CFG_WITH_VARIANT					1
-#define CFG_WITH_VARIANT_PRINT				1
-#define CFG_WITH_FLOAT						1
+#define CFG_WITH_STRING                      1
+#define CFG_WITH_TASK                        1
+#define CFG_WITH_VE_ITEM                     1
+#define CFG_WITH_VE_DBUS_ITEM_CONSUMER       1
+#define CFG_WITH_VE_VALUES                   1
+#define CFG_WITH_VE_DBUS_ITEM                1
+#define CFG_WITH_VARIANT                     1
+#define CFG_WITH_VARIANT_PRINT               1
+#define CFG_WITH_FLOAT                       1
+#define CFG_DBUS_NON_BLOCKING                1
+
 
 #endif

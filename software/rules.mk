@@ -2,7 +2,7 @@ DBUS = 1
 #NMEA2K = 1
 
 #ifdef DBUS
-T = gps_dbus$(EXT)
+T = dbus-adc$(EXT)
 #else
 #T = foo$(EXT)
 #endif
