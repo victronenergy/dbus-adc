@@ -20,7 +20,8 @@
 #define ADC_15VOLTS                         34125
 
 #define TANK_LEVEL_SENSOR_DIVIDER           (680) // ohms
-#define DEFAULT_MAX_TANK_LEVEL_RESISTANCE   (180) //ohms
+#define EUR_MAX_TANK_LEVEL_RESISTANCE       (180) //ohms
+#define USA_MAX_TANK_LEVEL_RESISTANCE       (240) //ohms
 #define TANK_LEVEL_PRCNT_MLTY               (1000) //ohms = multiplyer / decimal
 
 // Temperature sensors settings
@@ -36,14 +37,21 @@
 #define VIN_STD_0_10_DIVID_R1               (80000 + 12000) // ohms
 #define VIN_STD_0_10_DIVID_R2               (8000) // ohms
 
-#define NUM_OF_SENSOR_SETTINGS_PARAMS       6
-#define NUM_OF_PROD_ITEMS                   6
-#define NUM_OF_SENSOR_VARIANTS              3
+#define NUM_OF_SENSOR_SETTINGS_PARAMS       3
+#define NUM_OF_PROD_ITEMS                   5
+#define NUM_OF_SENSOR_OUTPUTS               2
+#define NUM_OF_SENSOR_VARIANTS              NUM_OF_SENSOR_OUTPUTS + NUM_OF_SENSOR_SETTINGS_PARAMS
 #define SENSORS_INFO_ARRAY_SIZE             NUM_OF_SENSOR_VARIANTS + NUM_OF_PROD_ITEMS
 
 typedef enum
 {
-    capacity,
+    capacity = 0,
+    fluidType = 1,
+    standard = 2,
+    scale = 0,
+    offset = 1,
+    filterStrength = 2,
+    num_of_parameters = 3
 }parameter_name_t;
 
 typedef enum
@@ -64,7 +72,6 @@ typedef struct
     VeItem id;
     VeItem instance;
     VeItem connected;
-    VeItem hardwareRevision;
     VeItem firmwareVersion;
 } ProductInfo;
 
