@@ -47,22 +47,6 @@ typedef struct
    float    adc_mem;
 }filter_iir_lpf_t;
 
-//typedef enum
-//{
-//    filter_splp_iir =0, // single pole lowpass infinite impulse response
-//    num_of_filter_types
-//}adc_filterTypes_t;
-
-//typedef struct
-//{
-//    adc_filterTypes_t filterType;
-//    float x;
-//    float *y;
-//    float Fc;
-//    float Fs;
-//    un16 FF;
-//}adc_filterInfo_t;
-
 veBool adc_read(un32 * value, adc_analogPin_t pin);
 float adc_sample2volts(un32 sample);
 float adc_filter(float x, float *y, float Fc, float Fs, un16 FF);

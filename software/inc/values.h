@@ -16,12 +16,9 @@
 #define DESIRED_VALUES_TASK_INTERVAL    100 // ms
 #define VALUES_TASK_INTERVAL            DESIRED_VALUES_TASK_INTERVAL / 50 // 50ms base ticking
 
-
-
-
 typedef struct
 {
-	struct VeItem *		item;
+    VeItem *		    item;
 	VeVariant *			local;
 	char const *		id;
 	VeVariantUnitFmt *	fmt;
