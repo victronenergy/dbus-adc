@@ -27,9 +27,10 @@ const char version[] = VERSION_STR;
 veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant);
+
+veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant);
-veBool filterStrengthChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
 //static varibles;
 analog_sensor_t analog_sensor[num_of_analog_sensors] = SENSORS_CONSTANT_DATA;
@@ -53,7 +54,6 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
         {
             veItemSetSetter(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].setValueCallback, (void *)&analog_sensor[sensor_index]);
         }
-        analog_sensor[sensor_index].interface.sig_cond.filter_iir_lpf.FF = 1000;
     }
 
 }
@@ -90,9 +90,8 @@ void sensors_handle(void)
         if(analog_sensor[analog_sensors_index].valid == veTrue)
         {
             // filter the input ADC sample and stor it in adc var
-
             analog_sensor[analog_sensors_index].interface.adc_sample =
-            (un32) adc_filter(
+            adc_filter(
                         (float) (analog_sensor[analog_sensors_index].interface.adc_sample),
                         &analog_sensor[analog_sensors_index].interface.sig_cond.filter_iir_lpf.adc_mem,
                         analog_sensor[analog_sensors_index].interface.sig_cond.filter_iir_lpf.fc,
@@ -104,12 +103,12 @@ void sensors_handle(void)
                 {
                     un8 Std = (un8)analog_sensor[analog_sensors_index].variant.tank_level.standard.value.UN32;
 
-                    if(analog_sensor[analog_sensors_index].interface.adc_sample > 3600)
+                    if(analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p6VOLTS)
                     {
                         veVariantStr(&analog_sensor[analog_sensors_index].variant.tank_level.level, "O.C.");
                     }
                     // this condition applies only for the US standard
-                    else if(Std && (analog_sensor[analog_sensors_index].interface.adc_sample < 15))
+                    else if(Std && (analog_sensor[analog_sensors_index].interface.adc_sample < ADC_0p15VOLTS))
                     {
                         veVariantStr(&analog_sensor[analog_sensors_index].variant.tank_level.level, "S.C.");
                     }
@@ -133,7 +132,6 @@ void sensors_handle(void)
                             {
                                 level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
                             }
-                            //level += analog_sensor[analog_sensors_index].interface.sig_cond.sig_correct.offset;
                             if(level > 1)
                             {
                                 level = 1;
@@ -162,40 +160,32 @@ void sensors_handle(void)
                 case temperature_t:
                 {
                     // sensor connectivity check
-                    if(analog_sensor[analog_sensors_index].interface.adc_sample > 2*TEMP_SENS_MAX_ADCIN)
+                    if(analog_sensor[analog_sensors_index].interface.adc_sample > TEMP_SENS_MAX_ADCIN)
                     {
                         veVariantStr(&analog_sensor[analog_sensors_index].variant.temperature.temperature, "O.C.");
-                    }
-                    else if(analog_sensor[analog_sensors_index].interface.adc_sample > TEMP_SENS_MAX_ADCIN)
-                    {
-                        veVariantStr(&analog_sensor[analog_sensors_index].variant.temperature.temperature, "HIGH TEMP.");
                     }
                     else if( analog_sensor[analog_sensors_index].interface.adc_sample < (TEMP_SENS_MIN_ADCIN/4) )
                     {
                         veVariantStr(&analog_sensor[analog_sensors_index].variant.temperature.temperature, "S.C.");
-                    }
-                    else if(analog_sensor[analog_sensors_index].interface.adc_sample < TEMP_SENS_MIN_ADCIN)
-                    {
-                        veVariantStr(&analog_sensor[analog_sensors_index].variant.temperature.temperature, "LOW TEMP.");
                     }
                     // Value ok
                     else
                     {
                         un32 divider_supply = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_temperature_pd, calc_type_Vin, 1);
                         float tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
-//                        tempC *= (analog_sensor[analog_sensors_index].variant.temperature.scale.value.Float);
-//                        tempC += (analog_sensor[analog_sensors_index].variant.temperature.offset.value.Float);
-                        veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (un32)tempC);
+                        tempC *= (analog_sensor[analog_sensors_index].variant.temperature.scale.value.Float);
+                        tempC += (analog_sensor[analog_sensors_index].variant.temperature.offset.value.SN32);
+                        veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
                     }
 
-//                    veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.scale,
-//                            analog_sensor[analog_sensors_index].dbus_info[scale].value->variant.value.Float);
+                    veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.scale,
+                            analog_sensor[analog_sensors_index].dbus_info[scale].value->variant.value.Float);
 
-//                    veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.offset,
-//                            analog_sensor[analog_sensors_index].dbus_info[offset].value->variant.value.Float);
+                    veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.offset,
+                            (sn32)analog_sensor[analog_sensors_index].dbus_info[offset].value->variant.value.Float);
 
-//                    veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.filterStrength,
-//                            analog_sensor[analog_sensors_index].dbus_info[filterStrength].value->variant.value.Float);
+                    veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperatureType,
+                            (sn32)analog_sensor[analog_sensors_index].dbus_info[TempType].value->variant.value.Float);
 
                     break;
                 }
@@ -280,6 +270,7 @@ veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant)
     return veTrue;
 }
 
+
 // Callback when the scale is changing
 veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
@@ -291,8 +282,7 @@ veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant)
     VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[scale].path);
     veItemSet(settingsItem, variant);
 
-    p_analog_sensor->variant.temperature.scale.value.Float = (float)variant->value.UN32/1000;
-    p_analog_sensor->interface.sig_cond.sig_correct.scale = (float)variant->value.UN32/1000;
+    p_analog_sensor->variant.temperature.scale.value.Float = variant->value.Float;
     return veTrue;
 }
 
@@ -307,23 +297,22 @@ veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant)
     VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[offset].path);
     veItemSet(settingsItem, variant);
 
-    p_analog_sensor->variant.temperature.offset.value.Float = (float)variant->value.UN32/100;
-    p_analog_sensor->interface.sig_cond.sig_correct.offset = (float)variant->value.UN32/100;
+    p_analog_sensor->variant.temperature.offset.value.SN32 = variant->value.SN32;
+
     return veTrue;
 }
 
-// Callback when the filter strength is changing
-veBool filterStrengthChange(struct VeItem *item, void *ctx, VeVariant *variant)
+//
+veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
     analog_sensor_t * p_analog_sensor = (analog_sensor_t *)ctx;
 
     veItemOwnerSet(item, variant);
     veItemOwnerSet(getConsumerRoot(), variant);
 
-    VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[filterStrength].path);
+    VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[TempType].path);
     veItemSet(settingsItem, variant);
 
-    p_analog_sensor->variant.temperature.filterStrength.value.UN32 = variant->value.UN32;
-    p_analog_sensor->interface.sig_cond.filter_iir_lpf.fc = 1/(float)variant->value.UN32;
+    p_analog_sensor->variant.temperature.temperatureType.value.SN32 = variant->value.SN32;
     return veTrue;
 }

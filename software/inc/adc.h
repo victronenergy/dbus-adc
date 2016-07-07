@@ -12,6 +12,12 @@
 #define ADC_VREF                            (float)(1.8)
 #define OMEGA                               (float)6.283185307179586476925286766559
 
+#define POTENTIAL_DIV_MAX_SAMPLE            11375 // = 4095 * 5/adc_vref
+#define ADC_4_VOLTS                         9100
+#define ADC_2p73VOLTS                       6211
+#define ADC_1p6VOLTS                        3640
+#define ADC_0p15VOLTS                       341
+
 typedef enum
 {
     adc_pin0 = 0,

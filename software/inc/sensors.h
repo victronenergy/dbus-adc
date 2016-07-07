@@ -8,30 +8,17 @@
 #include "adc.h"
 #include "values.h"
 
-#define POTENTIAL_DIV_MAX_SAMPLE            11375 // = 4095 * 5/adc_vref
-#define ADC_4_VOLTS                         9100
-#define ADC_2p73VOLTS                       6211
-#define ADC_70VOLTS                         159250
-#define ADC_15VOLTS                         34125
-
 #define TANK_LEVEL_SENSOR_DIVIDER           (680) // ohms
 #define EUR_MAX_TANK_LEVEL_RESISTANCE       (180) //ohms
 #define USA_MAX_TANK_LEVEL_RESISTANCE       (240) //ohms
 #define USA_MIN_TANK_LEVEL_RESISTANCE       (30) //ohms
-#define TANK_LEVEL_PRCNT_MLTY               (1000) //ohms = multiplyer / decimal
 
 // Temperature sensors settings
 #define TEMP_SENS_VOLT_DIVID_R1             (51000 + 51000) // ohms
 #define TEMP_SENS_VOLT_DIVID_R2             (22000) // ohms
 
-#define TEMP_SENS_MAX_ADCIN                 1614 // ~127C
-#define TEMP_SENS_MIN_ADCIN                 1100 // ~0C
-
-#define VBAT_DIVID_R1                       (470000 + 10000) // ohms
-#define VBAT_DIVID_R2                       (10000) // ohms
-
-#define VIN_STD_0_10_DIVID_R1               (80000 + 12000) // ohms
-#define VIN_STD_0_10_DIVID_R2               (8000) // ohms
+#define TEMP_SENS_MAX_ADCIN                 1800
+#define TEMP_SENS_MIN_ADCIN                 250
 
 #define NUM_OF_SENSOR_SETTINGS_PARAMS       3
 #define NUM_OF_PROD_ITEMS                   5
@@ -46,7 +33,7 @@ typedef enum
     standard = 2,
     scale = 0,
     offset = 1,
-    filterStrength = 2,
+    TempType = 2,
     num_of_parameters = 3
 }parameter_name_t;
 
@@ -83,18 +70,10 @@ typedef struct
    VeItem temperature;
    VeItem scale;
    VeItem offset;
-   VeItem filterStrength;
+   VeItem temperatureType;
    VeItem spareParam;
 }temperature_sensor_item_t;
 
-typedef struct
-{
-    VeItem voltage;
-    VeItem scale;
-    VeItem offset;
-    VeItem filterStrength;
-    VeItem spareParam;
-}voltage_sensor_item_t;
 
 typedef struct
 {
@@ -110,18 +89,9 @@ typedef struct
    VeVariant temperature;
    VeVariant scale;
    VeVariant offset;
-   VeVariant filterStrength;
+   VeVariant temperatureType;
    VeVariant spareParam;
 }temperature_sensor_variant_t;
-
-typedef struct
-{
-    VeVariant voltage;
-    VeVariant scale;
-    VeVariant offset;
-    VeVariant filterStrength;
-    VeVariant spareParam;
-}voltage_sensor_variant_t;
 
 typedef struct
 {
@@ -136,7 +106,6 @@ typedef struct
     {
         tank_level_sensor_item_t     tank_level;
         temperature_sensor_item_t    temperature;
-        voltage_sensor_item_t        voltage;
     };
 }sensors_items_t;
 
@@ -146,7 +115,6 @@ typedef struct
     {
         tank_level_sensor_variant_t     tank_level;
         temperature_sensor_variant_t    temperature;
-        voltage_sensor_variant_t        voltage;
     };
 }sensors_variants_t;
 
@@ -176,6 +144,7 @@ typedef struct
     signal_condition_t          sig_cond;
     sensors_dbus_interface_t    dbus;
 }sensors_interface_t;
+
 /* sensor structure */
 typedef struct
 {
@@ -205,9 +174,9 @@ void sensors_dbusDisconnect(void);
         {\
             adc_pin4,\
             0,\
-            {/*signal_condition_t sig_cond*/},\
+            {{},{1000,0.001,0}},\
             {\
-                "Fuel Tank",\
+                "Tank Level Sender 1",\
                 "com.victronenergy.tank.builtin_adc4_di0"\
             }		\
         },		\
@@ -238,9 +207,9 @@ void sensors_dbusDisconnect(void);
         {\
             adc_pin6,\
             0,\
-            {},\
+            {{},{1000,0.001,0}},\
             {\
-                "Fuel Tank",\
+                "Tank Level Sender 2",\
                 "com.victronenergy.tank.builtin_adc6_di1"\
             }\
         },\
@@ -271,9 +240,9 @@ void sensors_dbusDisconnect(void);
         {\
             adc_pin2,\
             0,\
-            {},\
+            {{},{1000,0.001,0}},\
             {\
-                "Fuel Tank",\
+                "Tank Level Sender 3",\
                 "com.victronenergy.tank.builtin_adc2_di2"\
             }\
         },\
@@ -304,7 +273,7 @@ void sensors_dbusDisconnect(void);
         {\
             adc_pin5,\
             0,\
-            {},\
+            {{},{100,0.01,0}},\
             {\
                 "Temperature Sensor 1",\
                 "com.victronenergy.temperature.builtin_adc5_di0"\
@@ -318,16 +287,16 @@ void sensors_dbusDisconnect(void);
                 "Settings/Temperature/1/Scale"\
             },\
             {\
-                0.0,\
-                0.0,\
-                100.0,\
+                0,\
+                -100,\
+                100,\
                 "Settings/Temperature/1/Offset"\
             },\
             {\
-                0.010,\
-                0.001,\
-                100.000,\
-                "Settings/Temperature/1/filterStrength"\
+                0,\
+                0,\
+                3,\
+                "Settings/Temperature/1/TemperatureType"\
             }\
         }\
     },\
@@ -337,7 +306,7 @@ void sensors_dbusDisconnect(void);
         {\
             adc_pin3,\
             0,\
-            {},\
+            {{},{100,0.01,0}},\
             {\
                 "Temperature Sensor 2",\
                 "com.victronenergy.temperature.builtin_adc3_di1"\
@@ -351,16 +320,16 @@ void sensors_dbusDisconnect(void);
                 "Settings/Temperature/2/Scale"\
             },\
             {\
-                0.0,\
-                0.0,\
-                100.0,\
+                0,\
+                -100,\
+                100,\
                 "Settings/Temperature/2/Offset"\
             },\
         {\
-                0.010,\
-                0.001,\
-                100.000,\
-                "Settings/Temperature/2/filterStrength"\
+                0,\
+                0,\
+                3,\
+                "Settings/Temperature/2/TemperatureType"\
             }\
             }\
     }\
@@ -412,10 +381,10 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_temperature1].items.product.firmwareVersion,								NULL,											"FirmwareVersion",	&units,	0},\
         {&analog_sensor[index_temperature1].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_temperature1].items.temperature.temperature,		&analog_sensor[index_temperature1].variant.temperature.temperature,		"Temperature",		&units,	5},\
-        {&analog_sensor[index_temperature1].items.temperature.spareParam,		&analog_sensor[index_temperature1].variant.temperature.spareParam,		"dummy",			&units,	5},\
-        {&analog_sensor[index_temperature1].items.temperature.scale,			&analog_sensor[index_temperature1].variant.temperature.scale,			"scale",			&units,	5, scaleChange},\
-        {&analog_sensor[index_temperature1].items.temperature.offset,			&analog_sensor[index_temperature1].variant.temperature.offset,			"offset",			&units,	5, offsetChange},\
-        {&analog_sensor[index_temperature1].items.temperature.filterStrength,	&analog_sensor[index_temperature1].variant.temperature.filterStrength,	"FilterStrength",	&units,	5, filterStrengthChange}\
+        {&analog_sensor[index_temperature1].items.temperature.spareParam,                               NULL,                                   		"",                 &units,	5},\
+        {&analog_sensor[index_temperature1].items.temperature.scale,			&analog_sensor[index_temperature1].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
+        {&analog_sensor[index_temperature1].items.temperature.offset,			&analog_sensor[index_temperature1].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\
+        {&analog_sensor[index_temperature1].items.temperature.temperatureType,	&analog_sensor[index_temperature1].variant.temperature.temperatureType,	"TemperatureType",	&units,	5, TempTypeChange}\
     },\
     {\
         {&analog_sensor[index_temperature2].items.product.connected,									NULL,											"Connected",		&units,	0},\
@@ -424,10 +393,10 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_temperature2].items.product.firmwareVersion,								NULL,											"FirmwareVersion",	&units,	0},\
         {&analog_sensor[index_temperature2].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_temperature2].items.temperature.temperature,		&analog_sensor[index_temperature2].variant.temperature.temperature,		"Temperature",		&units,	5},\
-        {&analog_sensor[index_temperature2].items.temperature.spareParam,		&analog_sensor[index_temperature2].variant.temperature.spareParam,		"dummy",			&units,	5},\
-        {&analog_sensor[index_temperature2].items.temperature.scale,			&analog_sensor[index_temperature2].variant.temperature.scale,			"scale",			&units,	5, scaleChange},\
-        {&analog_sensor[index_temperature2].items.temperature.offset,			&analog_sensor[index_temperature2].variant.temperature.offset,			"offset",			&units,	5, offsetChange},\
-        {&analog_sensor[index_temperature2].items.temperature.filterStrength,	&analog_sensor[index_temperature2].variant.temperature.filterStrength,	"FilterStrength",	&units,	5, filterStrengthChange}\
+        {&analog_sensor[index_temperature2].items.temperature.spareParam,                               NULL,                                   		"",                 &units,	5},\
+        {&analog_sensor[index_temperature2].items.temperature.scale,			&analog_sensor[index_temperature2].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
+        {&analog_sensor[index_temperature2].items.temperature.offset,			&analog_sensor[index_temperature2].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\
+        {&analog_sensor[index_temperature2].items.temperature.temperatureType,	&analog_sensor[index_temperature2].variant.temperature.temperatureType,	"TemperatureType",	&units,	5, TempTypeChange}\
     }\
 }
 #endif // End of sensors.h file

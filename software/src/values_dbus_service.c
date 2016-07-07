@@ -114,16 +114,13 @@ void values_dbus_service_addSettings(analog_sensor_t * sensor)
 
         /* Create an item pointing to our new setting */
         sensor->dbus_info[i].value = veItemGetOrCreateUid(consumer, sensor->dbus_info[i].path);
-        /* Listen to changes in the item. Once the item is created 'valueChanged' will be called */
-        //veItemSetChanged(sensor->dbus_info[i].value, valueChanged);
-
         /* Set the properties of the new settings */
         values_range_t  values_range;
         veVariantFloat(&values_range.def, sensor->dbus_info[i].def);
         veVariantFloat(&values_range.max, sensor->dbus_info[i].max);
         veVariantFloat(&values_range.min, sensor->dbus_info[i].min);
 
-        if (!veDBusAddLocalSetting(sensor->dbus_info[i].value,"f",&values_range.def,&values_range.min, &values_range.max,veFalse))
+        if (!veDBusAddLocalSetting(sensor->dbus_info[i].value, "f", &values_range.def, &values_range.min, &values_range.max,veFalse))
         {
            logE("task", "veDBusAddLocalSetting failed");
            pltExit(1);
