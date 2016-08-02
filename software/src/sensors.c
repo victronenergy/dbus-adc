@@ -103,7 +103,7 @@ void sensors_handle(void)
                 {
                     un8 Std = (un8)analog_sensor[analog_sensors_index].variant.tank_level.standard.value.UN32;
 
-                    if(analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p6VOLTS)
+                    if(analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p3VOLTS)
                     {
                         veVariantStr(&analog_sensor[analog_sensors_index].variant.tank_level.level, "O.C.");
                     }

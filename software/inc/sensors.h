@@ -14,10 +14,10 @@
 #define USA_MIN_TANK_LEVEL_RESISTANCE       (30) //ohms
 
 // Temperature sensors settings
-#define TEMP_SENS_VOLT_DIVID_R1             (51000 + 51000) // ohms
-#define TEMP_SENS_VOLT_DIVID_R2             (22000) // ohms
+#define TEMP_SENS_VOLT_DIVID_R1             (10000) // ohms
+#define TEMP_SENS_VOLT_DIVID_R2             (4700) // ohms
 
-#define TEMP_SENS_MAX_ADCIN                 1800
+#define TEMP_SENS_MAX_ADCIN                 ADC_1p3VOLTS // ~400K
 #define TEMP_SENS_MIN_ADCIN                 250
 
 #define NUM_OF_SENSOR_SETTINGS_PARAMS       3

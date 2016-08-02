@@ -16,6 +16,7 @@
 #define ADC_4_VOLTS                         9100
 #define ADC_2p73VOLTS                       6211
 #define ADC_1p6VOLTS                        3640
+#define ADC_1p3VOLTS                        2957
 #define ADC_0p15VOLTS                       341
 
 typedef enum
