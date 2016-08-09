@@ -21,7 +21,7 @@
 #define TEMP_SENS_MIN_ADCIN                 250
 
 #define NUM_OF_SENSOR_SETTINGS_PARAMS       3
-#define NUM_OF_PROD_ITEMS                   5
+#define NUM_OF_PROD_ITEMS                   4
 #define NUM_OF_SENSOR_OUTPUTS               2
 #define NUM_OF_SENSOR_VARIANTS              NUM_OF_SENSOR_OUTPUTS + NUM_OF_SENSOR_SETTINGS_PARAMS
 #define SENSORS_INFO_ARRAY_SIZE             NUM_OF_SENSOR_VARIANTS + NUM_OF_PROD_ITEMS
@@ -53,7 +53,6 @@ typedef struct
     VeItem id;
     VeItem instance;
     VeItem connected;
-    VeItem firmwareVersion;
 } ProductInfo;
 
 typedef struct
@@ -342,7 +341,6 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_tankLevel1].items.product.connected,										NULL,											"Connected",		&units,	0},\
         {&analog_sensor[index_tankLevel1].items.product.name,											NULL,											"ProductName",		&units,	0},\
         {&analog_sensor[index_tankLevel1].items.product.id,												NULL,											"ProductId",		&units,	0},\
-        {&analog_sensor[index_tankLevel1].items.product.firmwareVersion,								NULL,											"FirmwareVersion",	&units,	0},\
         {&analog_sensor[index_tankLevel1].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_tankLevel1].items.tank_level.level,				&analog_sensor[index_tankLevel1].variant.tank_level.level,				"Level",  			&units,	5},\
         {&analog_sensor[index_tankLevel1].items.tank_level.remaining,			&analog_sensor[index_tankLevel1].variant.tank_level.remaining,			"Remaining",  		&units,	5},\
@@ -354,7 +352,6 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_tankLevel2].items.product.connected,										NULL,											"Connected",		&units,	0},\
         {&analog_sensor[index_tankLevel2].items.product.name,											NULL,											"ProductName",		&units,	0},\
         {&analog_sensor[index_tankLevel2].items.product.id,												NULL,											"ProductId",		&units,	0},\
-        {&analog_sensor[index_tankLevel2].items.product.firmwareVersion,								NULL,											"FirmwareVersion",	&units,	0},\
         {&analog_sensor[index_tankLevel2].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_tankLevel2].items.tank_level.level,				&analog_sensor[index_tankLevel2].variant.tank_level.level,				"Level",  			&units,	5},\
         {&analog_sensor[index_tankLevel2].items.tank_level.remaining,			&analog_sensor[index_tankLevel2].variant.tank_level.remaining,			"Remaining",  		&units,	5},\
@@ -366,7 +363,6 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_tankLevel3].items.product.connected,										NULL,											"Connected",		&units,	0},\
         {&analog_sensor[index_tankLevel3].items.product.name,											NULL,											"ProductName",		&units,	0},\
         {&analog_sensor[index_tankLevel3].items.product.id,												NULL,											"ProductId",		&units,	0},\
-        {&analog_sensor[index_tankLevel3].items.product.firmwareVersion,								NULL,											"FirmwareVersion",	&units,	0},\
         {&analog_sensor[index_tankLevel3].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_tankLevel3].items.tank_level.level,				&analog_sensor[index_tankLevel3].variant.tank_level.level,				"Level",  			&units,	5},\
         {&analog_sensor[index_tankLevel3].items.tank_level.remaining,			&analog_sensor[index_tankLevel3].variant.tank_level.remaining,			"Remaining",  		&units,	5},\
@@ -378,7 +374,6 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_temperature1].items.product.connected,									NULL,											"Connected",		&units,	0},\
         {&analog_sensor[index_temperature1].items.product.name,											NULL,											"ProductName",		&units,	0},\
         {&analog_sensor[index_temperature1].items.product.id,											NULL,											"ProductId",		&units,	0},\
-        {&analog_sensor[index_temperature1].items.product.firmwareVersion,								NULL,											"FirmwareVersion",	&units,	0},\
         {&analog_sensor[index_temperature1].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_temperature1].items.temperature.temperature,		&analog_sensor[index_temperature1].variant.temperature.temperature,		"Temperature",		&units,	5},\
         {&analog_sensor[index_temperature1].items.temperature.spareParam,                               NULL,                                   		"",                 &units,	5},\
@@ -390,7 +385,6 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_temperature2].items.product.connected,									NULL,											"Connected",		&units,	0},\
         {&analog_sensor[index_temperature2].items.product.name,											NULL,											"ProductName",		&units,	0},\
         {&analog_sensor[index_temperature2].items.product.id,											NULL,											"ProductId",		&units,	0},\
-        {&analog_sensor[index_temperature2].items.product.firmwareVersion,								NULL,											"FirmwareVersion",	&units,	0},\
         {&analog_sensor[index_temperature2].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_temperature2].items.temperature.temperature,		&analog_sensor[index_temperature2].variant.temperature.temperature,		"Temperature",		&units,	5},\
         {&analog_sensor[index_temperature2].items.temperature.spareParam,                               NULL,                                   		"",                 &units,	5},\
