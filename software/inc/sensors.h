@@ -163,7 +163,7 @@ void values_dbus_service_addSettings(analog_sensor_t * sensor);
 void sensors_dbusConnect(analog_sensor_t * sensor, analog_sensors_index_t sensor_index);
 void sensors_dbusDisconnect(void);
 
-
+//void valueChanged(struct VeItem *item);
 
 #define SENSORS_CONSTANT_DATA \
 {		\
@@ -187,7 +187,7 @@ void sensors_dbusDisconnect(void);
                 "Settings/tank/1/Capacity"\
             },\
             {\
-                0,\
+                ' ',\
                 0,\
                 5,\
                 "Settings/tank/1/FluidType"\
@@ -220,7 +220,7 @@ void sensors_dbusDisconnect(void);
                 "Settings/tank/2/Capacity"\
             },\
             {\
-                0,\
+                ' ',\
                 0,\
                 5,\
                 "Settings/tank/2/FluidType"\
@@ -253,7 +253,7 @@ void sensors_dbusDisconnect(void);
                 "Settings/tank/3/Capacity"\
             },\
             {\
-                0,\
+                ' ',\
                 0,\
                 5,\
                 "Settings/tank/3/FluidType"\
@@ -292,7 +292,7 @@ void sensors_dbusDisconnect(void);
                 "Settings/Temperature/1/Offset"\
             },\
             {\
-                0,\
+                ' ',\
                 0,\
                 3,\
                 "Settings/Temperature/1/TemperatureType"\
@@ -324,13 +324,13 @@ void sensors_dbusDisconnect(void);
                 100,\
                 "Settings/Temperature/2/Offset"\
             },\
-        {\
-                0,\
+            {\
+                ' ',\
                 0,\
                 3,\
                 "Settings/Temperature/2/TemperatureType"\
             }\
-            }\
+         }\
     }\
 }
 

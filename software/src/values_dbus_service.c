@@ -52,17 +52,6 @@ VeItem * getConsumerRoot(void)
     return(consumer);
 }
 
-void valueChanged(struct VeItem *item)
-{
-    char buf[100];
-    VeVariantUnitFmt fmt;
-    fmt.decimals = 2;
-    fmt.unit = "X";
-
-    veVariantSprintf(&item->variant, &fmt, buf, sizeof(buf));
-    printf("changed %s\n", buf);
-}
-
 void valuesInit(analog_sensors_index_t sensor_index)
 {
     timeout = devReg.timeOut * 20;
@@ -76,7 +65,6 @@ void valuesInit(analog_sensors_index_t sensor_index)
     veItemSetFmt(&processName[sensor_index], veVariantFmt, &none);
     veItemSetFmt(&processVersion[sensor_index], veVariantFmt, &none);
     veItemSetFmt(&connection[sensor_index], veVariantFmt, &none);
-
 }
 
 void values_dbus_service_connectSettings(void)
