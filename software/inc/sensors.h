@@ -247,25 +247,25 @@ void sensors_dbusDisconnect(void);
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/tank/1/Function"\
+                "Settings/Tank/1/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
                 MIN_OF_TANK_CAPACITY,\
                 MAX_OF_TANK_CAPACITY,\
-                "Settings/tank/1/Capacity"\
+                "Settings/Tank/1/Capacity"\
             },\
             {\
                 DEFAULT_FLUID_TYPE,\
                 MIN_OF_FLUID_TYPE,\
                 MAX_OF_FLUID_TYPE,\
-                "Settings/tank/1/FluidType"\
+                "Settings/Tank/1/FluidType"\
             },\
             {\
                 european_std,\
                 european_std,\
                 (num_of_stds - 1),\
-                "Settings/tank/1/Standard"\
+                "Settings/Tank/1/Standard"\
             }\
         }\
     },\
@@ -286,25 +286,25 @@ void sensors_dbusDisconnect(void);
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/tank/2/Function"\
+                "Settings/Tank/2/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
                 MIN_OF_TANK_CAPACITY,\
                 MAX_OF_TANK_CAPACITY,\
-                "Settings/tank/2/Capacity"\
+                "Settings/Tank/2/Capacity"\
             },\
             {\
                 DEFAULT_FLUID_TYPE,\
                 MIN_OF_FLUID_TYPE,\
                 MAX_OF_FLUID_TYPE,\
-                "Settings/tank/2/FluidType"\
+                "Settings/Tank/2/FluidType"\
             },\
             {\
                 european_std,\
                 european_std,\
                 (num_of_stds - 1),\
-                "Settings/tank/2/Standard"\
+                "Settings/Tank/2/Standard"\
             }\
         }\
     },\
@@ -325,25 +325,25 @@ void sensors_dbusDisconnect(void);
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/tank/3/Function"\
+                "Settings/Tank/3/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
                 MIN_OF_TANK_CAPACITY,\
                 MAX_OF_TANK_CAPACITY,\
-                "Settings/tank/3/Capacity"\
+                "Settings/Tank/3/Capacity"\
             },\
             {\
                 DEFAULT_FLUID_TYPE,\
                 MIN_OF_FLUID_TYPE,\
                 MAX_OF_FLUID_TYPE,\
-                "Settings/tank/3/FluidType"\
+                "Settings/Tank/3/FluidType"\
             },\
             {\
                 european_std,\
                 european_std,\
                 (num_of_stds - 1),\
-                "Settings/tank/3/Standard"\
+                "Settings/Tank/3/Standard"\
             }\
         }\
     },\
