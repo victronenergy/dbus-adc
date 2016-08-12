@@ -157,7 +157,6 @@ typedef struct
 
 typedef struct
 {
-    char        *productName;
     const char  *service;
 }sensors_dbus_interface_t;
 
@@ -238,7 +237,6 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TANK_SENSOR_IIR_LPF_FF_EN, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "Tank Level Sender 1",\
                 "com.victronenergy.tank.builtin_adc4_di0"\
             }		\
         },		\
@@ -277,7 +275,6 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TANK_SENSOR_IIR_LPF_FF_EN, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "Tank Level Sender 2",\
                 "com.victronenergy.tank.builtin_adc6_di1"\
             }\
         },\
@@ -316,7 +313,6 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TANK_SENSOR_IIR_LPF_FF_EN, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "Tank Level Sender 3",\
                 "com.victronenergy.tank.builtin_adc2_di2"\
             }\
         },\
@@ -355,7 +351,6 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TEMPERATURE_SENSOR_IIR_LPF_FF_EN, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "Temperature Sensor 1",\
                 "com.victronenergy.temperature.builtin_adc5_di0"\
             }\
         },\
@@ -394,7 +389,6 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TEMPERATURE_SENSOR_IIR_LPF_FF_EN, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "Temperature Sensor 2",\
                 "com.victronenergy.temperature.builtin_adc3_di1"\
             }\
         },\

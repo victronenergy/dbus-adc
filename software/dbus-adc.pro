@@ -57,7 +57,8 @@ SOURCES += \
     src/sensors.c \
     ext/velib/src/types/ve_values.c \
     ext/velib/src/types/ve_dbus_item_consumer.c \
-    src/platform/pc/serial_hal_pc.c
+    src/platform/pc/serial_hal_pc.c \
+    ext/velib/src/vecan/products.c
 
 OTHER_FILES += \
     Makefile \
@@ -76,7 +77,8 @@ HEADERS += \
     inc/adc.h \
     inc/serial_hal.h \
     inc/sensors.h \
-    inc/task.h
+    inc/task.h \
+    ext/velib/inc/velib/vecan/products.h
 
 
 DEFINES += \

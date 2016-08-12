@@ -3,6 +3,8 @@
 #include <velib/types/ve_item.h>
 #include <velib/utils/ve_logger.h>
 #include <velib/types/ve_dbus_item.h>
+#include <velib/vecan/products.h>
+
 
 #include "values.h"
 #include "sensors.h"
@@ -68,7 +70,7 @@ static void updateValues(void)
     for(analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++)
     {
         // update only variables values
-        for(un8 i = (NUM_OF_PROD_ITEMS-1); i < SENSORS_INFO_ARRAY_SIZE; i++)
+        for(un8 i = 0; i < SENSORS_INFO_ARRAY_SIZE; i++)
         {
             if (sensors_info[sensor_index][i].local && veVariantIsValid(sensors_info[sensor_index][i].local))
             {
@@ -190,13 +192,13 @@ void sensors_handle(void)
                         if(analog_sensor[analog_sensors_index].interface.adc_sample > TEMP_SENS_MAX_ADCIN)
                         {
                             // open circuit error
-                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)disconnected);
+                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)disconnected);
                             tempC = -1;
                         }
                         else if( analog_sensor[analog_sensors_index].interface.adc_sample < (TEMP_SENS_MIN_ADCIN/4) )
                         {
                             // short circuit error
-                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)short_circuited);
+                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)short_circuited);
                             tempC = -1;
                         }
                         // Value ok
@@ -206,7 +208,7 @@ void sensors_handle(void)
                             tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
                             tempC *= (analog_sensor[analog_sensors_index].variant.temperature.scale.value.Float);
                             tempC += (analog_sensor[analog_sensors_index].variant.temperature.offset.value.SN32);
-                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)ok);
+                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)ok);
                         }
                         // all ok
                         veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
@@ -246,12 +248,25 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
 
     flags[sensor_index] |= F_CONNECTED;
 
-    static un8 instance = 0;
+    static un8 instance = 20;
 
     veItemOwnerSet(&analog_sensor[sensor_index].items.product.connected, veVariantUn32(&variant, veTrue));
     veItemOwnerSet(&analog_sensor[sensor_index].items.product.instance, veVariantUn8(&variant, instance++));
-    veItemOwnerSet(&analog_sensor[sensor_index].items.product.name, veVariantStr(&variant, analog_sensor[sensor_index].interface.dbus.productName));
-    veItemOwnerSet(&analog_sensor[sensor_index].items.product.id, veVariantStr(&variant, "41312"));
+    /* Product info */
+    if(analog_sensor[sensor_index].sensor_type == tank_level_t)
+    {
+        veItemOwnerSet(&analog_sensor[sensor_index].items.product.id, veVariantUn16(&variant, VE_PROD_ID_TANK_SENSOR_INPUT));
+        veItemOwnerSet(&analog_sensor[sensor_index].items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TANK_SENSOR_INPUT)));
+    }
+    else if(analog_sensor[sensor_index].sensor_type == temperature_t)
+    {
+        veItemOwnerSet(&analog_sensor[sensor_index].items.product.id, veVariantUn16(&variant, VE_PROD_ID_TEMPERATURE_SENSOR));
+        veItemOwnerSet(&analog_sensor[sensor_index].items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR)));
+    }
+    else
+    {
+
+    }
 
     values_dbus_service_addSettings(&analog_sensor[sensor_index]);
     sensors_dbusConnect(&analog_sensor[sensor_index], sensor_index);
