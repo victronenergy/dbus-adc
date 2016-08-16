@@ -24,6 +24,8 @@
 static un16 timeout;
 const char version[] = VERSION_STR;
 // Callbacks to be called when the paramters are changing
+veBool functionChange(struct VeItem *item, void *ctx, VeVariant *variant);
+
 veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant);
@@ -107,100 +109,117 @@ void sensors_handle(void)
             {
                 case tank_level_t:
                 {
-                    float level;
-                    un8 Std = (un8)analog_sensor[analog_sensors_index].variant.tank_level.standard.value.UN32;
+                    veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.function,
+                            (un32)analog_sensor[analog_sensors_index].dbus_info[function].value->variant.value.Float);
 
-                    if(analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p3VOLTS)
+                    if(analog_sensor[analog_sensors_index].variant.tank_level.function.value.UN32 == (un32)default_function)
                     {
-                        // open circuit error
-                        level = -1;
-                    }
-                    // this condition applies only for the US standard
-                    else if(Std && (analog_sensor[analog_sensors_index].interface.adc_sample < ADC_0p15VOLTS))
-                    {
-                        // short circuit error
-                        level = -1;
-                    }
-                    else
-                    {
-                        float R2 = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
-                        if(R2>0)
+                        float level;
+                        un8 Std = (un8)analog_sensor[analog_sensors_index].variant.tank_level.standard.value.UN32;
+
+                        if(analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p3VOLTS)
                         {
-                            if(Std)
-                            {
-                                level = (R2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
-                                if(level < 0)
-                                {
-                                    level = 0;
-                                }
-                                level = 1-level;
-                            }
-                            else
-                            {
-                                level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
-                            }
-                            if(level > 1)
-                            {
-                                level = 1;
-                            }
-
+                            // Sensor status: error- not connected
+                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)disconnected);
+                            level = -1;
+                        }
+                        // this condition applies only for the US standard
+                        else if(Std && (analog_sensor[analog_sensors_index].interface.adc_sample < ADC_0p15VOLTS))
+                        {
+                            // Sensor status: error- short circuited
+                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)short_circuited);
+                            level = -1;
                         }
                         else
                         {
-                            // resistance calculation error
+                            float R2 = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
+                            if(R2>0)
+                            {
+                                if(Std == european_std)
+                                {
+                                    level = (R2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
+                                    if(level < 0)
+                                    {
+                                        level = 0;
+                                    }
+                                    level = 1-level;
+                                }
+                                else
+                                {
+                                    level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
+                                }
+                                if(level > 1)
+                                {
+                                    level = 1;
+                                }
+                                // Sensor status: O.K.
+                                veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)ok);
+                            }
+                            else
+                            {
+                                // Sensor status: error- unknown value
+                                veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)unknown_value);
+                            }
                         }
+                        // measure is ok and R2 resistance was correctlly calculated
+                        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.level, (un32)(100*level));
+
+                        veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.remaining,
+                                level*analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
+
+                        veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.capacity,
+                                analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
+
+                        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.fluidType,
+                                (un32)analog_sensor[analog_sensors_index].dbus_info[fluidType].value->variant.value.Float);
+
+                        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.standard,
+                                (un32)analog_sensor[analog_sensors_index].dbus_info[standard].value->variant.value.Float);
                     }
-                    // measure is ok and R2 resistance was correctlly calculated
-                    veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.level, (un32)(100*level));
-
-                    veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.remaining,
-                            level*analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
-
-                    veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.capacity,
-                            analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
-
-                    veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.fluidType,
-                            (un32)analog_sensor[analog_sensors_index].dbus_info[fluidType].value->variant.value.Float);
-
-                    veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.standard,
-                            (un32)analog_sensor[analog_sensors_index].dbus_info[standard].value->variant.value.Float);
                     break;
                 }
                 case temperature_t:
                 {
-                    float tempC;
-                    // sensor connectivity check
-                    if(analog_sensor[analog_sensors_index].interface.adc_sample > TEMP_SENS_MAX_ADCIN)
+                    veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.function,
+                            (un32)analog_sensor[analog_sensors_index].dbus_info[function].value->variant.value.Float);
+
+                    if(analog_sensor[analog_sensors_index].variant.temperature.function.value.UN32 == (un32)default_function)
                     {
-                        // open circuit error
-                        tempC = -1;
+                        float tempC;
+                        // sensor connectivity check
+                        if(analog_sensor[analog_sensors_index].interface.adc_sample > TEMP_SENS_MAX_ADCIN)
+                        {
+                            // open circuit error
+                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)disconnected);
+                            tempC = -1;
+                        }
+                        else if( analog_sensor[analog_sensors_index].interface.adc_sample < (TEMP_SENS_MIN_ADCIN/4) )
+                        {
+                            // short circuit error
+                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)short_circuited);
+                            tempC = -1;
+                        }
+                        // Value ok
+                        else
+                        {
+                            un32 divider_supply = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_temperature_pd, calc_type_Vin, 1);
+                            tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
+                            tempC *= (analog_sensor[analog_sensors_index].variant.temperature.scale.value.Float);
+                            tempC += (analog_sensor[analog_sensors_index].variant.temperature.offset.value.SN32);
+                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)ok);
+                        }
+                        // all ok
+                        veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
+
+                        veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.scale,
+                                analog_sensor[analog_sensors_index].dbus_info[scale].value->variant.value.Float);
+
+                        veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.offset,
+                                (sn32)analog_sensor[analog_sensors_index].dbus_info[offset].value->variant.value.Float);
+
+                        veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperatureType,
+                                (sn32)analog_sensor[analog_sensors_index].dbus_info[TempType].value->variant.value.Float);
                     }
-                    else if( analog_sensor[analog_sensors_index].interface.adc_sample < (TEMP_SENS_MIN_ADCIN/4) )
-                    {
-                        // shirt circuit error
-                        tempC = -1;
-                    }
-                    // Value ok
-                    else
-                    {
-                        un32 divider_supply = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_temperature_pd, calc_type_Vin, 1);
-                        tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
-                        tempC *= (analog_sensor[analog_sensors_index].variant.temperature.scale.value.Float);
-                        tempC += (analog_sensor[analog_sensors_index].variant.temperature.offset.value.SN32);
-
-                    }
-                    // all ok
-                    veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
-
-                    veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.scale,
-                            analog_sensor[analog_sensors_index].dbus_info[scale].value->variant.value.Float);
-
-                    veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.offset,
-                            (sn32)analog_sensor[analog_sensors_index].dbus_info[offset].value->variant.value.Float);
-
-                    veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperatureType,
-                            (sn32)analog_sensor[analog_sensors_index].dbus_info[TempType].value->variant.value.Float);
-
                     break;
                 }
                 default:
@@ -236,6 +255,27 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
 
     values_dbus_service_addSettings(&analog_sensor[sensor_index]);
     sensors_dbusConnect(&analog_sensor[sensor_index], sensor_index);
+}
+
+// Callback when the sensor function is changing
+veBool functionChange(struct VeItem *item, void *ctx, VeVariant *variant)
+{
+    analog_sensor_t * p_analog_sensor = (analog_sensor_t *)ctx;
+
+    veItemOwnerSet(item, variant);
+    veItemOwnerSet(getConsumerRoot(), variant);
+
+    VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[function].path);
+    veItemSet(settingsItem, variant);
+    if(p_analog_sensor->sensor_type == tank_level_t)
+    {
+        p_analog_sensor->variant.tank_level.function.value.UN32 = variant->value.UN32;
+    }
+    else
+    {
+        p_analog_sensor->variant.temperature.function.value.UN32 = variant->value.UN32;
+    }
+    return veTrue;
 }
 
 // Callback when the capacity is changing
