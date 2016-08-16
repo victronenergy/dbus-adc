@@ -21,37 +21,47 @@
 #define MODULE                      "VALUES"
 
 
-/** dbus connection */
+// dbus connection
 struct VeDbus *dbus[num_of_analog_sensors];
 
-/** The root of the tree to locate values and format them etc */
+// The root of the tree to locate values and format them etc
 static VeItem root[num_of_analog_sensors];
 
 static VeItem processName[num_of_analog_sensors];
 static VeItem processVersion[num_of_analog_sensors];
 static VeItem connection[num_of_analog_sensors];
-
+// timer divider for the app ticking
 static un16 values_task_timer;
 static un32 timeout;
 
 static VeVariantUnitFmt none = {0, ""};
-
+/**
+ * @brief interface
+ * @return the interface of the system
+ */
 static char const *interface(void)
 {
     return "ADC";
 }
-
+// required dbus connection information of the settings service
 dbus_info_t     dbus_info;
-
 const char      *settingsService = "com.victronenergy.settings";
 VeItem          *input_root;
 VeItem			*consumer;
 
+/**
+ * @brief getConsumerRoot
+ * @return a pointer to the dbus consumer item root
+ */
 VeItem * getConsumerRoot(void)
 {
     return(consumer);
 }
 
+/**
+ * @brief valuesInit
+ * @param sensor_index - the sensor index array number
+ */
 void valuesInit(analog_sensors_index_t sensor_index)
 {
     timeout = devReg.timeOut * 20;
@@ -67,6 +77,9 @@ void valuesInit(analog_sensors_index_t sensor_index)
     veItemSetFmt(&connection[sensor_index], veVariantFmt, &none);
 }
 
+/**
+ * @brief values_dbus_service_connectSettings
+ */
 void values_dbus_service_connectSettings(void)
 {
     input_root = veValueTree();
@@ -87,6 +100,10 @@ void values_dbus_service_connectSettings(void)
     }
 }
 
+/**
+ * @brief values_dbus_service_addSettings
+ * @param sensor - the pointer to the sensor structure array element
+ */
 void values_dbus_service_addSettings(analog_sensor_t * sensor)
 {
     for(int i = 0; i < NUM_OF_SENSOR_SETTINGS_PARAMS; i++)
@@ -117,22 +134,32 @@ void values_dbus_service_addSettings(analog_sensor_t * sensor)
 }
 
 /** 50ms tick to invalidate items if there are not received in time */
+/**
+ * @brief valuesTick - divide the tick frequency.
+ * call to handle the sensors
+ * call to update the dbus items
+ */
 void valuesTick(void)
 {
+    // division of the ticking frequency
     if(!(--values_task_timer))
     {
         values_task_timer = VALUES_TASK_INTERVAL;
-
-        // update the settings
+        // handle the sensors- sample the adc ,check sensor status, filter raw data and process raw data
+        sensors_handle();
+        // update the dbus items on the settings service
         for(analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++)
         {
             veDbusItemUpdate(dbus[sensor_index]);
         }
-
-        sensors_handle();
     }
 }
 
+/**
+ * @brief sensors_dbusConnect -connects sensor to dbus
+ * @param sensor - pointer the the sensor structure array element
+ * @param sensor_index - the sensor index array number
+ */
 void sensors_dbusConnect(analog_sensor_t * sensor, analog_sensors_index_t sensor_index)
 {
     VeVariant variant;
@@ -157,7 +184,11 @@ void sensors_dbusConnect(analog_sensor_t * sensor, analog_sensors_index_t sensor
     veItemOwnerSet(&connection[sensor_index], veVariantStr(&variant, interface()));
 }
 
-/* Stop service if connection lost */
+/**
+ * @brief sensors_dbusDisconnect
+ * @param sensor - pointer the the sensor structure array element
+ * @param sensor_index -  the sensor index array number
+ */
 void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sensor_index)
 {
      veDbusDisconnect(dbus[sensor_index]);

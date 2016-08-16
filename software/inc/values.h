@@ -12,10 +12,11 @@
  * the received values are stored in a tree in SI units. This struct
  * contains the field needed to create the tree.
  */
-
+// tick intervall definition for app ticking
 #define DESIRED_VALUES_TASK_INTERVAL    100 // ms
 #define VALUES_TASK_INTERVAL            DESIRED_VALUES_TASK_INTERVAL / 50 // 50ms base ticking
 
+// information for interfacing to dbus service
 typedef struct
 {
     VeItem *		    item;
@@ -26,6 +27,7 @@ typedef struct
     VeItemSetterFun	*	setValueCallback;
 } ItemInfo;
 
+// values variables structure for dbus settings parameters
 typedef struct
 {
     VeVariant def;
@@ -33,6 +35,7 @@ typedef struct
     VeVariant max;
 }values_range_t;
 
+// structure to hold the onformation required to dbus unterfacing
 typedef struct
 {
     const float     def;
@@ -43,12 +46,33 @@ typedef struct
     VeItem          *value;
 }dbus_info_t;
 
+/***********************************************/
+// Public function prototypes
+/**
+ * @brief valuesTick
+ */
 void valuesTick(void);
 
+/**
+ * @brief getConsumerRoot
+ * @return
+ */
 VeItem * getConsumerRoot(void);
 
+/**
+ * @brief valuesInvalidate
+ */
 void valuesInvalidate(void);
+
+/**
+ * @brief valuesAddItemByInfo
+ * @param itemInfo
+ */
 void valuesAddItemByInfo(ItemInfo const *itemInfo);
+
+/**
+ * @brief valuesDisconnectedEvent
+ */
 void valuesDisconnectedEvent(void);
 
 #endif

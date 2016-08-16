@@ -27,11 +27,33 @@ static un16 timeout;
 const char version[] = VERSION_STR;
 
 // Local function prototypes
+/**
+ * @brief sensors_data_process
+ * @param analog_sensors_index
+ * @return
+ */
 veBool sensors_data_process(analog_sensors_index_t analog_sensors_index);
+/**
+ * @brief sensors_tankType_data_process
+ * @param analog_sensors_index
+ * @return
+ */
 veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index);
+/**
+ * @brief sensors_temperatureType_data_process
+ * @param analog_sensors_index
+ * @return
+ */
 veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index);
 
 // Callbacks to be called when the paramters are changing
+/**
+ * @brief xxxChange
+ * @param item
+ * @param ctx
+ * @param variant
+ * @return
+ */
 veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
 veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
@@ -43,6 +65,9 @@ veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
 //static varibles
+/**
+ * @brief analog_sensor - array of analog sensor structures
+ */
 analog_sensor_t analog_sensor[num_of_analog_sensors] = SENSORS_CONSTANT_DATA;
 
 // potential divider for the tank level sender
@@ -51,8 +76,14 @@ const potential_divider_t sensor_temperature_pd = {TEMP_SENS_VOLT_DIVID_R1, TEMP
 
 // instantiate a container structure for the interface with dbus APIś interface.
 static VeVariantUnitFmt units = {9, ""};
+// a pointers container for interfacing the sensor structure to the various dbus services
 static ItemInfo const sensors_info[num_of_analog_sensors][SENSORS_INFO_ARRAY_SIZE] = SENSOR_ITEM_CONTAINER;
 
+/**
+ * @brief sensor_init - hook the sensor items to their dbus services
+ * @param root - the service item root
+ * @param sensor_index - the sensor index array number
+ */
 void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 {
     for (int i = 0; i < SENSORS_INFO_ARRAY_SIZE; i++)
@@ -69,9 +100,11 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
             }
         }
     }
-
 }
 
+/**
+ * @brief updateValues - updates the dbus item values
+ */
 static void updateValues(void)
 {
     for(analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++)
@@ -87,6 +120,9 @@ static void updateValues(void)
     }
 }
 
+/**
+ * @brief sensors_handle - handles the sensors
+ */
 void sensors_handle(void)
 {
     analog_sensors_index_t analog_sensors_index;
@@ -146,12 +182,18 @@ void sensors_handle(void)
         }
         else
         {
-            // reading error
+            // adc reading error
         }
     }
+    // call to update the dbus sservice with the new item values
     updateValues();
 }
 
+/**
+ * @brief sensors_data_process - direct to the data processing algorithm per sensor type
+ * @param analog_sensors_index - the sensor index array number
+ * @return Boolean status veTrue-success, veFalse-fail
+ */
 veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
 {
     // check the type of sensor before starting
@@ -175,7 +217,11 @@ veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
     return veTrue;
 }
 
-// A function to proces the tank level sensor adc data (need to switch the oin function as when functions will be add)
+/**
+ * @brief sensors_tankType_data_process - proces the tank level sensor adc data (need to switch the oin function as when functions will be add)
+ * @param analog_sensors_index - the sensor index array number
+ * @return Boolean status veTrue-success, veFalse-fail
+ */
 veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index)
 {
         // process the data of the analog input with respect to its function
@@ -197,11 +243,13 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
         }
         else
         {
+            // calculate the resistance of the tank level sensor from the adc pin sample
             float R2 = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
+            // check if the integrity of the resistance
             if(R2>0)
-            {
+            {   // clculate the tank level
                 if(Std == european_std)
-                {
+                { // tank level calculation in the case it is a European standard sensor
                     level = (R2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
                     if(level < 0)
                     {
@@ -210,11 +258,13 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
                     level = 1-level;
                 }
                 else
-                {
+                {   // tank level calculation in the case it is a American standard sensor
                     level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
                 }
+                // is level biger than 100% ?
                 if(level > 1)
                 {
+                    // saturate the level to 100%
                     level = 1;
                 }
                 // Sensor status: O.K.
@@ -229,24 +279,24 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
         // measure is ok and R2 resistance was correctlly calculated
         veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.analogpinFunc,
                 (un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float);
-
+        // update the sensor vatiables
         veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.level, (un32)(100*level));
-
         veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.remaining,
                 level*analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
-
         veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.capacity,
                 analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
-
         veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.fluidType,
                 (un32)analog_sensor[analog_sensors_index].dbus_info[fluidType].value->variant.value.Float);
-
         veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.standard,
                 (un32)analog_sensor[analog_sensors_index].dbus_info[standard].value->variant.value.Float);
     return veTrue;
 }
 
-// A function to proces the temperature sensor adc data (need to switch the oin function as when functions will be add)
+/**
+ * @brief sensors_tankType_data_process - proces the temperature sensor adc data (need to switch the oin function as when functions will be add)
+ * @param analog_sensors_index - the sensor index array number
+ * @return Boolean status veTrue-success, veFalse-fail
+ */
 veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index)
 {
     float tempC;
@@ -266,31 +316,35 @@ veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensor
     // Value ok
     else
     {
+        // calculate the output of the LM335 temperature sensor from the adc pin sample
         un32 divider_supply = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_temperature_pd, calc_type_Vin, 1);
+        // convert from Fahrenheit to Celsius
         tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
+        // Signal scale correction
         tempC *= (analog_sensor[analog_sensors_index].variant.temperature.scale.value.Float);
+        // Signal offset correction
         tempC += (analog_sensor[analog_sensors_index].variant.temperature.offset.value.SN32);
+        // update sensor status
         veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)ok);
     }
-    // all ok
+    // all ok- update the sensor vatiables
     veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.analogpinFunc,
             (un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float);
-
     veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
-
     veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.scale,
             analog_sensor[analog_sensors_index].dbus_info[scale].value->variant.value.Float);
-
     veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.offset,
             (sn32)analog_sensor[analog_sensors_index].dbus_info[offset].value->variant.value.Float);
-
     veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperatureType,
             (sn32)analog_sensor[analog_sensors_index].dbus_info[TempType].value->variant.value.Float);
 
     return veTrue;
 }
 
-
+/**
+ * @brief sensors_dbusInit - connect sensor items to their dbus services
+ * @param sensor_index - the sensor index array number
+ */
 void sensors_dbusInit(analog_sensors_index_t sensor_index)
 {
     VeVariant variant;
@@ -329,6 +383,14 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
         sensors_dbusConnect(&analog_sensor[sensor_index], sensor_index);
     }
 }
+
+/**
+ * @brief xxxChange - is a callbeck that called when an item was changed
+ * @param item - a pointer to the chanched item
+ * @param ctx - a preloaded void pointer to some desired variable- in our case, a pointer the the sensor structure array element
+ * @param variant - the changed variant in the item
+ * @return Boolean status veTrue -success, veFalse -fail
+ */
 
 // Callback when the sensor function is changing
 veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant)

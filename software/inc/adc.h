@@ -12,6 +12,7 @@
 #define ADC_VREF                            (float)(1.8)
 #define OMEGA                               (float)6.283185307179586476925286766559
 
+#define ADC_MAX_COUNT                       4095
 #define POTENTIAL_DIV_MAX_SAMPLE            11375 // = 4095 * 5/adc_vref
 #define ADC_4_VOLTS                         9100
 #define ADC_2p73VOLTS                       6211
@@ -19,6 +20,7 @@
 #define ADC_1p3VOLTS                        2957
 #define ADC_0p15VOLTS                       341
 
+// adc interfacing pins
 typedef enum
 {
     adc_pin0 = 0,
@@ -31,7 +33,7 @@ typedef enum
     num_of_adc_pins
 }adc_analogPin_t;
 
-
+// Potential divider calculations types
 typedef enum
 {
     calc_type_Vin = 0,
@@ -40,13 +42,14 @@ typedef enum
     max_calc_type
 }pd_calc_type_t;
 
+// the potential divider variables
 typedef struct
 {
     un32 var1;
     un32 var2;
 }potential_divider_t;
 
-
+// Single pole iir low pass filter variables
 typedef struct
 {
    un32     FF;
@@ -54,9 +57,39 @@ typedef struct
    float    adc_mem;
 }filter_iir_lpf_t;
 
+/********************************************************/
+// Public functions
+/**
+ * @brief adc_read
+ * @param value
+ * @param pin
+ * @return
+ */
 veBool adc_read(un32 * value, adc_analogPin_t pin);
+/**
+ * @brief adc_sample2volts
+ * @param sample
+ * @return
+ */
 float adc_sample2volts(un32 sample);
+/**
+ * @brief adc_filter
+ * @param x
+ * @param y
+ * @param Fc
+ * @param Fs
+ * @param FF
+ * @return
+ */
 float adc_filter(float x, float *y, float Fc, float Fs, un16 FF);
+/**
+ * @brief adc_potDiv_calc
+ * @param sample
+ * @param pd
+ * @param type
+ * @param mltpty
+ * @return
+ */
 un32 adc_potDiv_calc(un32 sample, const potential_divider_t * pd, pd_calc_type_t type, un32 mltpty);
 
 #endif // ADC_H

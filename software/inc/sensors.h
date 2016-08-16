@@ -8,49 +8,53 @@
 #include "adc.h"
 #include "values.h"
 
-#define TANK_LEVEL_SENSOR_DIVIDER           (680) // ohms
-#define EUR_MAX_TANK_LEVEL_RESISTANCE       (180) //ohms
-#define USA_MAX_TANK_LEVEL_RESISTANCE       (240) //ohms
-#define USA_MIN_TANK_LEVEL_RESISTANCE       (30) //ohms
-
-// Temperature sensors settings
-#define TEMP_SENS_VOLT_DIVID_R1             (10000) // ohms
-#define TEMP_SENS_VOLT_DIVID_R2             (4700) // ohms
-
-#define TEMP_SENS_MAX_ADCIN                 ADC_1p3VOLTS // ~400K
-#define TEMP_SENS_MIN_ADCIN                 250
-
+// defines for the on-board sensors interface configurations to firmware application
 #define NUM_OF_SENSOR_SETTINGS_PARAMS       4
 #define NUM_OF_PROD_ITEMS                   4
 #define NUM_OF_SENSOR_OUTPUTS               3
 #define NUM_OF_SENSOR_VARIANTS              NUM_OF_SENSOR_OUTPUTS + NUM_OF_SENSOR_SETTINGS_PARAMS
 #define SENSORS_INFO_ARRAY_SIZE             NUM_OF_SENSOR_VARIANTS + NUM_OF_PROD_ITEMS
 
+// defines for the tank level sensor analog front end parameters
+#define TANK_LEVEL_SENSOR_DIVIDER           (680) // ohms
+#define EUR_MAX_TANK_LEVEL_RESISTANCE       (180) //ohms
+#define USA_MAX_TANK_LEVEL_RESISTANCE       (240) //ohms
+#define USA_MIN_TANK_LEVEL_RESISTANCE       (30) //ohms
+
+// defines for the temperature sensor analog front end parameters
+#define TEMP_SENS_VOLT_DIVID_R1             (10000) // ohms
+#define TEMP_SENS_VOLT_DIVID_R2             (4700) // ohms
+#define TEMP_SENS_MAX_ADCIN                 ADC_1p3VOLTS // ~400K
+#define TEMP_SENS_MIN_ADCIN                 250
+// defines to reset filter values
 #define INIT_ADC_SAMPLE_VAL                 0
 #define INIT_ADC_SAMPLE_MEMORY_VAL          0
-
+// defines to tank level sensor filter parameters
 #define TANK_SENSOR_IIR_LPF_FF_EN           1000  // samples
 #define TANK_SENSOR_CUTOFF_FREQ             0.001 // Hz
-
+// defines to temperature sensor filter parameters
 #define TEMPERATURE_SENSOR_IIR_LPF_FF_EN    1000  // samples
 #define TEMPERATURE_SENSOR_CUTOFF_FREQ      0.01 // Hz
 
+// defines to initialize the sensors settings parameters
+// tank level capacity
 #define DEFAULT_TANK_CAPACITY               (float)0.2 //m3
 #define MIN_OF_TANK_CAPACITY                0
 #define MAX_OF_TANK_CAPACITY                1
-
+// tank level fluid type
 #define DEFAULT_FLUID_TYPE                  0 // Fuel
 #define MIN_OF_FLUID_TYPE                   0
 #define MAX_OF_FLUID_TYPE                   5 //
-
+// temperature sensor signal sacle correction
 #define TEMPERATURE_SCALE                   (float)1.00
 #define MIN_OF_TEMPERATURE_SCALE            (float)0.10
 #define MAX_OF_TEMPERATURE_SCALE            (float)10.00
-
+// temperature sensor signal offset correction
 #define TEMPERATURE_OFFSET                  0
 #define MIN_OF_TEMPERATURE_OFFSET           -100
 #define MAX_OF_TEMPERATURE_OFFSET           100
 
+// analog input function
 typedef enum
 {
     no_function = 0,
@@ -58,6 +62,7 @@ typedef enum
     num_of_functions
 }sensor_function_t;
 
+// index of sensors settings parameters array
 typedef enum
 {
     analogpinFunc = 0,
@@ -70,6 +75,7 @@ typedef enum
     num_of_parameters = 4
 }parameter_name_t;
 
+// sensors array index
 typedef enum
 {
     index_tankLevel1 = 0,
@@ -80,6 +86,7 @@ typedef enum
     num_of_analog_sensors
 }analog_sensors_index_t;
 
+// sensor statuses
 typedef enum
 {
     ok = 0,
@@ -89,6 +96,7 @@ typedef enum
     num_of_sensor_statuses
 }sensor_status_t;
 
+// tank level sensor standards that the app can handle
 typedef enum
 {
     european_std = 0,
@@ -96,12 +104,22 @@ typedef enum
     num_of_stds
 }tank_sensor_std_t;
 
+// type of temperature sensors that the app can handle
 typedef enum
 {
     lm335 = 0,
     num_of_temperature_sensor_type
 }temperature_sensor_type_t;
 
+// types of sensors that the app can handle
+typedef enum
+{
+    tank_level_t = 0,
+    temperature_t,
+    num_of_sensorsTypes
+}sensors_type_t;
+
+// sensor product items for dbus service
 typedef struct
 {
     VeItem name;
@@ -110,6 +128,7 @@ typedef struct
     VeItem connected;
 } ProductInfo;
 
+// snesors items for dbus tank level sensor service
 typedef struct
 {
    VeItem level;
@@ -121,6 +140,7 @@ typedef struct
    VeItem standard;
 }tank_level_sensor_item_t;
 
+// snesors items for dbus temperature sensor service
 typedef struct
 {
    VeItem temperature;
@@ -132,7 +152,7 @@ typedef struct
    VeItem spareParam;
 }temperature_sensor_item_t;
 
-
+// snesors variables for tank level sensor items
 typedef struct
 {
    VeVariant level;
@@ -144,6 +164,7 @@ typedef struct
    VeVariant standard;
 }tank_level_sensor_variant_t;
 
+// snesors variables for temperature sensor items
 typedef struct
 {
    VeVariant temperature;
@@ -155,12 +176,14 @@ typedef struct
    VeVariant spareParam;
 }temperature_sensor_variant_t;
 
+// paramters to interface the sensor to dbus service
 typedef struct
 {
     const char  *service;
     veBool      connected;
 }sensors_dbus_interface_t;
 
+// building a sensor items structure to be published to dbus service
 typedef struct
 {
     ProductInfo     product;
@@ -171,6 +194,7 @@ typedef struct
     };
 }sensors_items_t;
 
+// sensor item variables per sensor type
 typedef struct
 {
     union
@@ -180,25 +204,21 @@ typedef struct
     };
 }sensors_variants_t;
 
-typedef enum
-{
-    tank_level_t = 0,
-    temperature_t,
-    num_of_sensorsTypes
-}sensors_type_t;
-
+// sensor signal correction parameters
 typedef struct
 {
     float scale;
     float offset;
 }signal_correction_t;
 
+// building a sensor signal conditioning structure
 typedef struct
 {
     signal_correction_t sig_correct;
     filter_iir_lpf_t    filter_iir_lpf;
 }signal_condition_t;
 
+// building a sensor interface structure
 typedef struct
 {
     const adc_analogPin_t       adc_pin;
@@ -207,7 +227,7 @@ typedef struct
     sensors_dbus_interface_t    dbus;
 }sensors_interface_t;
 
-/* sensor structure */
+// building a sensor structure
 typedef struct
 {
    const sensors_type_t   sensor_type;
@@ -218,16 +238,40 @@ typedef struct
    sensors_variants_t     variant;
 }analog_sensor_t;
 
+/**
+ * @brief sensor_init
+ * @param root
+ * @param sensor_index
+ */
 void sensor_init(VeItem *root, analog_sensors_index_t sensor_index);
+/**
+ * @brief sensors_handle
+ */
 void sensors_handle(void);
-
+/**
+ * @brief sensors_dbusInit
+ * @param sensor_index
+ */
 void sensors_dbusInit(analog_sensors_index_t sensor_index);
+/**
+ * @brief values_dbus_service_addSettings
+ * @param sensor
+ */
 void values_dbus_service_addSettings(analog_sensor_t * sensor);
+/**
+ * @brief sensors_dbusConnect
+ * @param sensor
+ * @param sensor_index
+ */
 void sensors_dbusConnect(analog_sensor_t * sensor, analog_sensors_index_t sensor_index);
+/**
+ * @brief sensors_dbusDisconnect
+ * @param sensor
+ * @param sensor_index
+ */
 void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sensor_index);
 
-analog_sensor_t * pointGet_analog_sensor(analog_sensors_index_t analog_sensors_index);
-
+// a define to hold all the required predetermind variables and constants of the analog sensor structure
 #define SENSORS_CONSTANT_DATA \
 {		\
     {	\
@@ -427,7 +471,7 @@ analog_sensor_t * pointGet_analog_sensor(analog_sensors_index_t analog_sensors_i
     }\
 }
 
-
+// preload the pointer container
 #define SENSOR_ITEM_CONTAINER \
 {\
     {\

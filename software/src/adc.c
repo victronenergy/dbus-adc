@@ -19,7 +19,12 @@
 
 #define MODULE	"ADC"
 #define MGRNUM	8
-
+/**
+ * @brief adc_read - performs an adc sample read
+ * @param value - a pointer to the variable which will store the result
+ * @param pin - which adc interface pin to sample
+ * @return - Boolean status veFalse-success, veTrue-fail
+ */
 veBool adc_read(un32 * value, adc_analogPin_t pin)
 {
     int fd;
@@ -39,12 +44,24 @@ veBool adc_read(un32 * value, adc_analogPin_t pin)
     *value = (un32)atoi(val);
     return(veFalse);
 }
-
+/**
+ * @brief adc_sample2volts - converts the adc sample from counts to volts
+ * @param sample - adc sample in counts
+ * @return - the value in volts
+ */
 float adc_sample2volts(un32 sample)
 {
-    return((float)sample*ADC_VREF/4095);
+    return((float)sample*ADC_VREF/ADC_MAX_COUNT);
 }
-
+/**
+ * @brief adc_filter - a single pole IIR low pass filter
+ * @param x - the current sample
+ * @param y - pointer to the filter tap
+ * @param Fc - cutoff frequency
+ * @param Fs - sampling rate
+ * @param FF - filter feedforward threshold
+ * @return the next filtered value (filter output)
+ */
 float adc_filter(float x, float *y, float Fc, float Fs, un16 FF)
 {
     if(FF)
@@ -61,8 +78,14 @@ float adc_filter(float x, float *y, float Fc, float Fs, un16 FF)
     return(x);
 }
 
-
-// converting the adc sample value to resistance
+/**
+ * @brief adc_potDiv_calc - will perform the various required calculations associated with a potential divider circuit
+ * @param sample - the input parameters
+ * @param pd - the pointer to the potential divider information structure.
+ * @param type - defines the desired calculation
+ * @param mltpty - multiply the single point variable to increase precision
+ * @return
+ */
 un32 adc_potDiv_calc(un32 sample, const potential_divider_t * pd, pd_calc_type_t type, un32 mltpty)
 {
     un32 out;
