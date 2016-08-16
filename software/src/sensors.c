@@ -25,8 +25,14 @@
 
 static un16 timeout;
 const char version[] = VERSION_STR;
+
+// Local function prototypes
+veBool sensors_data_process(analog_sensors_index_t analog_sensors_index);
+veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index);
+veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index);
+
 // Callbacks to be called when the paramters are changing
-veBool functionChange(struct VeItem *item, void *ctx, VeVariant *variant);
+veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
 veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
@@ -36,7 +42,7 @@ veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
-//static varibles;
+//static varibles
 analog_sensor_t analog_sensor[num_of_analog_sensors] = SENSORS_CONSTANT_DATA;
 
 // potential divider for the tank level sender
@@ -56,6 +62,7 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
             veItemAddChildByUid(root, sensors_info[sensor_index][i].id, sensors_info[sensor_index][i].item);
             veItemSetFmt(sensors_info[sensor_index][i].item, veVariantFmt, sensors_info[sensor_index][i].fmt);
             veItemSetTimeout(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].timeout);
+            // Register the change items value callbacks.
             if (sensors_info[sensor_index][i].setValueCallback)
             {
                 veItemSetSetter(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].setValueCallback, (void *)&analog_sensor[sensor_index]);
@@ -83,7 +90,8 @@ static void updateValues(void)
 void sensors_handle(void)
 {
     analog_sensors_index_t analog_sensors_index;
-
+    // first read fast all the analog inputs and mark which read is valid
+    // We reading always the same number of analog inputs to try to keep the timming of the system constant.
     for(analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++)
     {
         // reading all the analog inputs adc values
@@ -94,9 +102,10 @@ void sensors_handle(void)
         }
     }
 
+    // Now handle the adc read to update the sensor
     for(analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++)
     {
-        // reading all the analog inputs adc values
+        // proceed if the adc reading is valid
         if(analog_sensor[analog_sensors_index].valid == veTrue)
         {
             // filter the input ADC sample and stor it in adc var
@@ -106,133 +115,179 @@ void sensors_handle(void)
                         &analog_sensor[analog_sensors_index].interface.sig_cond.filter_iir_lpf.adc_mem,
                         analog_sensor[analog_sensors_index].interface.sig_cond.filter_iir_lpf.fc,
                         10, analog_sensor[analog_sensors_index].interface.sig_cond.filter_iir_lpf.FF);
-
-            switch(analog_sensor[analog_sensors_index].sensor_type)
+            // reset the adc valid reading flag for next sampling cycle
+            analog_sensor[analog_sensors_index].valid = veFalse;
+            // check if the sensor function-if it needed at all?
+            un32 sensor_analogpinFunc = (un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float;
+            switch(sensor_analogpinFunc)
             {
-                case tank_level_t:
+                case default_function:
                 {
-                    veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.function,
-                            (un32)analog_sensor[analog_sensors_index].dbus_info[function].value->variant.value.Float);
-
-                    if(analog_sensor[analog_sensors_index].variant.tank_level.function.value.UN32 == (un32)default_function)
+                    // check if dbus is disconnected and connect it
+                    if(!analog_sensor[analog_sensors_index].interface.dbus.connected)
                     {
-                        float level;
-                        un8 Std = (un8)analog_sensor[analog_sensors_index].variant.tank_level.standard.value.UN32;
-
-                        if(analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p3VOLTS)
-                        {
-                            // Sensor status: error- not connected
-                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)disconnected);
-                            level = -1;
-                        }
-                        // this condition applies only for the US standard
-                        else if(Std && (analog_sensor[analog_sensors_index].interface.adc_sample < ADC_0p15VOLTS))
-                        {
-                            // Sensor status: error- short circuited
-                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)short_circuited);
-                            level = -1;
-                        }
-                        else
-                        {
-                            float R2 = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
-                            if(R2>0)
-                            {
-                                if(Std == european_std)
-                                {
-                                    level = (R2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
-                                    if(level < 0)
-                                    {
-                                        level = 0;
-                                    }
-                                    level = 1-level;
-                                }
-                                else
-                                {
-                                    level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
-                                }
-                                if(level > 1)
-                                {
-                                    level = 1;
-                                }
-                                // Sensor status: O.K.
-                                veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)ok);
-                            }
-                            else
-                            {
-                                // Sensor status: error- unknown value
-                                veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)unknown_value);
-                            }
-                        }
-                        // measure is ok and R2 resistance was correctlly calculated
-                        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.level, (un32)(100*level));
-
-                        veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.remaining,
-                                level*analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
-
-                        veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.capacity,
-                                analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
-
-                        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.fluidType,
-                                (un32)analog_sensor[analog_sensors_index].dbus_info[fluidType].value->variant.value.Float);
-
-                        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.standard,
-                                (un32)analog_sensor[analog_sensors_index].dbus_info[standard].value->variant.value.Float);
+                        sensors_dbusConnect(&analog_sensor[analog_sensors_index], analog_sensors_index);
                     }
+                    // need to proces the data
+                    sensors_data_process(analog_sensors_index);
                     break;
                 }
-                case temperature_t:
-                {
-                    veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.function,
-                            (un32)analog_sensor[analog_sensors_index].dbus_info[function].value->variant.value.Float);
-
-                    if(analog_sensor[analog_sensors_index].variant.temperature.function.value.UN32 == (un32)default_function)
-                    {
-                        float tempC;
-                        // sensor connectivity check
-                        if(analog_sensor[analog_sensors_index].interface.adc_sample > TEMP_SENS_MAX_ADCIN)
-                        {
-                            // open circuit error
-                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)disconnected);
-                            tempC = -1;
-                        }
-                        else if( analog_sensor[analog_sensors_index].interface.adc_sample < (TEMP_SENS_MIN_ADCIN/4) )
-                        {
-                            // short circuit error
-                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)short_circuited);
-                            tempC = -1;
-                        }
-                        // Value ok
-                        else
-                        {
-                            un32 divider_supply = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_temperature_pd, calc_type_Vin, 1);
-                            tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
-                            tempC *= (analog_sensor[analog_sensors_index].variant.temperature.scale.value.Float);
-                            tempC += (analog_sensor[analog_sensors_index].variant.temperature.offset.value.SN32);
-                            veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)ok);
-                        }
-                        // all ok
-                        veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
-
-                        veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.scale,
-                                analog_sensor[analog_sensors_index].dbus_info[scale].value->variant.value.Float);
-
-                        veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.offset,
-                                (sn32)analog_sensor[analog_sensors_index].dbus_info[offset].value->variant.value.Float);
-
-                        veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperatureType,
-                                (sn32)analog_sensor[analog_sensors_index].dbus_info[TempType].value->variant.value.Float);
-                    }
-                    break;
-                }
+                case no_function:
                 default:
                 {
+                    // check id dbus is connected and disconnect it
+                    if(analog_sensor[analog_sensors_index].interface.dbus.connected)
+                    {
+                        sensors_dbusDisconnect(&analog_sensor[analog_sensors_index], analog_sensors_index);
+                    }
                     break;
                 }
             }
-            analog_sensor[analog_sensors_index].valid = veFalse;
+        }
+        else
+        {
+            // reading error
         }
     }
     updateValues();
+}
+
+veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
+{
+    // check the type of sensor before starting
+    switch(analog_sensor[analog_sensors_index].sensor_type)
+    {
+        case tank_level_t:
+        {
+            sensors_tankType_data_process(analog_sensors_index);
+            break;
+        }
+        case temperature_t:
+        {
+            sensors_temperatureType_data_process(analog_sensors_index);
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+    return veTrue;
+}
+
+// A function to proces the tank level sensor adc data (need to switch the oin function as when functions will be add)
+veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index)
+{
+        // process the data of the analog input with respect to its function
+        float level;
+        un8 Std = (un8)analog_sensor[analog_sensors_index].variant.tank_level.standard.value.UN32;
+
+        if(analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p3VOLTS)
+        {
+            // Sensor status: error- not connected
+            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)disconnected);
+            level = -1;
+        }
+        // this condition applies only for the US standard
+        else if(Std && (analog_sensor[analog_sensors_index].interface.adc_sample < ADC_0p15VOLTS))
+        {
+            // Sensor status: error- short circuited
+            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)short_circuited);
+            level = -1;
+        }
+        else
+        {
+            float R2 = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
+            if(R2>0)
+            {
+                if(Std == european_std)
+                {
+                    level = (R2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
+                    if(level < 0)
+                    {
+                        level = 0;
+                    }
+                    level = 1-level;
+                }
+                else
+                {
+                    level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
+                }
+                if(level > 1)
+                {
+                    level = 1;
+                }
+                // Sensor status: O.K.
+                veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)ok);
+            }
+            else
+            {
+                // Sensor status: error- unknown value
+                veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)unknown_value);
+            }
+        }
+        // measure is ok and R2 resistance was correctlly calculated
+        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.analogpinFunc,
+                (un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float);
+
+        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.level, (un32)(100*level));
+
+        veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.remaining,
+                level*analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
+
+        veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.capacity,
+                analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
+
+        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.fluidType,
+                (un32)analog_sensor[analog_sensors_index].dbus_info[fluidType].value->variant.value.Float);
+
+        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.standard,
+                (un32)analog_sensor[analog_sensors_index].dbus_info[standard].value->variant.value.Float);
+    return veTrue;
+}
+
+// A function to proces the temperature sensor adc data (need to switch the oin function as when functions will be add)
+veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index)
+{
+    float tempC;
+    // sensor connectivity check
+    if(analog_sensor[analog_sensors_index].interface.adc_sample > TEMP_SENS_MAX_ADCIN)
+    {
+        // open circuit error
+        veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)disconnected);
+        tempC = -1;
+    }
+    else if( analog_sensor[analog_sensors_index].interface.adc_sample < (TEMP_SENS_MIN_ADCIN/4) )
+    {
+        // short circuit error
+        veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)short_circuited);
+        tempC = -1;
+    }
+    // Value ok
+    else
+    {
+        un32 divider_supply = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_temperature_pd, calc_type_Vin, 1);
+        tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
+        tempC *= (analog_sensor[analog_sensors_index].variant.temperature.scale.value.Float);
+        tempC += (analog_sensor[analog_sensors_index].variant.temperature.offset.value.SN32);
+        veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)ok);
+    }
+    // all ok
+    veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.analogpinFunc,
+            (un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float);
+
+    veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
+
+    veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.scale,
+            analog_sensor[analog_sensors_index].dbus_info[scale].value->variant.value.Float);
+
+    veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.offset,
+            (sn32)analog_sensor[analog_sensors_index].dbus_info[offset].value->variant.value.Float);
+
+    veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperatureType,
+            (sn32)analog_sensor[analog_sensors_index].dbus_info[TempType].value->variant.value.Float);
+
+    return veTrue;
 }
 
 
@@ -260,8 +315,8 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
     }
     else if(analog_sensor[sensor_index].sensor_type == temperature_t)
     {
-        veItemOwnerSet(&analog_sensor[sensor_index].items.product.id, veVariantUn16(&variant, VE_PROD_ID_TEMPERATURE_SENSOR));
-        veItemOwnerSet(&analog_sensor[sensor_index].items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR)));
+        veItemOwnerSet(&analog_sensor[sensor_index].items.product.id, veVariantUn16(&variant, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT));
+        veItemOwnerSet(&analog_sensor[sensor_index].items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
     }
     else
     {
@@ -269,27 +324,24 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
     }
 
     values_dbus_service_addSettings(&analog_sensor[sensor_index]);
-    sensors_dbusConnect(&analog_sensor[sensor_index], sensor_index);
+    if(!analog_sensor[sensor_index].interface.dbus.connected)
+    {
+        sensors_dbusConnect(&analog_sensor[sensor_index], sensor_index);
+    }
 }
 
 // Callback when the sensor function is changing
-veBool functionChange(struct VeItem *item, void *ctx, VeVariant *variant)
+veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
     analog_sensor_t * p_analog_sensor = (analog_sensor_t *)ctx;
 
     veItemOwnerSet(item, variant);
     veItemOwnerSet(getConsumerRoot(), variant);
 
-    VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[function].path);
+    VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[analogpinFunc].path);
     veItemSet(settingsItem, variant);
-    if(p_analog_sensor->sensor_type == tank_level_t)
-    {
-        p_analog_sensor->variant.tank_level.function.value.UN32 = variant->value.UN32;
-    }
-    else
-    {
-        p_analog_sensor->variant.temperature.function.value.UN32 = variant->value.UN32;
-    }
+
+    p_analog_sensor->variant.tank_level.analogpinFunc.value.Float = variant->value.Float;
     return veTrue;
 }
 

@@ -53,7 +53,14 @@
 
 typedef enum
 {
-    function =0,
+    no_function = 0,
+    default_function,
+    num_of_functions
+}sensor_function_t;
+
+typedef enum
+{
+    analogpinFunc = 0,
     capacity = 1,
     fluidType = 2,
     standard = 3,
@@ -84,13 +91,6 @@ typedef enum
 
 typedef enum
 {
-    no_function = 0,
-    default_function,
-    num_of_functions
-}sensor_function_t;
-
-typedef enum
-{
     european_std = 0,
     american_std,
     num_of_stds
@@ -115,7 +115,7 @@ typedef struct
    VeItem level;
    VeItem remaining;
    VeItem status;
-   VeItem function;
+   VeItem analogpinFunc;
    VeItem capacity;
    VeItem fluidType;
    VeItem standard;
@@ -125,7 +125,7 @@ typedef struct
 {
    VeItem temperature;
    VeItem status;
-   VeItem function;
+   VeItem analogpinFunc;
    VeItem scale;
    VeItem offset;
    VeItem temperatureType;
@@ -138,7 +138,7 @@ typedef struct
    VeVariant level;
    VeVariant remaining;
    VeVariant status;
-   VeVariant function;
+   VeVariant analogpinFunc;
    VeVariant capacity;
    VeVariant fluidType;
    VeVariant standard;
@@ -148,7 +148,7 @@ typedef struct
 {
    VeVariant temperature;
    VeVariant status;
-   VeVariant function;
+   VeVariant analogpinFunc;
    VeVariant scale;
    VeVariant offset;
    VeVariant temperatureType;
@@ -158,6 +158,7 @@ typedef struct
 typedef struct
 {
     const char  *service;
+    veBool      connected;
 }sensors_dbus_interface_t;
 
 typedef struct
@@ -223,9 +224,9 @@ void sensors_handle(void);
 void sensors_dbusInit(analog_sensors_index_t sensor_index);
 void values_dbus_service_addSettings(analog_sensor_t * sensor);
 void sensors_dbusConnect(analog_sensor_t * sensor, analog_sensors_index_t sensor_index);
-void sensors_dbusDisconnect(void);
+void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sensor_index);
 
-//void valueChanged(struct VeItem *item);
+analog_sensor_t * pointGet_analog_sensor(analog_sensors_index_t analog_sensors_index);
 
 #define SENSORS_CONSTANT_DATA \
 {		\
@@ -237,7 +238,8 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TANK_SENSOR_IIR_LPF_FF_EN, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "com.victronenergy.tank.builtin_adc4_di0"\
+                "com.victronenergy.tank.builtin_adc4_di0",\
+                veFalse\
             }		\
         },		\
         {\
@@ -245,7 +247,7 @@ void sensors_dbusDisconnect(void);
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/Tank/1/Function"\
+                "Settings/AnalogInput/1/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
@@ -275,7 +277,8 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TANK_SENSOR_IIR_LPF_FF_EN, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "com.victronenergy.tank.builtin_adc6_di1"\
+                "com.victronenergy.tank.builtin_adc6_di1",\
+                veFalse\
             }\
         },\
         {\
@@ -283,7 +286,7 @@ void sensors_dbusDisconnect(void);
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/Tank/2/Function"\
+                "Settings/AnalogInput/2/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
@@ -313,7 +316,8 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TANK_SENSOR_IIR_LPF_FF_EN, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "com.victronenergy.tank.builtin_adc2_di2"\
+                "com.victronenergy.tank.builtin_adc2_di2",\
+                veFalse\
             }\
         },\
         {\
@@ -321,7 +325,7 @@ void sensors_dbusDisconnect(void);
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/Tank/3/Function"\
+                "Settings/AnalogInput/3/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
@@ -351,7 +355,8 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TEMPERATURE_SENSOR_IIR_LPF_FF_EN, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "com.victronenergy.temperature.builtin_adc5_di0"\
+                "com.victronenergy.temperature.builtin_adc5_di0",\
+                veFalse\
             }\
         },\
         {\
@@ -359,7 +364,7 @@ void sensors_dbusDisconnect(void);
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/Temperature/1/Function"\
+                "Settings/AnalogInput/5/Function"\
             },\
             {\
                 TEMPERATURE_SCALE,\
@@ -389,7 +394,8 @@ void sensors_dbusDisconnect(void);
             INIT_ADC_SAMPLE_VAL,\
             {{},{TEMPERATURE_SENSOR_IIR_LPF_FF_EN, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
-                "com.victronenergy.temperature.builtin_adc3_di1"\
+                "com.victronenergy.temperature.builtin_adc3_di1",\
+                veFalse\
             }\
         },\
         {\
@@ -397,7 +403,7 @@ void sensors_dbusDisconnect(void);
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/Temperature/2/Function"\
+                "Settings/AnalogInput/3/Function"\
             },\
             {\
                 TEMPERATURE_SCALE,\
@@ -432,7 +438,7 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_tankLevel1].items.tank_level.level,				&analog_sensor[index_tankLevel1].variant.tank_level.level,				"Level",  			&units,	5},\
         {&analog_sensor[index_tankLevel1].items.tank_level.remaining,			&analog_sensor[index_tankLevel1].variant.tank_level.remaining,			"Remaining",  		&units,	5},\
         {&analog_sensor[index_tankLevel1].items.tank_level.status,				&analog_sensor[index_tankLevel1].variant.tank_level.status,				"Status",  			&units,	5},\
-        {&analog_sensor[index_tankLevel1].items.tank_level.function,			&analog_sensor[index_tankLevel1].variant.tank_level.function,			"Function",			&units,	5, functionChange},\
+        {&analog_sensor[index_tankLevel1].items.tank_level.analogpinFunc,		&analog_sensor[index_tankLevel1].variant.tank_level.analogpinFunc,      "analogpinFunc",	&units,	5, analogPinFuncChange},\
         {&analog_sensor[index_tankLevel1].items.tank_level.capacity,			&analog_sensor[index_tankLevel1].variant.tank_level.capacity,			"Capacity",			&units,	5, capacityChange},\
         {&analog_sensor[index_tankLevel1].items.tank_level.fluidType,			&analog_sensor[index_tankLevel1].variant.tank_level.fluidType,			"FluidType",  		&units,	5, fluidTypeChange},\
         {&analog_sensor[index_tankLevel1].items.tank_level.standard,			&analog_sensor[index_tankLevel1].variant.tank_level.standard,			"Standard",  		&units,	5, standardChange}\
@@ -445,7 +451,7 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_tankLevel2].items.tank_level.level,				&analog_sensor[index_tankLevel2].variant.tank_level.level,				"Level",  			&units,	5},\
         {&analog_sensor[index_tankLevel2].items.tank_level.remaining,			&analog_sensor[index_tankLevel2].variant.tank_level.remaining,			"Remaining",  		&units,	5},\
         {&analog_sensor[index_tankLevel2].items.tank_level.status,				&analog_sensor[index_tankLevel2].variant.tank_level.status,				"Status",  			&units,	5},\
-        {&analog_sensor[index_tankLevel2].items.tank_level.function,			&analog_sensor[index_tankLevel2].variant.tank_level.function,			"Function",			&units,	5, functionChange},\
+        {&analog_sensor[index_tankLevel2].items.tank_level.analogpinFunc,		&analog_sensor[index_tankLevel2].variant.tank_level.analogpinFunc,      "analogpinFunc",	&units,	5, analogPinFuncChange},\
         {&analog_sensor[index_tankLevel2].items.tank_level.capacity,			&analog_sensor[index_tankLevel2].variant.tank_level.capacity,			"Capacity",			&units,	5, capacityChange},\
         {&analog_sensor[index_tankLevel2].items.tank_level.fluidType,			&analog_sensor[index_tankLevel2].variant.tank_level.fluidType,			"FluidType",  		&units,	5, fluidTypeChange},\
         {&analog_sensor[index_tankLevel2].items.tank_level.standard,			&analog_sensor[index_tankLevel2].variant.tank_level.standard,			"Standard",  		&units,	5, standardChange}\
@@ -458,7 +464,7 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_tankLevel3].items.tank_level.level,				&analog_sensor[index_tankLevel3].variant.tank_level.level,				"Level",  			&units,	5},\
         {&analog_sensor[index_tankLevel3].items.tank_level.remaining,			&analog_sensor[index_tankLevel3].variant.tank_level.remaining,			"Remaining",  		&units,	5},\
         {&analog_sensor[index_tankLevel3].items.tank_level.status,				&analog_sensor[index_tankLevel3].variant.tank_level.status,				"Status",  			&units,	5},\
-        {&analog_sensor[index_tankLevel3].items.tank_level.function,			&analog_sensor[index_tankLevel3].variant.tank_level.function,			"Function",			&units,	5, functionChange},\
+        {&analog_sensor[index_tankLevel3].items.tank_level.analogpinFunc,		&analog_sensor[index_tankLevel3].variant.tank_level.analogpinFunc,      "analogpinFunc",	&units,	5, analogPinFuncChange},\
         {&analog_sensor[index_tankLevel3].items.tank_level.capacity,			&analog_sensor[index_tankLevel3].variant.tank_level.capacity,			"Capacity",			&units,	5, capacityChange},\
         {&analog_sensor[index_tankLevel3].items.tank_level.fluidType,			&analog_sensor[index_tankLevel3].variant.tank_level.fluidType,			"FluidType",  		&units,	5, fluidTypeChange},\
         {&analog_sensor[index_tankLevel3].items.tank_level.standard,			&analog_sensor[index_tankLevel3].variant.tank_level.standard,			"Standard",  		&units,	5, standardChange}\
@@ -471,7 +477,7 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_temperature1].items.temperature.temperature,		&analog_sensor[index_temperature1].variant.temperature.temperature,		"Temperature",		&units,	5},\
         {&analog_sensor[index_temperature1].items.temperature.status,			&analog_sensor[index_temperature1].variant.temperature.status,			"Status",  			&units,	5},\
         {                       NULL,                                                                   NULL,                                               NULL,           NULL,	NULL},\
-        {&analog_sensor[index_temperature1].items.temperature.function,			&analog_sensor[index_temperature1].variant.temperature.function,		"Function",			&units,	5, functionChange},\
+        {&analog_sensor[index_temperature1].items.temperature.analogpinFunc,	&analog_sensor[index_temperature1].variant.temperature.analogpinFunc,   "analogpinFunc",	&units,	5, analogPinFuncChange},\
         {&analog_sensor[index_temperature1].items.temperature.scale,			&analog_sensor[index_temperature1].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
         {&analog_sensor[index_temperature1].items.temperature.offset,			&analog_sensor[index_temperature1].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\
         {&analog_sensor[index_temperature1].items.temperature.temperatureType,	&analog_sensor[index_temperature1].variant.temperature.temperatureType,	"TemperatureType",	&units,	5, TempTypeChange}\
@@ -484,7 +490,7 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_temperature2].items.temperature.temperature,		&analog_sensor[index_temperature2].variant.temperature.temperature,		"Temperature",		&units,	5},\
         {&analog_sensor[index_temperature2].items.temperature.status,			&analog_sensor[index_temperature2].variant.temperature.status,			"Status",  			&units,	5},\
         {                       NULL,                                                                   NULL,                                               NULL,           NULL,	NULL},\
-        {&analog_sensor[index_temperature2].items.temperature.function,			&analog_sensor[index_temperature2].variant.temperature.function,		"Function",			&units,	5, functionChange},\
+        {&analog_sensor[index_temperature2].items.temperature.analogpinFunc,	&analog_sensor[index_temperature2].variant.temperature.analogpinFunc,   "analogpinFunc",	&units,	5, analogPinFuncChange},\
         {&analog_sensor[index_temperature2].items.temperature.scale,			&analog_sensor[index_temperature2].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
         {&analog_sensor[index_temperature2].items.temperature.offset,			&analog_sensor[index_temperature2].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\
         {&analog_sensor[index_temperature2].items.temperature.temperatureType,	&analog_sensor[index_temperature2].variant.temperature.temperatureType,	"TemperatureType",	&units,	5, TempTypeChange}\

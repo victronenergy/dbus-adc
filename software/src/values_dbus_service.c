@@ -99,7 +99,6 @@ void values_dbus_service_addSettings(analog_sensor_t * sensor)
         }
         /* Listen to D-Bus.. */
         veDbusSetListeningDbus(sensor->dbus_info[i].connect);
-
         /* Create an item pointing to our new setting */
         sensor->dbus_info[i].value = veItemGetOrCreateUid(consumer, sensor->dbus_info[i].path);
         /* Set the properties of the new settings */
@@ -144,6 +143,7 @@ void sensors_dbusConnect(analog_sensor_t * sensor, analog_sensors_index_t sensor
         logE(sensor->interface.dbus.service, "dbus connect failed");
         pltExit(1);
     }
+    sensor->interface.dbus.connected = veTrue;
     /* Device found */
     timeout = 0;
 
@@ -158,9 +158,9 @@ void sensors_dbusConnect(analog_sensor_t * sensor, analog_sensors_index_t sensor
 }
 
 /* Stop service if connection lost */
-void sensors_dbusDisconnect(void)
+void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sensor_index)
 {
-    logE(MODULE, "connection timeout");
-    pltExit(130);
+     veDbusDisconnect(dbus[sensor_index]);
+     sensor->interface.dbus.connected = veFalse;
 }
 
