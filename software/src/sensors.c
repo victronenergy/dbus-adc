@@ -47,12 +47,15 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 {
     for (int i = 0; i < SENSORS_INFO_ARRAY_SIZE; i++)
     {
-        veItemAddChildByUid(root, sensors_info[sensor_index][i].id, sensors_info[sensor_index][i].item);
-        veItemSetFmt(sensors_info[sensor_index][i].item, veVariantFmt, sensors_info[sensor_index][i].fmt);
-        veItemSetTimeout(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].timeout);
-        if (sensors_info[sensor_index][i].setValueCallback)
+        if(sensors_info[sensor_index][i].item != NULL)
         {
-            veItemSetSetter(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].setValueCallback, (void *)&analog_sensor[sensor_index]);
+            veItemAddChildByUid(root, sensors_info[sensor_index][i].id, sensors_info[sensor_index][i].item);
+            veItemSetFmt(sensors_info[sensor_index][i].item, veVariantFmt, sensors_info[sensor_index][i].fmt);
+            veItemSetTimeout(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].timeout);
+            if (sensors_info[sensor_index][i].setValueCallback)
+            {
+                veItemSetSetter(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].setValueCallback, (void *)&analog_sensor[sensor_index]);
+            }
         }
     }
 

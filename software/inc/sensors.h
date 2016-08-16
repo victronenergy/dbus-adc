@@ -220,7 +220,7 @@ void sensors_dbusDisconnect(void);
                 "Settings/tank/2/Capacity"\
             },\
             {\
-                ' ',\
+                0,\
                 0,\
                 5,\
                 "Settings/tank/2/FluidType"\
@@ -253,7 +253,7 @@ void sensors_dbusDisconnect(void);
                 "Settings/tank/3/Capacity"\
             },\
             {\
-                ' ',\
+                0,\
                 0,\
                 5,\
                 "Settings/tank/3/FluidType"\
@@ -376,7 +376,7 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_temperature1].items.product.id,											NULL,											"ProductId",		&units,	0},\
         {&analog_sensor[index_temperature1].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_temperature1].items.temperature.temperature,		&analog_sensor[index_temperature1].variant.temperature.temperature,		"Temperature",		&units,	5},\
-        {&analog_sensor[index_temperature1].items.temperature.spareParam,                               NULL,                                   		"",                 &units,	5},\
+        {                       NULL,                                                                   NULL,                                               NULL,           NULL,	NULL},\
         {&analog_sensor[index_temperature1].items.temperature.scale,			&analog_sensor[index_temperature1].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
         {&analog_sensor[index_temperature1].items.temperature.offset,			&analog_sensor[index_temperature1].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\
         {&analog_sensor[index_temperature1].items.temperature.temperatureType,	&analog_sensor[index_temperature1].variant.temperature.temperatureType,	"TemperatureType",	&units,	5, TempTypeChange}\
@@ -387,7 +387,7 @@ void sensors_dbusDisconnect(void);
         {&analog_sensor[index_temperature2].items.product.id,											NULL,											"ProductId",		&units,	0},\
         {&analog_sensor[index_temperature2].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_temperature2].items.temperature.temperature,		&analog_sensor[index_temperature2].variant.temperature.temperature,		"Temperature",		&units,	5},\
-        {&analog_sensor[index_temperature2].items.temperature.spareParam,                               NULL,                                   		"",                 &units,	5},\
+        {                       NULL,                                                                   NULL,                                               NULL,           NULL,	NULL},\
         {&analog_sensor[index_temperature2].items.temperature.scale,			&analog_sensor[index_temperature2].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
         {&analog_sensor[index_temperature2].items.temperature.offset,			&analog_sensor[index_temperature2].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\
         {&analog_sensor[index_temperature2].items.temperature.temperatureType,	&analog_sensor[index_temperature2].variant.temperature.temperatureType,	"TemperatureType",	&units,	5, TempTypeChange}\
