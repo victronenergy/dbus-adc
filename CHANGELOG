@@ -1,0 +1,22 @@
+Version 1.00
+============
+Started development on gps_dbus project and make the first initial working version for the dbus-adc project
+
+
+Version 1.01
+============
+First version for hardware version 2
+First functioning (but not verified) version
+
+
+Version 1.10
+============
+Add sensor function and status fields. 
+	- Function field will determine how the analog pin should function. 
+		* When function field = no_function the relevant sensor dbus service will be disconnected.
+	- Status field indecates the status of the sensor.
+		* When sensor status is not o.k. invalidate its value (and publish invalid value)
+
+Updated submodule (velib on branch WIP_add_settings) to include the generated produc numbers in products.h.
+Publish the correct product name and ID of the sensor to dbus service.
+
