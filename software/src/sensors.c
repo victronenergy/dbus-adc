@@ -232,14 +232,12 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
         {
             // Sensor status: error- not connected
             veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)disconnected);
-            level = -1;
         }
         // this condition applies only for the US standard
         else if(Std && (analog_sensor[analog_sensors_index].interface.adc_sample < ADC_0p15VOLTS))
         {
             // Sensor status: error- short circuited
             veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)short_circuited);
-            level = -1;
         }
         else
         {
@@ -279,8 +277,15 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
         // measure is ok and R2 resistance was correctlly calculated
         veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.analogpinFunc,
                 (un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float);
-        // update the sensor vatiables
-        veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.level, (un32)(100*level));
+        // if status = o.k. publish valid value otherwise publish invalid value
+        if(analog_sensor[analog_sensors_index].variant.tank_level.status.value.UN8 == (un8)ok)
+        {
+            veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.level, (un32)(100*level));
+        }
+        else
+        {
+            veVariantStr(&analog_sensor[analog_sensors_index].variant.tank_level.level,"");
+        }
         veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.remaining,
                 level*analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
         veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.capacity,
@@ -305,13 +310,11 @@ veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensor
     {
         // open circuit error
         veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)disconnected);
-        tempC = -1;
     }
     else if( analog_sensor[analog_sensors_index].interface.adc_sample < (TEMP_SENS_MIN_ADCIN/4) )
     {
         // short circuit error
         veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)short_circuited);
-        tempC = -1;
     }
     // Value ok
     else
@@ -327,10 +330,18 @@ veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensor
         // update sensor status
         veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)ok);
     }
-    // all ok- update the sensor vatiables
+
     veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.analogpinFunc,
             (un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float);
-    veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
+    // if status = o.k. publish valid value otherwise publish invalid value
+    if(analog_sensor[analog_sensors_index].variant.temperature.status.value.UN8 == (un8)ok)
+    {
+        veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
+    }
+    else
+    {
+        veVariantStr(&analog_sensor[analog_sensors_index].variant.temperature.temperature, "");
+    }
     veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.scale,
             analog_sensor[analog_sensors_index].dbus_info[scale].value->variant.value.Float);
     veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.offset,
