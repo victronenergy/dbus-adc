@@ -291,7 +291,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/AnalogInput/1/Function"\
+                "Settings/AnalogInput/4/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
@@ -330,7 +330,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/AnalogInput/2/Function"\
+                "Settings/AnalogInput/6/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
@@ -369,7 +369,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/AnalogInput/3/Function"\
+                "Settings/AnalogInput/2/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
