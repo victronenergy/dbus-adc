@@ -11,6 +11,10 @@ First functioning (but not verified) version
 
 Version 1.10
 ============
+NOTE: This version still works on a branch of velib! Which needs to be fixed before making this part of an
+official bbb image.
+
+Changes:
 Add sensor function and status fields. 
 	- Function field will determine how the analog pin should function. 
 		* When function field = no_function the relevant sensor dbus service will be disconnected.
