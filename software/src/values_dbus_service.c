@@ -124,7 +124,7 @@ void values_dbus_service_addSettings(analog_sensor_t * sensor)
         veVariantFloat(&values_range.max, sensor->dbus_info[i].max);
         veVariantFloat(&values_range.min, sensor->dbus_info[i].min);
 
-        if (!veDBusAddLocalSetting(sensor->dbus_info[i].value, "f", &values_range.def, &values_range.min, &values_range.max,veFalse))
+        if (!veDBusAddLocalSetting(sensor->dbus_info[i].value, &values_range.def, &values_range.min, &values_range.max, veFalse))
         {
            logE("task", "veDBusAddLocalSetting failed");
            pltExit(1);
