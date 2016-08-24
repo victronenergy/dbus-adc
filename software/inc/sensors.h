@@ -107,9 +107,13 @@ typedef enum
 // type of temperature sensors that the app can handle
 typedef enum
 {
-    lm335 = 0,
+    battery = 0,
+    refrigerator,
+    other,
     num_of_temperature_sensor_type
 }temperature_sensor_type_t;
+#define DEFAULT_TEMPERATURE_TYPE   battery
+#define MIN_TEMPERATURE_TYPE       0
 
 // types of sensors that the app can handle
 typedef enum
@@ -423,8 +427,8 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 "Settings/Temperature/1/Offset"\
             },\
             {\
-                lm335,\
-                lm335,\
+                DEFAULT_TEMPERATURE_TYPE,\
+                MIN_TEMPERATURE_TYPE,\
                 (num_of_temperature_sensor_type-1),\
                 "Settings/Temperature/1/TemperatureType"\
             }\
@@ -462,8 +466,8 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 "Settings/Temperature/2/Offset"\
             },\
             {\
-                lm335,\
-                lm335,\
+                DEFAULT_TEMPERATURE_TYPE,\
+                MIN_TEMPERATURE_TYPE,\
                 (num_of_temperature_sensor_type-1),\
                 "Settings/Temperature/2/TemperatureType"\
             }\
