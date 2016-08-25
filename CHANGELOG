@@ -24,3 +24,17 @@ Add sensor function and status fields.
 Updated submodule (velib on branch WIP_add_settings) to include the generated produc numbers in products.h.
 Publish the correct product name and ID of the sensor to dbus service.
 
+Version 1.11
+============
+NOTE: This version was created towards making an official bbb image with velib on master branch
+
+
+Changes:
+velib is in master branch
+Changed the Analog Inputs Function indexings to match the physical connector indexing
+Add temperature sensor types
+    
+    Enum:
+    0- battery
+    1- refrigerator
+    2- other
