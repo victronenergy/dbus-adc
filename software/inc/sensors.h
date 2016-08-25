@@ -295,7 +295,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/AnalogInput/4/Function"\
+                "Settings/AnalogInput/Resistive/1/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
@@ -334,7 +334,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/AnalogInput/6/Function"\
+                "Settings/AnalogInput/Resistive/2/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
@@ -373,7 +373,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/AnalogInput/2/Function"\
+                "Settings/AnalogInput/Resistive/3/Function"\
             },\
             {\
                 DEFAULT_TANK_CAPACITY,\
@@ -412,7 +412,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/AnalogInput/5/Function"\
+                "Settings/AnalogInput/Temperature/1/Function"\
             },\
             {\
                 TEMPERATURE_SCALE,\
@@ -451,7 +451,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
                 default_function,\
                 no_function,\
                 (num_of_functions-1),\
-                "Settings/AnalogInput/3/Function"\
+                "Settings/AnalogInput/Temperature/2/Function"\
             },\
             {\
                 TEMPERATURE_SCALE,\
