@@ -24,16 +24,24 @@
 // defines for the temperature sensor analog front end parameters
 #define TEMP_SENS_VOLT_DIVID_R1             (10000) // ohms
 #define TEMP_SENS_VOLT_DIVID_R2             (4700) // ohms
+#define KELVIN_2_CELCIUS(X)                 (X+273)
 #define TEMP_SENS_MAX_ADCIN                 ADC_1p3VOLTS // ~400K
-#define TEMP_SENS_MIN_ADCIN                 250
+#define TEMP_SENS_MIN_ADCIN                 ADC_0p8VOLTS // ~(-22) dgrees C
+#define TEMP_SENS_S_C_ADCIN                 50 // samples
+#define TEMP_SENS_INV_PLRTY_ADCIN           ADC_0p208VOLTS // 0.7 volts at divider input
+#define TEMP_SENS_INV_PLRTY_ADCIN_BAND      ADC_0p15VOLTS
+#define TEMP_SENS_INV_PLRTY_ADCIN_LB        (TEMP_SENS_INV_PLRTY_ADCIN - TEMP_SENS_INV_PLRTY_ADCIN_BAND)
+#define TEMP_SENS_INV_PLRTY_ADCIN_HB        (TEMP_SENS_INV_PLRTY_ADCIN + TEMP_SENS_INV_PLRTY_ADCIN_BAND)
+#define VALUE_BETWEEN(V,L,H)                ((((L)<(V))&&((V)<(H)))?1:0)
+
 // defines to reset filter values
 #define INIT_ADC_SAMPLE_VAL                 0
 #define INIT_ADC_SAMPLE_MEMORY_VAL          0
 // defines to tank level sensor filter parameters
-#define TANK_SENSOR_IIR_LPF_FF_EN           1000  // samples
+#define TANK_SENSOR_IIR_LPF_FF_VALUE           1000  // samples
 #define TANK_SENSOR_CUTOFF_FREQ             0.001 // Hz
 // defines to temperature sensor filter parameters
-#define TEMPERATURE_SENSOR_IIR_LPF_FF_EN    1000  // samples
+#define TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE    500  // samples
 #define TEMPERATURE_SENSOR_CUTOFF_FREQ      0.01 // Hz
 
 // defines to initialize the sensors settings parameters
@@ -92,6 +100,7 @@ typedef enum
     ok = 0,
     disconnected,
     short_circuited,
+    reverse_polarity,
     unknown_value,
     num_of_sensor_statuses
 }sensor_status_t;
@@ -284,7 +293,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
         {\
             adc_pin4,\
             INIT_ADC_SAMPLE_VAL,\
-            {{},{TANK_SENSOR_IIR_LPF_FF_EN, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
+            {{},{TANK_SENSOR_IIR_LPF_FF_VALUE, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
                 "com.victronenergy.tank.builtin_adc4_di0",\
                 veFalse\
@@ -323,7 +332,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
         {\
             adc_pin6,\
             INIT_ADC_SAMPLE_VAL,\
-            {{},{TANK_SENSOR_IIR_LPF_FF_EN, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
+            {{},{TANK_SENSOR_IIR_LPF_FF_VALUE, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
                 "com.victronenergy.tank.builtin_adc6_di1",\
                 veFalse\
@@ -362,7 +371,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
         {\
             adc_pin2,\
             INIT_ADC_SAMPLE_VAL,\
-            {{},{TANK_SENSOR_IIR_LPF_FF_EN, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
+            {{},{TANK_SENSOR_IIR_LPF_FF_VALUE, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
                 "com.victronenergy.tank.builtin_adc2_di2",\
                 veFalse\
@@ -401,7 +410,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
         {\
             adc_pin5,\
             INIT_ADC_SAMPLE_VAL,\
-            {{},{TEMPERATURE_SENSOR_IIR_LPF_FF_EN, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
+            {{},{TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
                 "com.victronenergy.temperature.builtin_adc5_di0",\
                 veFalse\
@@ -440,7 +449,7 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
         {\
             adc_pin3,\
             INIT_ADC_SAMPLE_VAL,\
-            {{},{TEMPERATURE_SENSOR_IIR_LPF_FF_EN, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
+            {{},{TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
             {\
                 "com.victronenergy.temperature.builtin_adc3_di1",\
                 veFalse\
@@ -474,6 +483,26 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
          }\
     }\
 }
+
+typedef enum
+{
+    Connected_item = 0,
+    ProductName_item = 1,
+    productId_item = 2,
+    deviceInstance_item = 3,
+    level_item = 4,
+    temperature_item = 4,
+    remaining_item = 5,
+    status_item = 6,
+    analogpinFunc_item = 7,
+    tank_level_sens_capacity_item = 8,
+    temp_sens_Scale_item = 8,
+    tank_level_sens_fluidType_item = 9,
+    temp_sens_offset_item = 9,
+    tank_level_sens_standard_item = 10,
+    temp_sens_type_item = 10,
+    num_of_container_items = 11
+}snesor_items_container_items_t;
 
 // preload the pointer container
 #define SENSOR_ITEM_CONTAINER \
@@ -523,8 +552,8 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
         {&analog_sensor[index_temperature1].items.product.id,											NULL,											"ProductId",		&units,	0},\
         {&analog_sensor[index_temperature1].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_temperature1].items.temperature.temperature,		&analog_sensor[index_temperature1].variant.temperature.temperature,		"Temperature",		&units,	5},\
-        {&analog_sensor[index_temperature1].items.temperature.status,			&analog_sensor[index_temperature1].variant.temperature.status,			"Status",  			&units,	5},\
         {                       NULL,                                                                   NULL,                                               NULL,           NULL,	NULL},\
+        {&analog_sensor[index_temperature1].items.temperature.status,			&analog_sensor[index_temperature1].variant.temperature.status,			"Status",  			&units,	5},\
         {&analog_sensor[index_temperature1].items.temperature.analogpinFunc,	&analog_sensor[index_temperature1].variant.temperature.analogpinFunc,   "analogpinFunc",	&units,	5, analogPinFuncChange},\
         {&analog_sensor[index_temperature1].items.temperature.scale,			&analog_sensor[index_temperature1].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
         {&analog_sensor[index_temperature1].items.temperature.offset,			&analog_sensor[index_temperature1].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\
@@ -536,8 +565,8 @@ void sensors_dbusDisconnect(analog_sensor_t * sensor, analog_sensors_index_t sen
         {&analog_sensor[index_temperature2].items.product.id,											NULL,											"ProductId",		&units,	0},\
         {&analog_sensor[index_temperature2].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
         {&analog_sensor[index_temperature2].items.temperature.temperature,		&analog_sensor[index_temperature2].variant.temperature.temperature,		"Temperature",		&units,	5},\
-        {&analog_sensor[index_temperature2].items.temperature.status,			&analog_sensor[index_temperature2].variant.temperature.status,			"Status",  			&units,	5},\
         {                       NULL,                                                                   NULL,                                               NULL,           NULL,	NULL},\
+        {&analog_sensor[index_temperature2].items.temperature.status,			&analog_sensor[index_temperature2].variant.temperature.status,			"Status",  			&units,	5},\
         {&analog_sensor[index_temperature2].items.temperature.analogpinFunc,	&analog_sensor[index_temperature2].variant.temperature.analogpinFunc,   "analogpinFunc",	&units,	5, analogPinFuncChange},\
         {&analog_sensor[index_temperature2].items.temperature.scale,			&analog_sensor[index_temperature2].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
         {&analog_sensor[index_temperature2].items.temperature.offset,			&analog_sensor[index_temperature2].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\

@@ -39,9 +39,35 @@ static VeVariantUnitFmt none = {0, ""};
  * @brief interface
  * @return the interface of the system
  */
-static char const *interface(void)
+static char const *interface(analog_sensors_index_t analog_sensors_index)
 {
-    return "ADC";
+    switch(analog_sensors_index)
+    {
+        case index_tankLevel1:
+        {
+            return("Tank Level sensor input 1");
+        }
+        case index_tankLevel2:
+        {
+            return("Tank Level sensor input 2");
+        }
+        case index_tankLevel3:
+        {
+            return("Tank Level sensor input 3");
+        }
+        case index_temperature1:
+        {
+            return("Temperature sensor input 1");
+        }
+        case index_temperature2:
+        {
+            return("Temperature sensor input 2");
+        }
+        default:
+        {
+            return("");
+        }
+    }
 }
 // required dbus connection information of the settings service
 dbus_info_t     dbus_info;
@@ -181,7 +207,7 @@ void sensors_dbusConnect(analog_sensor_t * sensor, analog_sensors_index_t sensor
 
     veItemOwnerSet(&processName[sensor_index], veVariantStr(&variant, pltProgramName()));
     veItemOwnerSet(&processVersion[sensor_index], veVariantStr(&variant, pltProgramVersion()));
-    veItemOwnerSet(&connection[sensor_index], veVariantStr(&variant, interface()));
+    veItemOwnerSet(&connection[sensor_index], veVariantStr(&variant, interface(sensor_index)));
 }
 
 /**
