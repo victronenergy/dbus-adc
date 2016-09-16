@@ -38,3 +38,21 @@ Add temperature sensor types
     0- battery
     1- refrigerator
     2- other
+
+Version 1.12
+============
+    Fix temperature and tank level sensor bugs
+    
+    Tank level sensor- when status not o.k. remaning value is 0 instead of unknown
+    Temperature sensor- 1. when status not o.k. last value is shown
+                        2. showing -200 degrees C when connected in reverse polarity
+                        3. minimum temperature should be -20 degrees C (bellow that temperature is unknown)
+                        4. should try to detect connection in revers polarity
+    
+    Change Connection item value (string) in the Device Page
+    
+    For tank lvel sensor- Tank lvel sensor input 1/2/3
+    For temperature sensor- Temperature sensor 1/2
+    
+    Invalidate sensor output data when sensor status is not OK.
+
