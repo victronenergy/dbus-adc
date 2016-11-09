@@ -228,7 +228,7 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
         float level;
         un8 Std = (un8)analog_sensor[analog_sensors_index].variant.tank_level.standard.value.UN32;
 
-        if(analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p3VOLTS)
+        if(analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p4VOLTS)
         {
             // Sensor status: error- not connected
             veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)disconnected);
