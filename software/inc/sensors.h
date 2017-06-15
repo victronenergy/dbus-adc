@@ -490,39 +490,39 @@ typedef enum {
 		{&analog_sensor[index_tankLevel1].items.product.name,											NULL,											"ProductName",		&units,	0},\
 		{&analog_sensor[index_tankLevel1].items.product.id,												NULL,											"ProductId",		&units,	0},\
 		{&analog_sensor[index_tankLevel1].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
-		{&analog_sensor[index_tankLevel1].items.tank_level.level,				&analog_sensor[index_tankLevel1].variant.tank_level.level,				"Level",			&units,	5},\
-		{&analog_sensor[index_tankLevel1].items.tank_level.remaining,			&analog_sensor[index_tankLevel1].variant.tank_level.remaining,			"Remaining",		&units,	5},\
-		{&analog_sensor[index_tankLevel1].items.tank_level.status,				&analog_sensor[index_tankLevel1].variant.tank_level.status,				"Status",			&units,	5},\
+		{&analog_sensor[index_tankLevel1].items.tank_level.level,				&analog_sensor[index_tankLevel1].variant.tank_level.level,				"Level",  			&units,	5},\
+		{&analog_sensor[index_tankLevel1].items.tank_level.remaining,			&analog_sensor[index_tankLevel1].variant.tank_level.remaining,			"Remaining",  		&units,	5},\
+		{&analog_sensor[index_tankLevel1].items.tank_level.status,				&analog_sensor[index_tankLevel1].variant.tank_level.status,				"Status",  			&statusFormat,	5},\
 		{&analog_sensor[index_tankLevel1].items.tank_level.analogpinFunc,		&analog_sensor[index_tankLevel1].variant.tank_level.analogpinFunc,		"analogpinFunc",	&units,	5, analogPinFuncChange},\
 		{&analog_sensor[index_tankLevel1].items.tank_level.capacity,			&analog_sensor[index_tankLevel1].variant.tank_level.capacity,			"Capacity",			&units,	5, capacityChange},\
-		{&analog_sensor[index_tankLevel1].items.tank_level.fluidType,			&analog_sensor[index_tankLevel1].variant.tank_level.fluidType,			"FluidType",		&units,	5, fluidTypeChange},\
-		{&analog_sensor[index_tankLevel1].items.tank_level.standard,			&analog_sensor[index_tankLevel1].variant.tank_level.standard,			"Standard",			&units,	5, standardChange}\
+		{&analog_sensor[index_tankLevel1].items.tank_level.fluidType,			&analog_sensor[index_tankLevel1].variant.tank_level.fluidType,			"FluidType",  		&fluidTypeFormat,	5, fluidTypeChange},\
+		{&analog_sensor[index_tankLevel1].items.tank_level.standard,			&analog_sensor[index_tankLevel1].variant.tank_level.standard,			"Standard",  		&standardFormat,	5, standardChange}\
 	},\
 	{\
 		{&analog_sensor[index_tankLevel2].items.product.connected,										NULL,											"Connected",		&units,	0},\
 		{&analog_sensor[index_tankLevel2].items.product.name,											NULL,											"ProductName",		&units,	0},\
 		{&analog_sensor[index_tankLevel2].items.product.id,												NULL,											"ProductId",		&units,	0},\
 		{&analog_sensor[index_tankLevel2].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
-		{&analog_sensor[index_tankLevel2].items.tank_level.level,				&analog_sensor[index_tankLevel2].variant.tank_level.level,				"Level",			&units,	5},\
-		{&analog_sensor[index_tankLevel2].items.tank_level.remaining,			&analog_sensor[index_tankLevel2].variant.tank_level.remaining,			"Remaining",		&units,	5},\
-		{&analog_sensor[index_tankLevel2].items.tank_level.status,				&analog_sensor[index_tankLevel2].variant.tank_level.status,				"Status",			&units,	5},\
+		{&analog_sensor[index_tankLevel2].items.tank_level.level,				&analog_sensor[index_tankLevel2].variant.tank_level.level,				"Level",  			&units,	5},\
+		{&analog_sensor[index_tankLevel2].items.tank_level.remaining,			&analog_sensor[index_tankLevel2].variant.tank_level.remaining,			"Remaining",  		&units,	5},\
+		{&analog_sensor[index_tankLevel2].items.tank_level.status,				&analog_sensor[index_tankLevel2].variant.tank_level.status,				"Status",  			&statusFormat,	5},\
 		{&analog_sensor[index_tankLevel2].items.tank_level.analogpinFunc,		&analog_sensor[index_tankLevel2].variant.tank_level.analogpinFunc,		"analogpinFunc",	&units,	5, analogPinFuncChange},\
 		{&analog_sensor[index_tankLevel2].items.tank_level.capacity,			&analog_sensor[index_tankLevel2].variant.tank_level.capacity,			"Capacity",			&units,	5, capacityChange},\
-		{&analog_sensor[index_tankLevel2].items.tank_level.fluidType,			&analog_sensor[index_tankLevel2].variant.tank_level.fluidType,			"FluidType",		&units,	5, fluidTypeChange},\
-		{&analog_sensor[index_tankLevel2].items.tank_level.standard,			&analog_sensor[index_tankLevel2].variant.tank_level.standard,			"Standard",			&units,	5, standardChange}\
+		{&analog_sensor[index_tankLevel2].items.tank_level.fluidType,			&analog_sensor[index_tankLevel2].variant.tank_level.fluidType,			"FluidType",  		&fluidTypeFormat,	5, fluidTypeChange},\
+		{&analog_sensor[index_tankLevel2].items.tank_level.standard,			&analog_sensor[index_tankLevel2].variant.tank_level.standard,			"Standard",  		&standardFormat,	5, standardChange}\
 	},\
 	{\
 		{&analog_sensor[index_tankLevel3].items.product.connected,										NULL,											"Connected",		&units,	0},\
 		{&analog_sensor[index_tankLevel3].items.product.name,											NULL,											"ProductName",		&units,	0},\
 		{&analog_sensor[index_tankLevel3].items.product.id,												NULL,											"ProductId",		&units,	0},\
 		{&analog_sensor[index_tankLevel3].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
-		{&analog_sensor[index_tankLevel3].items.tank_level.level,				&analog_sensor[index_tankLevel3].variant.tank_level.level,				"Level",			&units,	5},\
-		{&analog_sensor[index_tankLevel3].items.tank_level.remaining,			&analog_sensor[index_tankLevel3].variant.tank_level.remaining,			"Remaining",		&units,	5},\
-		{&analog_sensor[index_tankLevel3].items.tank_level.status,				&analog_sensor[index_tankLevel3].variant.tank_level.status,				"Status",			&units,	5},\
+		{&analog_sensor[index_tankLevel3].items.tank_level.level,				&analog_sensor[index_tankLevel3].variant.tank_level.level,				"Level",  			&units,	5},\
+		{&analog_sensor[index_tankLevel3].items.tank_level.remaining,			&analog_sensor[index_tankLevel3].variant.tank_level.remaining,			"Remaining",  		&units,	5},\
+		{&analog_sensor[index_tankLevel3].items.tank_level.status,				&analog_sensor[index_tankLevel3].variant.tank_level.status,				"Status",  			&statusFormat,	5},\
 		{&analog_sensor[index_tankLevel3].items.tank_level.analogpinFunc,		&analog_sensor[index_tankLevel3].variant.tank_level.analogpinFunc,		"analogpinFunc",	&units,	5, analogPinFuncChange},\
 		{&analog_sensor[index_tankLevel3].items.tank_level.capacity,			&analog_sensor[index_tankLevel3].variant.tank_level.capacity,			"Capacity",			&units,	5, capacityChange},\
-		{&analog_sensor[index_tankLevel3].items.tank_level.fluidType,			&analog_sensor[index_tankLevel3].variant.tank_level.fluidType,			"FluidType",		&units,	5, fluidTypeChange},\
-		{&analog_sensor[index_tankLevel3].items.tank_level.standard,			&analog_sensor[index_tankLevel3].variant.tank_level.standard,			"Standard",			&units,	5, standardChange}\
+		{&analog_sensor[index_tankLevel3].items.tank_level.fluidType,			&analog_sensor[index_tankLevel3].variant.tank_level.fluidType,			"FluidType",  		&fluidTypeFormat,	5, fluidTypeChange},\
+		{&analog_sensor[index_tankLevel3].items.tank_level.standard,			&analog_sensor[index_tankLevel3].variant.tank_level.standard,			"Standard",  		&standardFormat,	5, standardChange}\
 	},\
 	{\
 		{&analog_sensor[index_temperature1].items.product.connected,									NULL,											"Connected",		&units,	0},\
@@ -530,9 +530,9 @@ typedef enum {
 		{&analog_sensor[index_temperature1].items.product.id,											NULL,											"ProductId",		&units,	0},\
 		{&analog_sensor[index_temperature1].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
 		{&analog_sensor[index_temperature1].items.temperature.temperature,		&analog_sensor[index_temperature1].variant.temperature.temperature,		"Temperature",		&units,	5},\
-		{						NULL,																	NULL,												NULL,			NULL,	NULL},\
-		{&analog_sensor[index_temperature1].items.temperature.status,			&analog_sensor[index_temperature1].variant.temperature.status,			"Status",			&units,	5},\
-		{&analog_sensor[index_temperature1].items.temperature.analogpinFunc,	&analog_sensor[index_temperature1].variant.temperature.analogpinFunc,	"analogpinFunc",	&units,	5, analogPinFuncChange},\
+		{					   NULL,																   NULL,											NULL,		   NULL,	NULL},\
+		{&analog_sensor[index_temperature1].items.temperature.status,			&analog_sensor[index_temperature1].variant.temperature.status,			"Status",  			&statusFormat,	5},\
+		{&analog_sensor[index_temperature1].items.temperature.analogpinFunc,	&analog_sensor[index_temperature1].variant.temperature.analogpinFunc,   "analogpinFunc",	&units,	5, analogPinFuncChange},\
 		{&analog_sensor[index_temperature1].items.temperature.scale,			&analog_sensor[index_temperature1].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
 		{&analog_sensor[index_temperature1].items.temperature.offset,			&analog_sensor[index_temperature1].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\
 		{&analog_sensor[index_temperature1].items.temperature.temperatureType,	&analog_sensor[index_temperature1].variant.temperature.temperatureType,	"TemperatureType",	&units,	5, TempTypeChange}\
@@ -543,8 +543,8 @@ typedef enum {
 		{&analog_sensor[index_temperature2].items.product.id,											NULL,											"ProductId",		&units,	0},\
 		{&analog_sensor[index_temperature2].items.product.instance,										NULL,											"DeviceInstance",	&units,	0},\
 		{&analog_sensor[index_temperature2].items.temperature.temperature,		&analog_sensor[index_temperature2].variant.temperature.temperature,		"Temperature",		&units,	5},\
-		{						NULL,																	NULL,												NULL,			NULL,	NULL},\
-		{&analog_sensor[index_temperature2].items.temperature.status,			&analog_sensor[index_temperature2].variant.temperature.status,			"Status",			&units,	5},\
+		{					   NULL,																   NULL,											NULL,		   NULL,	NULL},\
+		{&analog_sensor[index_temperature2].items.temperature.status,			&analog_sensor[index_temperature2].variant.temperature.status,			"Status",  			&statusFormat,	5},\
 		{&analog_sensor[index_temperature2].items.temperature.analogpinFunc,	&analog_sensor[index_temperature2].variant.temperature.analogpinFunc,	"analogpinFunc",	&units,	5, analogPinFuncChange},\
 		{&analog_sensor[index_temperature2].items.temperature.scale,			&analog_sensor[index_temperature2].variant.temperature.scale,			"Scale",			&units,	5, scaleChange},\
 		{&analog_sensor[index_temperature2].items.temperature.offset,			&analog_sensor[index_temperature2].variant.temperature.offset,			"Offset",			&units,	5, offsetChange},\

@@ -54,6 +54,7 @@ veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensor
  * @return
  */
 veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
+veBool statusChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
 veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
@@ -62,6 +63,10 @@ veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant);
 veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant);
+
+size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
+size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
+size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
 
 //static varibles
 /**
@@ -74,7 +79,11 @@ const potential_divider_t sensor_tankLevel_pd = {TANK_LEVEL_SENSOR_DIVIDER, (POT
 const potential_divider_t sensor_temperature_pd = {TEMP_SENS_VOLT_DIVID_R1, TEMP_SENS_VOLT_DIVID_R2};
 
 // instantiate a container structure for the interface with dbus APIś interface.
-static VeVariantUnitFmt units = {9, ""};
+static FormatInfo units = {{9, ""}, NULL};
+static FormatInfo statusFormat = {{0, ""}, statusFormatter};
+static FormatInfo fluidTypeFormat = {{0, ""}, fluidTypeFormatter};
+static FormatInfo standardFormat = {{0, ""}, standardItemFormatter};
+
 // a pointers container for interfacing the sensor structure to the various dbus services
 static ItemInfo const sensors_info[num_of_analog_sensors][SENSORS_INFO_ARRAY_SIZE] = SENSOR_ITEM_CONTAINER;
 
@@ -86,13 +95,18 @@ static ItemInfo const sensors_info[num_of_analog_sensors][SENSORS_INFO_ARRAY_SIZ
 void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 {
 	for (int i = 0; i < SENSORS_INFO_ARRAY_SIZE; i++) {
-		if (sensors_info[sensor_index][i].item != NULL) {
-			veItemAddChildByUid(root, sensors_info[sensor_index][i].id, sensors_info[sensor_index][i].item);
-			veItemSetFmt(sensors_info[sensor_index][i].item, veVariantFmt, sensors_info[sensor_index][i].fmt);
-			veItemSetTimeout(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].timeout);
+		const ItemInfo *itemInfo = &sensors_info[sensor_index][i];
+		if (itemInfo->item != NULL) {
+			veItemAddChildByUid(root, itemInfo->id, itemInfo->item);
+			if (itemInfo->fmt->fun != NULL) {
+				veItemSetFmt(itemInfo->item, itemInfo->fmt->fun, NULL);
+			} else {
+				veItemSetFmt(itemInfo->item, veVariantFmt, &itemInfo->fmt->unit);
+			}
+			veItemSetTimeout(itemInfo->item, itemInfo->timeout);
 			// Register the change items value callbacks.
-			if (sensors_info[sensor_index][i].setValueCallback) {
-				veItemSetSetter(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].setValueCallback, (void *)&analog_sensor[sensor_index]);
+			if (itemInfo->setValueCallback) {
+				veItemSetSetter(itemInfo->item, itemInfo->setValueCallback, (void *)&analog_sensor[sensor_index]);
 			}
 		}
 	}
@@ -463,4 +477,56 @@ veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 
 	p_analog_sensor->variant.temperature.temperatureType.value.SN32 = variant->value.SN32;
 	return veTrue;
+}
+
+/** Formats enum values. The content of `var` will converted to an integer. The integer will be used
+  * as index to pick a string from options. This string is copied to buf.
+  * If `var` is invalid or its value exceeds `optionCount`, buf will be an empty string
+  * @returns The size of the selected option (or 0 if no option could be selected).
+  */
+size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **options,
+					 un32 optionCount)
+{
+	if (var->type.tp != VE_UNKNOWN) {
+		un32 optionIndex = 0;
+		const char *option = NULL;
+		veVariantToN32(var);
+		optionIndex = var->value.UN32;
+		if (optionIndex < optionCount) {
+			option = options[optionIndex];
+			strncpy(buf, option, len);
+			return strlen(option);
+		}
+	}
+	/* Invalid or unknown value, set an empty string if possible */
+	if (len > 0) {
+		*buf = 0;
+	}
+	return 0;
+}
+
+/** Used to format the /Status D-Bus entry */
+size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
+{
+	const char *options[] = { "Ok", "Disconnected", "Short circuited", "Reverse polarity",
+							  "Unknown" };
+	VE_UNUSED(ctx);
+	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
+}
+
+/** Used to format the /FluidType D-Bus entry */
+size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
+{
+	const char *options[] = { "Fuel", "Fresh water", "Waste water", "Live well", "Oil",
+							  "Black water (sewage)" };
+	VE_UNUSED(ctx);
+	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
+}
+
+/** Used to format the /Standard D-Bus entry */
+size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
+{
+	const char *options[] = { "European", "American" };
+	VE_UNUSED(ctx);
+	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
 }

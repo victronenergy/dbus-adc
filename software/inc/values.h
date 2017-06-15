@@ -14,12 +14,17 @@
 #define DESIRED_VALUES_TASK_INTERVAL	100 // ms
 #define VALUES_TASK_INTERVAL			DESIRED_VALUES_TASK_INTERVAL / 50 // 50ms base ticking
 
+typedef struct {
+	VeVariantUnitFmt unit;
+	VeItemValueFmt *fun;
+} FormatInfo;
+
 // information for interfacing to dbus service
 typedef struct {
 	VeItem *item;
 	VeVariant *local;
 	char const *id;
-	VeVariantUnitFmt *fmt;
+	FormatInfo *fmt;
 	un8 timeout;
 	VeItemSetterFun *setValueCallback;
 } ItemInfo;
