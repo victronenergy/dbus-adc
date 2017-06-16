@@ -13,14 +13,14 @@
 
 #if ((FIRMWARE_VERSION >> 20) & 0xF) != 0		// 6th char not 0
 #define V6		n2c(FIRMWARE_VERSION, 20),
-#define V5 		n2c(FIRMWARE_VERSION, 16),'.'
+#define V5		n2c(FIRMWARE_VERSION, 16),'.'
 #define V4		n2c(FIRMWARE_VERSION, 12),
 
 #else											// 6th char 0
 #define V6
 
 #if ((FIRMWARE_VERSION >> 16) & 0xF) != 0		// 5th char not 0
-#define V5 		n2c(FIRMWARE_VERSION, 16),'.',
+#define V5		n2c(FIRMWARE_VERSION, 16),'.',
 #define V4		n2c(FIRMWARE_VERSION, 12),
 #else											// 5th char 0 as well
 #define V5
@@ -34,9 +34,9 @@
 #endif											// 5th char not 0
 #endif											// 6th char not 0
 
-#define V3 		n2c(FIRMWARE_VERSION, 8)
+#define V3		n2c(FIRMWARE_VERSION, 8)
 #define V2		n2c(FIRMWARE_VERSION, 4),
-#define V1 		n2c(FIRMWARE_VERSION, 0)
+#define V1		n2c(FIRMWARE_VERSION, 0)
 
 // The complete version string.
 // (some comma's are missing on purpose since they are included in the value,

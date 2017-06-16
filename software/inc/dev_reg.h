@@ -3,8 +3,7 @@
 
 #include <velib/base/base.h>
 
-typedef struct
-{
+typedef struct {
 	un32 timeOut;
 	un32 baudRate;
 } DevReg;

@@ -24,7 +24,7 @@ struct option consoleOptions[] =
 	{0,					0,					0,							0}
 };
 
-void consoleUsage(char* program)
+void consoleUsage(char*program)
 {
 	printf("%s\n", program);
 	printf("\n");
@@ -42,8 +42,7 @@ void consoleUsage(char* program)
 
 veBool consoleOption(int flag)
 {
-	switch(flag)
-	{
+	switch (flag) {
 	case 't':
 		errno = 0;
 		devReg.timeOut = veArgInt(optarg);
@@ -68,8 +67,7 @@ veBool consoleArgs(int argc, char *argv[])
 {
 	VE_UNUSED(argv);
 
-	if (argc != 0)
-	{
+	if (argc != 0) {
 		printf("error - no arguments are expected - missing a '-' or '--'?");
 		return veFalse;
 	}

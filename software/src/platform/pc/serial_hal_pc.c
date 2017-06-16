@@ -51,10 +51,10 @@
 //			rxHead = 0;
 
 //		/*
-//		 * note: the old data is thrown away in case of a buffer overflow,
-//		 * to make sure there is enough space to sync again, and subsequent
-//		 * characters are not dropped again directly.
-//		 */
+//		* note: the old data is thrown away in case of a buffer overflow,
+//		* to make sure there is enough space to sync again, and subsequent
+//		* characters are not dropped again directly.
+//		*/
 //		if (rxHead == rxTail)
 //			logW(MODULE, "rx buffer overflow");
 
