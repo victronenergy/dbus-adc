@@ -68,7 +68,7 @@ size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
 size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
 size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
 
-//static varibles
+//static variables
 /**
  * @brief analog_sensor - array of analog sensor structures
  */
@@ -78,7 +78,7 @@ analog_sensor_t analog_sensor[num_of_analog_sensors] = SENSORS_CONSTANT_DATA;
 const potential_divider_t sensor_tankLevel_pd = {TANK_LEVEL_SENSOR_DIVIDER, (POTENTIAL_DIV_MAX_SAMPLE - 1)};
 const potential_divider_t sensor_temperature_pd = {TEMP_SENS_VOLT_DIVID_R1, TEMP_SENS_VOLT_DIVID_R2};
 
-// instantiate a container structure for the interface with dbus APIś interface.
+// instantiate a container structure for the interface with dbus API's interface.
 static FormatInfo units = {{9, ""}, NULL};
 static FormatInfo statusFormat = {{0, ""}, statusFormatter};
 static FormatInfo fluidTypeFormat = {{0, ""}, fluidTypeFormatter};
@@ -170,7 +170,7 @@ void sensors_handle(void)
 
 			case no_function:
 			default:
-				// check id dbus is connected and disconnect it
+				// check if dbus is connected and disconnect it
 				if (analog_sensor[analog_sensors_index].interface.dbus.connected) {
 					sensors_dbusDisconnect(&analog_sensor[analog_sensors_index], analog_sensors_index);
 				}
@@ -227,7 +227,7 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
 		// calculate the resistance of the tank level sensor from the adc pin sample
 		float R2 = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
 		// check the integrity of the resistance
-		if (R2>0) { // clculate the tank level
+		if (R2>0) { // calculate the tank level
 			if (Std == american_std) { // tank level calculation in the case it is an American standard sensor
 				level = (R2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
 				if (level < 0) {
