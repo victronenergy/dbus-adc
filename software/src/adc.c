@@ -30,7 +30,7 @@ veBool adc_read(un32 * value, adc_analogPin_t pin)
     int fd;
     char buf[ADC_SYSFS_READ_BUF_SIZE];
     char val[4];
-    snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/iio\:device0/in_voltage%d_raw", pin);
+    snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/iio:device0/in_voltage%d_raw", pin);
     fd = open(buf, O_RDONLY);
     if (fd < 0)
     {
