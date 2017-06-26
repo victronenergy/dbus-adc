@@ -214,13 +214,13 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
 		float R2 = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
 		// check the integrity of the resistance
 		if (R2>0) { // clculate the tank level
-			if (Std == european_std) { // tank level calculation in the case it is a European standard sensor
+			if (Std == american_std) { // tank level calculation in the case it is an American standard sensor
 				level = (R2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
 				if (level < 0) {
 					level = 0;
 				}
 				level = 1-level;
-			} else { // tank level calculation in the case it is an American standard sensor
+			} else { // tank level calculation in the case it is an European standard sensor
 				level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
 			}
 			// is level biger than 100% ?
