@@ -92,6 +92,7 @@ un32 adc_potDiv_calc(un32 sample, const potential_divider_t *pd, pd_calc_type_t 
 		// var1 = R1, var2 = R2
 		out = mltpty * sample * (pd->var1 + pd->var2);
 		out /= pd->var2;
+		out /= mltpty;
 		break;
 	case calc_type_R1:
 		// var1 = divider_supply, var2 = R2
