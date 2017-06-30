@@ -48,3 +48,12 @@ __Version 1.13__
  - Fix tank level sensor disconnection detection.
   - When the tank level sensor is being disconnected the pin voltage is clambed at v > ~1.4. therefore the voltage threshold for disconnection detection was changed from 1.3v to 1.4v
 
+
+__Version 1.14__
+ - Fixed swapped tank level standard (American <-> European)
+   https://github.com/victronenergy/venus/issues/157
+ - Fixed bug in potential divider voltage calculation (this bug never caused problems because of
+   the way the function was called).
+ - Fixed code style issues
+ - Translate the enums used on the D-Bus to strings instead of showing integral values.
+   https://github.com/victronenergy/venus/issues/152
