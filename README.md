@@ -25,3 +25,27 @@ For cross-compiling for a Venus device, see
 [here](https://www.victronenergy.com/live/open_source:ccgx:setup_development_environment).
 And then especially the section about velib projects.
 
+## dbus paths
+
+Tank:
+
+```
+/analogpinFunc
+/Level              0 to 100%
+/Remaining          
+/Status             0=Ok; 1=Disconnected; 2=Short circuited; 3=Unknown
+/Capacity
+/FluidType          0=Fuel; 1=Fresh water; 2=Waste water; 3=Live well; 4=Oil; 5=Black water (sewage)
+/Standard           0=European; 1=USA
+```
+
+Temperature:
+
+```
+/analogpinFunc
+/Temperature        degrees Celcius
+/Status             0=Ok; 1=Disconnected; 2=Short circuited; 3=Reverse polarity; 4=Unknown
+/Scale
+/Offset
+/TemperatureType    0=battery; 1=fridge; 2=generic
+```
