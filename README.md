@@ -37,6 +37,8 @@ Tank:
 /Capacity
 /FluidType          0=Fuel; 1=Fresh water; 2=Waste water; 3=Live well; 4=Oil; 5=Black water (sewage)
 /Standard           0=European; 1=USA
+
+Note that the FluidType enumeration is kept in sync with NMEA2000 definitions.
 ```
 
 Temperature:
