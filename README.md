@@ -32,9 +32,9 @@ Tank:
 ```
 /analogpinFunc
 /Level              0 to 100%
-/Remaining          
+/Remaining          m3
 /Status             0=Ok; 1=Disconnected; 2=Short circuited; 3=Unknown
-/Capacity
+/Capacity           m3
 /FluidType          0=Fuel; 1=Fresh water; 2=Waste water; 3=Live well; 4=Oil; 5=Black water (sewage)
 /Standard           0=European; 1=USA
 
