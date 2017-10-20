@@ -48,7 +48,7 @@
 // tank level capacity
 #define DEFAULT_TANK_CAPACITY				(float)0.2 //m3
 #define MIN_OF_TANK_CAPACITY				0
-#define MAX_OF_TANK_CAPACITY				1
+#define MAX_OF_TANK_CAPACITY				1000
 // tank level fluid type
 #define DEFAULT_FLUID_TYPE					0 // Fuel
 #define MIN_OF_FLUID_TYPE					0

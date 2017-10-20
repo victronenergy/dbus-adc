@@ -57,3 +57,6 @@ __Version 1.14__
  - Fixed code style issues
  - Translate the enums used on the D-Bus to strings instead of showing integral values.
    https://github.com/victronenergy/venus/issues/152
+
+__Version 1.15__
+ - Increased maximum tank capacity to 1000 cubic meters.
