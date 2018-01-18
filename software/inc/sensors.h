@@ -241,6 +241,11 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index);
  */
 void sensors_handle(void);
 /**
+ * @brief sensors_addSettings
+ * @param sensor_index
+ */
+void sensors_addSettings(analog_sensors_index_t sensor_index);
+/**
  * @brief sensors_dbusInit
  * @param sensor_index
  */

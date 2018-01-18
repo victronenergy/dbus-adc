@@ -33,6 +33,7 @@ void taskInit(void)
 	}
 	// Connect sensor items to their dbus services
 	for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {
+		sensors_addSettings(sensor_index);
 		sensors_dbusInit(sensor_index);
 	}
 	// Interrupt enable now

@@ -327,6 +327,15 @@ veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensor
 }
 
 /**
+ * @brief sensors_addSettings - connect sensor items to their dbus services
+ * @param sensor_index - the sensor index array number
+ */
+void sensors_addSettings(analog_sensors_index_t sensor_index)
+{
+	values_dbus_service_addSettings(&analog_sensor[sensor_index]);
+}
+
+/**
  * @brief sensors_dbusInit - connect sensor items to their dbus services
  * @param sensor_index - the sensor index array number
  */
@@ -337,7 +346,11 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
 
 	timeout = CONNECTION_TIMEOUT;
 
-	if (flags[sensor_index] & F_CONNECTED) {
+	/* This horrible cast is necessary because for some reason the settings are
+	 * stored as floats. */
+	un32 sensor_function = (un32)analog_sensor[sensor_index].dbus_info[analogpinFunc].value->variant.value.Float;
+
+	if ((sensor_function == no_function) || (flags[sensor_index] & F_CONNECTED)) {
 		return;
 	}
 
@@ -358,7 +371,6 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
 
 	}
 
-	values_dbus_service_addSettings(&analog_sensor[sensor_index]);
 	if (!analog_sensor[sensor_index].interface.dbus.connected) {
 		sensors_dbusConnect(&analog_sensor[sensor_index], sensor_index);
 	}
