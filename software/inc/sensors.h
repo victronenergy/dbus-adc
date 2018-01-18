@@ -480,7 +480,7 @@ typedef enum {
 	tank_level_sens_standard_item = 10,
 	temp_sens_type_item = 10,
 	num_of_container_items = 11
-} snesor_items_container_items_t;
+} sensor_items_container_items_t;
 
 // preload the pointer container
 #define SENSOR_ITEM_CONTAINER \

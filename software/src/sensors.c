@@ -119,7 +119,7 @@ static void updateValues(void)
 {
 	for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {
 		// update only variables values
-		for (snesor_items_container_items_t i = 0; i < num_of_container_items; i++) {
+		for (sensor_items_container_items_t i = 0; i < num_of_container_items; i++) {
 			if (sensors_info[sensor_index][i].local && veVariantIsValid(sensors_info[sensor_index][i].local)) {
 				veItemOwnerSet(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].local);
 			}
@@ -365,7 +365,7 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
 }
 
 /**
- * @brief xxxChange - is a callbeck that called when an item was changed
+ * @brief xxxChange - is a callback that called when an item was changed
  * @param item - a pointer to the chanched item
  * @param ctx - a preloaded void pointer to some desired variable- in our case, a pointer the the sensor structure array element
  * @param variant - the changed variant in the item
