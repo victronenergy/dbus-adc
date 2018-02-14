@@ -30,6 +30,9 @@ And then especially the section about velib projects.
 Tank:
 
 ```
+com.victronenergy.tank
+
+
 /analogpinFunc
 /Level              0 to 100%
 /Remaining          m3
@@ -44,6 +47,8 @@ Note that the FluidType enumeration is kept in sync with NMEA2000 definitions.
 Temperature:
 
 ```
+com.victronenergy.temperature
+
 /analogpinFunc
 /Temperature        degrees Celcius
 /Status             0=Ok; 1=Disconnected; 2=Short circuited; 3=Reverse polarity; 4=Unknown
