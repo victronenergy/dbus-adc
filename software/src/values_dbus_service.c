@@ -80,6 +80,7 @@ void valuesInit(analog_sensors_index_t sensor_index)
 	sensor->iface_name = interface(sensor_index);
 
 	values_dbus_service_addSettings(sensor);
+	sensors_dbusInit(sensor_index);
 }
 
 /**
