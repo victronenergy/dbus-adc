@@ -31,7 +31,6 @@ static VeItem processVersion[num_of_analog_sensors];
 static VeItem connection[num_of_analog_sensors];
 // timer divider for the app ticking
 static un16 values_task_timer;
-static un32 timeout;
 
 static VeVariantUnitFmt none = {0, ""};
 /**
@@ -76,7 +75,6 @@ VeItem *getConsumerRoot(void)
  */
 void valuesInit(analog_sensors_index_t sensor_index)
 {
-	timeout = devReg.timeOut * 20;
 	values_task_timer = VALUES_TASK_INTERVAL;
 	sensor_init(&root[sensor_index], sensor_index);
 
@@ -177,7 +175,6 @@ void sensors_dbusConnect(analog_sensor_t *sensor, analog_sensors_index_t sensor_
 	}
 	sensor->interface.dbus.connected = veTrue;
 	/* Device found */
-	timeout = 0;
 
 	veDbusItemInit(dbus[sensor_index], &root[sensor_index]);
 	veDbusChangeName(dbus[sensor_index], sensor->interface.dbus.service);

@@ -19,10 +19,6 @@
 
 #define F_CONNECTED					1
 
-#define CONNECTION_TIMEOUT			(5 * 20)	/* 50ms */
-
-static un16 timeout;
-
 // Local function prototypes
 /**
  * @brief sensors_data_process
@@ -341,8 +337,6 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
 {
 	VeVariant variant;
 	static veBool flags[num_of_analog_sensors];
-
-	timeout = CONNECTION_TIMEOUT;
 
 	if (flags[sensor_index] & F_CONNECTED) {
 		return;
