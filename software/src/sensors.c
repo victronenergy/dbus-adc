@@ -17,8 +17,6 @@
 #include <stdlib.h>
 #endif
 
-#define F_CONNECTED					1
-
 // Local function prototypes
 /**
  * @brief sensors_data_process
@@ -336,14 +334,6 @@ void sensors_addSettings(analog_sensors_index_t sensor_index)
 void sensors_dbusInit(analog_sensors_index_t sensor_index)
 {
 	VeVariant variant;
-	static veBool flags[num_of_analog_sensors];
-
-	if (flags[sensor_index] & F_CONNECTED) {
-		return;
-	}
-
-	flags[sensor_index] |= F_CONNECTED;
-
 	static un8 instance = 20;
 
 	veItemOwnerSet(&analog_sensor[sensor_index].items.product.connected, veVariantUn32(&variant, veTrue));
