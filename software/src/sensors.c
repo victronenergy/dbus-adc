@@ -17,29 +17,6 @@
 #include <stdlib.h>
 #endif
 
-// Local function prototypes
-
-/**
- * @brief sensors_data_process
- * @param analog_sensors_index
- * @return
- */
-static veBool sensors_data_process(analog_sensors_index_t analog_sensors_index);
-
-/**
- * @brief sensors_tankType_data_process
- * @param analog_sensors_index
- * @return
- */
-static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index);
-
-/**
- * @brief sensors_temperatureType_data_process
- * @param analog_sensors_index
- * @return
- */
-static veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index);
-
 // Callbacks to be called when the paramters are changing
 /**
  * @brief xxxChange
@@ -112,119 +89,6 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 			}
 		}
 	}
-}
-
-/**
- * @brief updateValues - updates the dbus item values
- */
-static void updateValues(void)
-{
-	for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {
-		analog_sensor_t *sensor = &analog_sensor[sensor_index];
-
-		// update only variables values
-		for (sensor_items_container_items_t i = 0; i < num_of_container_items; i++) {
-			const ItemInfo *itemInfo = &sensor->info[i];
-
-			if (itemInfo->local && veVariantIsValid(itemInfo->local)) {
-				veItemOwnerSet(itemInfo->item, itemInfo->local);
-			}
-		}
-	}
-}
-
-/**
- * @brief sensors_handle - handles the sensors
- */
-void sensors_handle(void)
-{
-	analog_sensors_index_t analog_sensors_index;
-
-	// first read fast all the analog inputs and mark which read is valid
-	// We reading always the same number of analog inputs to try to keep the timming of the system constant.
-	for (analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++) {
-		analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
-
-		// reading all the analog inputs adc values
-		if (!adc_read(&sensor->interface.adc_sample, sensor->interface.adc_pin)) {
-			// validate the sample
-			sensor->valid = veTrue;
-		}
-	}
-
-	// Now handle the adc read to update the sensor
-	for (analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++) {
-		analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
-
-		// proceed if the adc reading is valid
-		if (sensor->valid == veTrue) {
-			filter_iir_lpf_t *filter = &sensor->interface.sig_cond.filter_iir_lpf;
-
-			// filter the input ADC sample and store it in adc var
-			sensor->interface.adc_sample = adc_filter(
-				(float)sensor->interface.adc_sample,
-				&filter->adc_mem,
-				filter->fc,
-				10, filter->FF);
-
-			// reset the adc valid reading flag for next sampling cycle
-			sensor->valid = veFalse;
-
-			// check if the sensor function-if it needed at all?
-			un32 sensor_analogpinFunc = (un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float;
-
-			switch (sensor_analogpinFunc) {
-			case default_function:
-				// check if dbus is disconnected and connect it
-				if (!sensor->interface.dbus.connected) {
-					sensors_dbusConnect(sensor, analog_sensors_index);
-				}
-
-				// need to proces the data
-				sensors_data_process(analog_sensors_index);
-				break;
-
-			case no_function:
-			default:
-				// check if dbus is connected and disconnect it
-				if (sensor->interface.dbus.connected) {
-					sensors_dbusDisconnect(sensor, analog_sensors_index);
-				}
-				break;
-			}
-		} else {
-			// adc reading error
-		}
-	}
-
-	// call to update the dbus sservice with the new item values
-	updateValues();
-}
-
-/**
- * @brief sensors_data_process - direct to the data processing algorithm per sensor type
- * @param analog_sensors_index - the sensor index array number
- * @return Boolean status veTrue-success, veFalse-fail
- */
-static veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
-{
-	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
-
-	// check the type of sensor before starting
-	switch (sensor->sensor_type) {
-	case tank_level_t:
-		sensors_tankType_data_process(analog_sensors_index);
-		break;
-
-	case temperature_t:
-		sensors_temperatureType_data_process(analog_sensors_index);
-		break;
-
-	default:
-		break;
-	}
-
-	return veTrue;
 }
 
 /**
@@ -355,6 +219,119 @@ static veBool sensors_temperatureType_data_process(analog_sensors_index_t analog
 			(sn32)sensor->dbus_info[TempType].value->variant.value.Float);
 
 	return veTrue;
+}
+
+/**
+ * @brief sensors_data_process - direct to the data processing algorithm per sensor type
+ * @param analog_sensors_index - the sensor index array number
+ * @return Boolean status veTrue-success, veFalse-fail
+ */
+static veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
+{
+	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+
+	// check the type of sensor before starting
+	switch (sensor->sensor_type) {
+	case tank_level_t:
+		sensors_tankType_data_process(analog_sensors_index);
+		break;
+
+	case temperature_t:
+		sensors_temperatureType_data_process(analog_sensors_index);
+		break;
+
+	default:
+		break;
+	}
+
+	return veTrue;
+}
+
+/**
+ * @brief updateValues - updates the dbus item values
+ */
+static void updateValues(void)
+{
+	for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {
+		analog_sensor_t *sensor = &analog_sensor[sensor_index];
+
+		// update only variables values
+		for (sensor_items_container_items_t i = 0; i < num_of_container_items; i++) {
+			const ItemInfo *itemInfo = &sensor->info[i];
+
+			if (itemInfo->local && veVariantIsValid(itemInfo->local)) {
+				veItemOwnerSet(itemInfo->item, itemInfo->local);
+			}
+		}
+	}
+}
+
+/**
+ * @brief sensors_handle - handles the sensors
+ */
+void sensors_handle(void)
+{
+	analog_sensors_index_t analog_sensors_index;
+
+	// first read fast all the analog inputs and mark which read is valid
+	// We reading always the same number of analog inputs to try to keep the timming of the system constant.
+	for (analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++) {
+		analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+
+		// reading all the analog inputs adc values
+		if (!adc_read(&sensor->interface.adc_sample, sensor->interface.adc_pin)) {
+			// validate the sample
+			sensor->valid = veTrue;
+		}
+	}
+
+	// Now handle the adc read to update the sensor
+	for (analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++) {
+		analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+
+		// proceed if the adc reading is valid
+		if (sensor->valid == veTrue) {
+			filter_iir_lpf_t *filter = &sensor->interface.sig_cond.filter_iir_lpf;
+
+			// filter the input ADC sample and store it in adc var
+			sensor->interface.adc_sample = adc_filter(
+				(float)sensor->interface.adc_sample,
+				&filter->adc_mem,
+				filter->fc,
+				10, filter->FF);
+
+			// reset the adc valid reading flag for next sampling cycle
+			sensor->valid = veFalse;
+
+			// check if the sensor function-if it needed at all?
+			un32 sensor_analogpinFunc = (un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float;
+
+			switch (sensor_analogpinFunc) {
+			case default_function:
+				// check if dbus is disconnected and connect it
+				if (!sensor->interface.dbus.connected) {
+					sensors_dbusConnect(sensor, analog_sensors_index);
+				}
+
+				// need to proces the data
+				sensors_data_process(analog_sensors_index);
+				break;
+
+			case no_function:
+			default:
+				// check if dbus is connected and disconnect it
+				if (sensor->interface.dbus.connected) {
+					sensors_dbusDisconnect(sensor, analog_sensors_index);
+				}
+				break;
+			}
+		} else {
+			// adc reading error
+		}
+	}
+
+	// call to update the dbus sservice with the new item values
+	updateValues();
 }
 
 /**
