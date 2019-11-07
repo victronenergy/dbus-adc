@@ -18,24 +18,27 @@
 #endif
 
 // Local function prototypes
+
 /**
  * @brief sensors_data_process
  * @param analog_sensors_index
  * @return
  */
-veBool sensors_data_process(analog_sensors_index_t analog_sensors_index);
+static veBool sensors_data_process(analog_sensors_index_t analog_sensors_index);
+
 /**
  * @brief sensors_tankType_data_process
  * @param analog_sensors_index
  * @return
  */
-veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index);
+static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index);
+
 /**
  * @brief sensors_temperatureType_data_process
  * @param analog_sensors_index
  * @return
  */
-veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index);
+static veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index);
 
 // Callbacks to be called when the paramters are changing
 /**
@@ -45,20 +48,19 @@ veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensor
  * @param variant
  * @return
  */
-veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
-veBool statusChange(struct VeItem *item, void *ctx, VeVariant *variant);
+static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
-veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
-veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
-veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant);
+static veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
+static veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
+static veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
-veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
-veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant);
-veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant);
+static veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
+static veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant);
+static veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
-size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
-size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
-size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
+static size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
+static size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
+static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
 
 //static variables
 /**
@@ -204,7 +206,7 @@ void sensors_handle(void)
  * @param analog_sensors_index - the sensor index array number
  * @return Boolean status veTrue-success, veFalse-fail
  */
-veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
+static veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
 {
 	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
 
@@ -230,7 +232,7 @@ veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
  * @param analog_sensors_index - the sensor index array number
  * @return Boolean status veTrue-success, veFalse-fail
  */
-veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index)
+static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index)
 {
 	// process the data of the analog input with respect to its function
 	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
@@ -305,7 +307,7 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
  * @param analog_sensors_index - the sensor index array number
  * @return Boolean status veTrue-success, veFalse-fail
  */
-veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index)
+static veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index)
 {
 	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
 	float tempC;
@@ -400,7 +402,7 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
  */
 
 // Callback when the sensor function is changing
-veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant)
+static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
@@ -416,7 +418,7 @@ veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant)
 }
 
 // Callback when the capacity is changing
-veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant)
+static veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
@@ -432,7 +434,7 @@ veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant)
 }
 
 // Callback when the fluid type is changing
-veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
+static veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
@@ -448,7 +450,7 @@ veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 }
 
 // Callback when the standard is changing
-veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant)
+static veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
@@ -463,9 +465,8 @@ veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	return veTrue;
 }
 
-
 // Callback when the scale is changing
-veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant)
+static veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
@@ -481,7 +482,7 @@ veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant)
 }
 
 // Callback when the offset is changing
-veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant)
+static veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
@@ -497,7 +498,7 @@ veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant)
 }
 
 //
-veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
+static veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 {
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
@@ -517,7 +518,7 @@ veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
   * If `var` is invalid or its value exceeds `optionCount`, buf will be an empty string
   * @returns The size of the selected option (or 0 if no option could be selected).
   */
-size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **options,
+static size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **options,
 					 un32 optionCount)
 {
 	if (var->type.tp != VE_UNKNOWN) {
@@ -543,7 +544,7 @@ size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **options
 }
 
 /** Used to format the /Status D-Bus entry */
-size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
+static size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
 {
 	const char *options[] = { "Ok", "Disconnected", "Short circuited", "Reverse polarity",
 							  "Unknown" };
@@ -552,7 +553,7 @@ size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
 }
 
 /** Used to format the /FluidType D-Bus entry */
-size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
+static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
 {
 	const char *options[] = { "Fuel", "Fresh water", "Waste water", "Live well", "Oil",
 							  "Black water (sewage)" };
@@ -561,7 +562,7 @@ size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len
 }
 
 /** Used to format the /Standard D-Bus entry */
-size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
+static size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
 {
 	const char *options[] = { "European", "American" };
 	VE_UNUSED(ctx);
