@@ -1,4 +1,4 @@
 [submodule "software/ext/velib"]
 	path = software/ext/velib
-	url = https://github.com/victronenergy/velib.git
+	url = git@github.com:victronenergy/velib.git
 	branch = master
