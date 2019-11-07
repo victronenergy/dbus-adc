@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #endif
 
-// Callbacks to be called when the paramters are changing
+// Callbacks to be called when the parameters are changing
 static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
 static veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
@@ -85,9 +85,9 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 }
 
 /**
- * @brief sensors_tankType_data_process - proces the tank level sensor adc data (need to switch the oin function as when functions will be add)
+ * @brief sensors_tankType_data_process - process the tank level sensor adc data (need to switch the oin function as when functions will be add)
  * @param analog_sensors_index - the sensor index array number
- * @return Boolean status veTrue-success, veFalse-fail
+ * @return Boolean status veTrue - success, veFalse - fail
  */
 static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index)
 {
@@ -97,11 +97,11 @@ static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensor
 	un8 Std = (un8)sensor->variant.tank_level.standard.value.UN32;
 
 	if (sensor->interface.adc_sample > ADC_1p4VOLTS) {
-		// Sensor status: error- not connected
+		// Sensor status: error - not connected
 		veVariantUn32(&sensor->variant.tank_level.status, (un32)disconnected);
 	// this condition applies only for the US standard
 	} else if (Std && (sensor->interface.adc_sample < ADC_0p15VOLTS)) {
-		// Sensor status: error- short circuited
+		// Sensor status: error - short circuited
 		veVariantUn32(&sensor->variant.tank_level.status, (un32)short_circuited);
 	} else {
 		// calculate the resistance of the tank level sensor from the adc pin sample
@@ -115,11 +115,11 @@ static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensor
 					level = 0;
 				}
 				level = 1-level;
-			} else { // tank level calculation in the case it is an European standard sensor
+			} else { // tank level calculation in the case it is a European standard sensor
 				level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
 			}
 
-			// is level biger than 100% ?
+			// is level bigger than 100% ?
 			if (level > 1) {
 				// saturate the level to 100%
 				level = 1;
@@ -128,12 +128,12 @@ static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensor
 			// Sensor status: O.K.
 			veVariantUn32(&sensor->variant.tank_level.status, (un32)ok);
 		} else {
-			// Sensor status: error- unknown value
+			// Sensor status: error - unknown value
 			veVariantUn32(&sensor->variant.tank_level.status, (un32)unknown_value);
 		}
 	}
 
-	// measure is ok and R2 resistance was correctlly calculated
+	// measure is ok and R2 resistance was correctly calculated
 	veVariantUn32(&sensor->variant.tank_level.analogpinFunc,
 			(un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float);
 
@@ -160,7 +160,7 @@ static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensor
 }
 
 /**
- * @brief sensors_tankType_data_process - proces the temperature sensor adc data (need to switch the oin function as when functions will be add)
+ * @brief sensors_tankType_data_process - process the temperature sensor adc data (need to switch the oin function as when functions will be add)
  * @param analog_sensors_index - the sensor index array number
  * @return Boolean status veTrue-success, veFalse-fail
  */
@@ -267,7 +267,7 @@ void sensors_handle(void)
 	analog_sensors_index_t analog_sensors_index;
 
 	// first read fast all the analog inputs and mark which read is valid
-	// We reading always the same number of analog inputs to try to keep the timming of the system constant.
+	// We reading always the same number of analog inputs to try to keep the timing of the system constant.
 	for (analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++) {
 		analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
 
@@ -296,7 +296,7 @@ void sensors_handle(void)
 			// reset the adc valid reading flag for next sampling cycle
 			sensor->valid = veFalse;
 
-			// check if the sensor function-if it needed at all?
+			// check if the sensor function - if it needed at all?
 			un32 sensor_analogpinFunc = (un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float;
 
 			switch (sensor_analogpinFunc) {
@@ -323,7 +323,7 @@ void sensors_handle(void)
 		}
 	}
 
-	// call to update the dbus sservice with the new item values
+	// call to update the dbus service with the new item values
 	updateValues();
 }
 
@@ -366,9 +366,9 @@ void sensors_dbusInit(analog_sensors_index_t sensor_index)
 /**
  * @brief xxxChange - is a callback that called when an item was changed
  * @param item - a pointer to the chanched item
- * @param ctx - a preloaded void pointer to some desired variable- in our case, a pointer the the sensor structure array element
+ * @param ctx - a preloaded void pointer to some desired variable - in our case, a pointer the the sensor structure array element
  * @param variant - the changed variant in the item
- * @return Boolean status veTrue -success, veFalse -fail
+ * @return Boolean status veTrue - success, veFalse - fail
  */
 
 // Callback when the sensor function is changing

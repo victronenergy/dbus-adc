@@ -53,7 +53,7 @@
 #define DEFAULT_FLUID_TYPE					0 // Fuel
 #define MIN_OF_FLUID_TYPE					0
 #define MAX_OF_FLUID_TYPE					5 //
-// temperature sensor signal sacle correction
+// temperature sensor signal scale correction
 #define TEMPERATURE_SCALE					(float)1.00
 #define MIN_OF_TEMPERATURE_SCALE			(float)0.10
 #define MAX_OF_TEMPERATURE_SCALE			(float)10.00
@@ -133,7 +133,7 @@ typedef struct {
 	VeItem connected;
 } ProductInfo;
 
-// snesors items for dbus tank level sensor service
+// sensors items for dbus tank level sensor service
 typedef struct {
 	VeItem level;
 	VeItem remaining;
@@ -144,7 +144,7 @@ typedef struct {
 	VeItem standard;
 } tank_level_sensor_item_t;
 
-// snesors items for dbus temperature sensor service
+// sensors items for dbus temperature sensor service
 typedef struct {
 	VeItem temperature;
 	VeItem status;
@@ -155,7 +155,7 @@ typedef struct {
 	VeItem spareParam;
 } temperature_sensor_item_t;
 
-// snesors variables for tank level sensor items
+// sensors variables for tank level sensor items
 typedef struct {
 	VeVariant level;
 	VeVariant remaining;
@@ -166,7 +166,7 @@ typedef struct {
 	VeVariant standard;
 } tank_level_sensor_variant_t;
 
-// snesors variables for temperature sensor items
+// sensors variables for temperature sensor items
 typedef struct {
 	VeVariant temperature;
 	VeVariant status;
@@ -177,7 +177,7 @@ typedef struct {
 	VeVariant spareParam;
 } temperature_sensor_variant_t;
 
-// paramters to interface the sensor to dbus service
+// parameters to interface the sensor to dbus service
 typedef struct {
 	const char *service;
 	veBool connected;
@@ -239,7 +239,7 @@ void values_dbus_service_addSettings(analog_sensor_t *sensor);
 void sensors_dbusConnect(analog_sensor_t *sensor, analog_sensors_index_t sensor_index);
 void sensors_dbusDisconnect(analog_sensor_t *sensor, analog_sensors_index_t sensor_index);
 
-// a define to hold all the required predetermind variables and constants of the analog sensor structure
+// a define to hold all the required predetermined variables and constants of the analog sensor structure
 #define SENSORS_CONSTANT_DATA \
 {		\
 	{	\

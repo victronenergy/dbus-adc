@@ -10,7 +10,7 @@
  * the received values are stored in a tree in SI units. This struct
  * contains the field needed to create the tree.
  */
-// tick intervall definition for app ticking
+// tick interval definition for app ticking
 #define DESIRED_VALUES_TASK_INTERVAL	100 // ms
 #define VALUES_TASK_INTERVAL			DESIRED_VALUES_TASK_INTERVAL / 50 // 50ms base ticking
 
@@ -36,7 +36,7 @@ typedef struct {
 	VeVariant max;
 } values_range_t;
 
-// structure to hold the onformation required to dbus unterfacing
+// structure to hold the information required to dbus interfacing
 typedef struct {
 	const float def;
 	const float min;

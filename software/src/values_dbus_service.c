@@ -149,7 +149,7 @@ void valuesTick(void)
 	// division of the ticking frequency
 	if (!(--values_task_timer)) {
 		values_task_timer = VALUES_TASK_INTERVAL;
-		// handle the sensors- sample the adc ,check sensor status, filter raw data and process raw data
+		// handle the sensors - sample the adc, check sensor status, filter raw data and process raw data
 		sensors_handle();
 		// update the dbus items on the settings service
 		for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {

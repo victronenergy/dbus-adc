@@ -17,9 +17,9 @@
 #define ADC_1p6VOLTS						3640
 #define ADC_1p4VOLTS						3185
 #define ADC_1p3VOLTS						2957
-// -22.78 degrees, invalidate results bellow that temperaturwe
+// -22.78 degrees, invalidate results below that temperature
 #define ADC_0p8VOLTS						1820
-// corresponding value when lm335 is connected in oposite polarity (forward zener diode voltage ~0.7V*DIVIDER = 0.22)
+// corresponding value when lm335 is connected in opposite polarity (forward zener diode voltage ~0.7V*DIVIDER = 0.22)
 #define ADC_0p208VOLTS						473
 #define ADC_0p15VOLTS						341
 
