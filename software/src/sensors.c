@@ -328,17 +328,6 @@ void sensors_handle(void)
 }
 
 /**
- * @brief sensors_addSettings - connect sensor items to their dbus services
- * @param sensor_index - the sensor index array number
- */
-void sensors_addSettings(analog_sensors_index_t sensor_index)
-{
-	analog_sensor_t *sensor = &analog_sensor[sensor_index];
-
-	values_dbus_service_addSettings(sensor);
-}
-
-/**
  * @brief sensors_dbusInit - connect sensor items to their dbus services
  * @param sensor_index - the sensor index array number
  */

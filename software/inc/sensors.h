@@ -239,7 +239,6 @@ typedef struct {
 
 analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index);
 void sensors_handle(void);
-void sensors_addSettings(analog_sensors_index_t sensor_index);
 void sensors_dbusInit(analog_sensors_index_t sensor_index);
 void values_dbus_service_addSettings(analog_sensor_t *sensor);
 void sensors_dbusConnect(analog_sensor_t *sensor);

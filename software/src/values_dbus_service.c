@@ -78,6 +78,8 @@ void valuesInit(analog_sensors_index_t sensor_index)
 	veItemSetFmt(&sensor->processVersion, veVariantFmt, &none);
 	veItemSetFmt(&sensor->connection, veVariantFmt, &none);
 	sensor->iface_name = interface(sensor_index);
+
+	values_dbus_service_addSettings(sensor);
 }
 
 /**
