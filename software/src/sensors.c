@@ -87,10 +87,11 @@ static ItemInfo const sensors_info[num_of_analog_sensors][SENSORS_INFO_ARRAY_SIZ
 void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 {
 	analog_sensor_t *sensor = &analog_sensor[sensor_index];
-	const ItemInfo *sensor_info = sensors_info[sensor_index];
+
+	sensor->info = sensors_info[sensor_index];
 
 	for (int i = 0; i < SENSORS_INFO_ARRAY_SIZE; i++) {
-		const ItemInfo *itemInfo = &sensor_info[i];
+		const ItemInfo *itemInfo = &sensor->info[i];
 
 		if (itemInfo->item != NULL) {
 			veItemAddChildByUid(root, itemInfo->id, itemInfo->item);
@@ -117,11 +118,11 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 static void updateValues(void)
 {
 	for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {
-		const ItemInfo *sensor_info = sensors_info[sensor_index];
+		analog_sensor_t *sensor = &analog_sensor[sensor_index];
 
 		// update only variables values
 		for (sensor_items_container_items_t i = 0; i < num_of_container_items; i++) {
-			const ItemInfo *itemInfo = &sensor_info[i];
+			const ItemInfo *itemInfo = &sensor->info[i];
 
 			if (itemInfo->local && veVariantIsValid(itemInfo->local)) {
 				veItemOwnerSet(itemInfo->item, itemInfo->local);
@@ -233,7 +234,6 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
 {
 	// process the data of the analog input with respect to its function
 	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
-	const ItemInfo *sensor_info = sensors_info[analog_sensors_index];
 	float level;
 	un8 Std = (un8)sensor->variant.tank_level.standard.value.UN32;
 
@@ -286,8 +286,8 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
 	} else {
 		veVariantInvalidate(&sensor->variant.tank_level.level);
 		veVariantInvalidate(&sensor->variant.tank_level.remaining);
-		veItemOwnerSet(sensor_info[level_item].item, sensor_info[level_item].local);
-		veItemOwnerSet(sensor_info[remaining_item].item, sensor_info[remaining_item].local);
+		veItemOwnerSet(sensor->info[level_item].item, sensor->info[level_item].local);
+		veItemOwnerSet(sensor->info[remaining_item].item, sensor->info[remaining_item].local);
 	}
 
 	veVariantFloat(&sensor->variant.tank_level.capacity,
@@ -308,7 +308,6 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
 veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index)
 {
 	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
-	const ItemInfo *sensor_info = sensors_info[analog_sensors_index];
 	float tempC;
 
 	if (VALUE_BETWEEN(sensor->interface.adc_sample, TEMP_SENS_MIN_ADCIN, TEMP_SENS_MAX_ADCIN)) {
@@ -341,7 +340,7 @@ veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensor
 		veVariantSn32(&sensor->variant.temperature.temperature, (sn32)tempC);
 	} else {
 		veVariantInvalidate(&sensor->variant.temperature.temperature);
-		veItemOwnerSet(sensor_info[temperature_item].item, sensor_info[temperature_item].local);
+		veItemOwnerSet(sensor->info[temperature_item].item, sensor->info[temperature_item].local);
 	}
 
 	veVariantUn32(&sensor->variant.temperature.analogpinFunc,

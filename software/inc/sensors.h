@@ -228,6 +228,7 @@ typedef struct {
 	dbus_info_t dbus_info[NUM_OF_SENSOR_SETTINGS_PARAMS];
 	sensors_items_t items;
 	sensors_variants_t variant;
+	const ItemInfo *info;
 } analog_sensor_t;
 
 /**
