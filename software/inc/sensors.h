@@ -229,15 +229,21 @@ typedef struct {
 	sensors_items_t items;
 	sensors_variants_t variant;
 	const ItemInfo *info;
+	struct VeDbus *dbus;
+	VeItem root;
+	VeItem processName;
+	VeItem processVersion;
+	VeItem connection;
+	const char *iface_name;
 } analog_sensor_t;
 
-void sensor_init(VeItem *root, analog_sensors_index_t sensor_index);
+analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index);
 void sensors_handle(void);
 void sensors_addSettings(analog_sensors_index_t sensor_index);
 void sensors_dbusInit(analog_sensors_index_t sensor_index);
 void values_dbus_service_addSettings(analog_sensor_t *sensor);
-void sensors_dbusConnect(analog_sensor_t *sensor, analog_sensors_index_t sensor_index);
-void sensors_dbusDisconnect(analog_sensor_t *sensor, analog_sensors_index_t sensor_index);
+void sensors_dbusConnect(analog_sensor_t *sensor);
+void sensors_dbusDisconnect(analog_sensor_t *sensor);
 
 // a define to hold all the required predetermined variables and constants of the analog sensor structure
 #define SENSORS_CONSTANT_DATA \

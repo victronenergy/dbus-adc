@@ -53,10 +53,10 @@ static ItemInfo const sensors_info[num_of_analog_sensors][SENSORS_INFO_ARRAY_SIZ
 
 /**
  * @brief sensor_init - hook the sensor items to their dbus services
- * @param root - the service item root
  * @param sensor_index - the sensor index array number
+ * @return Pointer to sensor struct
  */
-void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
+analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index)
 {
 	analog_sensor_t *sensor = &analog_sensor[sensor_index];
 
@@ -66,7 +66,7 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 		const ItemInfo *itemInfo = &sensor->info[i];
 
 		if (itemInfo->item != NULL) {
-			veItemAddChildByUid(root, itemInfo->id, itemInfo->item);
+			veItemAddChildByUid(&sensor->root, itemInfo->id, itemInfo->item);
 
 			if (itemInfo->fmt->fun != NULL) {
 				veItemSetFmt(itemInfo->item, itemInfo->fmt->fun, NULL);
@@ -82,6 +82,8 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 			}
 		}
 	}
+
+	return sensor;
 }
 
 /**
@@ -256,6 +258,8 @@ static void updateValues(void)
 				veItemOwnerSet(itemInfo->item, itemInfo->local);
 			}
 		}
+
+		veDbusItemUpdate(sensor->dbus);
 	}
 }
 
@@ -303,7 +307,7 @@ void sensors_handle(void)
 			case default_function:
 				// check if dbus is disconnected and connect it
 				if (!sensor->interface.dbus.connected) {
-					sensors_dbusConnect(sensor, analog_sensors_index);
+					sensors_dbusConnect(sensor);
 				}
 
 				// need to proces the data
@@ -314,7 +318,7 @@ void sensors_handle(void)
 			default:
 				// check if dbus is connected and disconnect it
 				if (sensor->interface.dbus.connected) {
-					sensors_dbusDisconnect(sensor, analog_sensors_index);
+					sensors_dbusDisconnect(sensor);
 				}
 				break;
 			}

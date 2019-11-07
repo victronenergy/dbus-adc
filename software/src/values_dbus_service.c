@@ -19,15 +19,6 @@
 #define MODULE					"VALUES"
 
 
-// dbus connection
-struct VeDbus *dbus[num_of_analog_sensors];
-
-// The root of the tree to locate values and format them etc
-static VeItem root[num_of_analog_sensors];
-
-static VeItem processName[num_of_analog_sensors];
-static VeItem processVersion[num_of_analog_sensors];
-static VeItem connection[num_of_analog_sensors];
 // timer divider for the app ticking
 static un16 values_task_timer;
 
@@ -74,16 +65,19 @@ VeItem *getConsumerRoot(void)
  */
 void valuesInit(analog_sensors_index_t sensor_index)
 {
+	analog_sensor_t *sensor;
+
 	values_task_timer = VALUES_TASK_INTERVAL;
-	sensor_init(&root[sensor_index], sensor_index);
+	sensor = sensor_init(sensor_index);
 
 	/* App info */
-	veItemAddChildByUid(&root[sensor_index], "Mgmt/ProcessName", &processName[sensor_index]);
-	veItemAddChildByUid(&root[sensor_index], "Mgmt/ProcessVersion", &processVersion[sensor_index]);
-	veItemAddChildByUid(&root[sensor_index], "Mgmt/Connection", &connection[sensor_index]);
-	veItemSetFmt(&processName[sensor_index], veVariantFmt, &none);
-	veItemSetFmt(&processVersion[sensor_index], veVariantFmt, &none);
-	veItemSetFmt(&connection[sensor_index], veVariantFmt, &none);
+	veItemAddChildByUid(&sensor->root, "Mgmt/ProcessName", &sensor->processName);
+	veItemAddChildByUid(&sensor->root, "Mgmt/ProcessVersion", &sensor->processVersion);
+	veItemAddChildByUid(&sensor->root, "Mgmt/Connection", &sensor->connection);
+	veItemSetFmt(&sensor->processName, veVariantFmt, &none);
+	veItemSetFmt(&sensor->processVersion, veVariantFmt, &none);
+	veItemSetFmt(&sensor->connection, veVariantFmt, &none);
+	sensor->iface_name = interface(sensor_index);
 }
 
 /**
@@ -151,48 +145,42 @@ void valuesTick(void)
 		values_task_timer = VALUES_TASK_INTERVAL;
 		// handle the sensors - sample the adc, check sensor status, filter raw data and process raw data
 		sensors_handle();
-		// update the dbus items on the settings service
-		for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {
-			veDbusItemUpdate(dbus[sensor_index]);
-		}
 	}
 }
 
 /**
  * @brief sensors_dbusConnect -connects sensor to dbus
  * @param sensor - pointer the the sensor structure array element
- * @param sensor_index - the sensor index array number
  */
-void sensors_dbusConnect(analog_sensor_t *sensor, analog_sensors_index_t sensor_index)
+void sensors_dbusConnect(analog_sensor_t *sensor)
 {
 	VeVariant variant;
 
-	dbus[sensor_index] = veDbusConnect(DBUS_BUS_SYSTEM);
-	if (!dbus[sensor_index]) {
+	sensor->dbus = veDbusConnect(DBUS_BUS_SYSTEM);
+	if (!sensor->dbus) {
 		logE(sensor->interface.dbus.service, "dbus connect failed");
 		pltExit(1);
 	}
 	sensor->interface.dbus.connected = veTrue;
 	/* Device found */
 
-	veDbusItemInit(dbus[sensor_index], &root[sensor_index]);
-	veDbusChangeName(dbus[sensor_index], sensor->interface.dbus.service);
+	veDbusItemInit(sensor->dbus, &sensor->root);
+	veDbusChangeName(sensor->dbus, sensor->interface.dbus.service);
 
 	logI(sensor->interface.dbus.service, "connected to dbus");
 
-	veItemOwnerSet(&processName[sensor_index], veVariantStr(&variant, pltProgramName()));
-	veItemOwnerSet(&processVersion[sensor_index], veVariantStr(&variant, pltProgramVersion()));
-	veItemOwnerSet(&connection[sensor_index], veVariantStr(&variant, interface(sensor_index)));
+	veItemOwnerSet(&sensor->processName, veVariantStr(&variant, pltProgramName()));
+	veItemOwnerSet(&sensor->processVersion, veVariantStr(&variant, pltProgramVersion()));
+	veItemOwnerSet(&sensor->connection, veVariantStr(&variant, sensor->iface_name));
 }
 
 /**
  * @brief sensors_dbusDisconnect
  * @param sensor - pointer the the sensor structure array element
- * @param sensor_index - the sensor index array number
  */
-void sensors_dbusDisconnect(analog_sensor_t *sensor, analog_sensors_index_t sensor_index)
+void sensors_dbusDisconnect(analog_sensor_t *sensor)
 {
-	veDbusDisconnect(dbus[sensor_index]);
+	veDbusDisconnect(sensor->dbus);
 	sensor->interface.dbus.connected = veFalse;
 }
 
