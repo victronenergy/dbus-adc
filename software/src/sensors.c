@@ -88,13 +88,12 @@ analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index)
 
 /**
  * @brief sensors_tankType_data_process - process the tank level sensor adc data (need to switch the oin function as when functions will be add)
- * @param analog_sensors_index - the sensor index array number
+ * @param sensor - pointer to the sensor struct
  * @return Boolean status veTrue - success, veFalse - fail
  */
-static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index)
+static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 {
 	// process the data of the analog input with respect to its function
-	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
 	float level;
 	un8 Std = (un8)sensor->variant.tank_level.standard.value.UN32;
 
@@ -163,12 +162,11 @@ static veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensor
 
 /**
  * @brief sensors_tankType_data_process - process the temperature sensor adc data (need to switch the oin function as when functions will be add)
- * @param analog_sensors_index - the sensor index array number
+ * @param sensor - pointer to the sensor struct
  * @return Boolean status veTrue-success, veFalse-fail
  */
-static veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index)
+static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 {
-	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
 	float tempC;
 
 	if (VALUE_BETWEEN(sensor->interface.adc_sample, TEMP_SENS_MIN_ADCIN, TEMP_SENS_MAX_ADCIN)) {
@@ -218,21 +216,19 @@ static veBool sensors_temperatureType_data_process(analog_sensors_index_t analog
 
 /**
  * @brief sensors_data_process - direct to the data processing algorithm per sensor type
- * @param analog_sensors_index - the sensor index array number
+ * @param sensor - the sensor struct
  * @return Boolean status veTrue-success, veFalse-fail
  */
-static veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
+static veBool sensors_data_process(analog_sensor_t *sensor)
 {
-	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
-
 	// check the type of sensor before starting
 	switch (sensor->sensor_type) {
 	case tank_level_t:
-		sensors_tankType_data_process(analog_sensors_index);
+		sensors_tankType_data_process(sensor);
 		break;
 
 	case temperature_t:
-		sensors_temperatureType_data_process(analog_sensors_index);
+		sensors_temperatureType_data_process(sensor);
 		break;
 
 	default:
@@ -311,7 +307,7 @@ void sensors_handle(void)
 				}
 
 				// need to proces the data
-				sensors_data_process(analog_sensors_index);
+				sensors_data_process(sensor);
 				break;
 
 			case no_function:
