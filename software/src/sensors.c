@@ -86,19 +86,26 @@ static ItemInfo const sensors_info[num_of_analog_sensors][SENSORS_INFO_ARRAY_SIZ
  */
 void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 {
+	analog_sensor_t *sensor = &analog_sensor[sensor_index];
+	const ItemInfo *sensor_info = sensors_info[sensor_index];
+
 	for (int i = 0; i < SENSORS_INFO_ARRAY_SIZE; i++) {
-		const ItemInfo *itemInfo = &sensors_info[sensor_index][i];
+		const ItemInfo *itemInfo = &sensor_info[i];
+
 		if (itemInfo->item != NULL) {
 			veItemAddChildByUid(root, itemInfo->id, itemInfo->item);
+
 			if (itemInfo->fmt->fun != NULL) {
 				veItemSetFmt(itemInfo->item, itemInfo->fmt->fun, NULL);
 			} else {
 				veItemSetFmt(itemInfo->item, veVariantFmt, &itemInfo->fmt->unit);
 			}
+
 			veItemSetTimeout(itemInfo->item, itemInfo->timeout);
+
 			// Register the change items value callbacks.
 			if (itemInfo->setValueCallback) {
-				veItemSetSetter(itemInfo->item, itemInfo->setValueCallback, (void *)&analog_sensor[sensor_index]);
+				veItemSetSetter(itemInfo->item, itemInfo->setValueCallback, (void *)sensor);
 			}
 		}
 	}
@@ -110,10 +117,14 @@ void sensor_init(VeItem *root, analog_sensors_index_t sensor_index)
 static void updateValues(void)
 {
 	for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {
+		const ItemInfo *sensor_info = sensors_info[sensor_index];
+
 		// update only variables values
 		for (sensor_items_container_items_t i = 0; i < num_of_container_items; i++) {
-			if (sensors_info[sensor_index][i].local && veVariantIsValid(sensors_info[sensor_index][i].local)) {
-				veItemOwnerSet(sensors_info[sensor_index][i].item, sensors_info[sensor_index][i].local);
+			const ItemInfo *itemInfo = &sensor_info[i];
+
+			if (itemInfo->local && veVariantIsValid(itemInfo->local)) {
+				veItemOwnerSet(itemInfo->item, itemInfo->local);
 			}
 		}
 	}
@@ -125,37 +136,47 @@ static void updateValues(void)
 void sensors_handle(void)
 {
 	analog_sensors_index_t analog_sensors_index;
+
 	// first read fast all the analog inputs and mark which read is valid
 	// We reading always the same number of analog inputs to try to keep the timming of the system constant.
 	for (analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++) {
+		analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+
 		// reading all the analog inputs adc values
-		if (!adc_read(&analog_sensor[analog_sensors_index].interface.adc_sample, analog_sensor[analog_sensors_index].interface.adc_pin)) {
+		if (!adc_read(&sensor->interface.adc_sample, sensor->interface.adc_pin)) {
 			// validate the sample
-			analog_sensor[analog_sensors_index].valid = veTrue;
+			sensor->valid = veTrue;
 		}
 	}
 
 	// Now handle the adc read to update the sensor
 	for (analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++) {
+		analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+
 		// proceed if the adc reading is valid
-		if (analog_sensor[analog_sensors_index].valid == veTrue) {
+		if (sensor->valid == veTrue) {
+			filter_iir_lpf_t *filter = &sensor->interface.sig_cond.filter_iir_lpf;
+
 			// filter the input ADC sample and store it in adc var
-			analog_sensor[analog_sensors_index].interface.adc_sample =
-			adc_filter(
-						(float) (analog_sensor[analog_sensors_index].interface.adc_sample),
-						&analog_sensor[analog_sensors_index].interface.sig_cond.filter_iir_lpf.adc_mem,
-						analog_sensor[analog_sensors_index].interface.sig_cond.filter_iir_lpf.fc,
-						10, analog_sensor[analog_sensors_index].interface.sig_cond.filter_iir_lpf.FF);
+			sensor->interface.adc_sample = adc_filter(
+				(float)sensor->interface.adc_sample,
+				&filter->adc_mem,
+				filter->fc,
+				10, filter->FF);
+
 			// reset the adc valid reading flag for next sampling cycle
-			analog_sensor[analog_sensors_index].valid = veFalse;
+			sensor->valid = veFalse;
+
 			// check if the sensor function-if it needed at all?
-			un32 sensor_analogpinFunc = (un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float;
+			un32 sensor_analogpinFunc = (un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float;
+
 			switch (sensor_analogpinFunc) {
 			case default_function:
 				// check if dbus is disconnected and connect it
-				if (!analog_sensor[analog_sensors_index].interface.dbus.connected) {
-					sensors_dbusConnect(&analog_sensor[analog_sensors_index], analog_sensors_index);
+				if (!sensor->interface.dbus.connected) {
+					sensors_dbusConnect(sensor, analog_sensors_index);
 				}
+
 				// need to proces the data
 				sensors_data_process(analog_sensors_index);
 				break;
@@ -163,8 +184,8 @@ void sensors_handle(void)
 			case no_function:
 			default:
 				// check if dbus is connected and disconnect it
-				if (analog_sensor[analog_sensors_index].interface.dbus.connected) {
-					sensors_dbusDisconnect(&analog_sensor[analog_sensors_index], analog_sensors_index);
+				if (sensor->interface.dbus.connected) {
+					sensors_dbusDisconnect(sensor, analog_sensors_index);
 				}
 				break;
 			}
@@ -172,6 +193,7 @@ void sensors_handle(void)
 			// adc reading error
 		}
 	}
+
 	// call to update the dbus sservice with the new item values
 	updateValues();
 }
@@ -183,17 +205,22 @@ void sensors_handle(void)
  */
 veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
 {
+	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+
 	// check the type of sensor before starting
-	switch (analog_sensor[analog_sensors_index].sensor_type) {
+	switch (sensor->sensor_type) {
 	case tank_level_t:
 		sensors_tankType_data_process(analog_sensors_index);
 		break;
+
 	case temperature_t:
 		sensors_temperatureType_data_process(analog_sensors_index);
 		break;
+
 	default:
 		break;
 	}
+
 	return veTrue;
 }
 
@@ -205,19 +232,22 @@ veBool sensors_data_process(analog_sensors_index_t analog_sensors_index)
 veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index)
 {
 	// process the data of the analog input with respect to its function
+	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+	const ItemInfo *sensor_info = sensors_info[analog_sensors_index];
 	float level;
-	un8 Std = (un8)analog_sensor[analog_sensors_index].variant.tank_level.standard.value.UN32;
+	un8 Std = (un8)sensor->variant.tank_level.standard.value.UN32;
 
-	if (analog_sensor[analog_sensors_index].interface.adc_sample > ADC_1p4VOLTS) {
+	if (sensor->interface.adc_sample > ADC_1p4VOLTS) {
 		// Sensor status: error- not connected
-		veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)disconnected);
+		veVariantUn32(&sensor->variant.tank_level.status, (un32)disconnected);
 	// this condition applies only for the US standard
-	} else if (Std && (analog_sensor[analog_sensors_index].interface.adc_sample < ADC_0p15VOLTS)) {
+	} else if (Std && (sensor->interface.adc_sample < ADC_0p15VOLTS)) {
 		// Sensor status: error- short circuited
-		veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)short_circuited);
+		veVariantUn32(&sensor->variant.tank_level.status, (un32)short_circuited);
 	} else {
 		// calculate the resistance of the tank level sensor from the adc pin sample
-		float R2 = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
+		float R2 = adc_potDiv_calc(sensor->interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
+
 		// check the integrity of the resistance
 		if (R2>0) { // calculate the tank level
 			if (Std == american_std) { // tank level calculation in the case it is an American standard sensor
@@ -229,39 +259,44 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
 			} else { // tank level calculation in the case it is an European standard sensor
 				level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
 			}
+
 			// is level biger than 100% ?
 			if (level > 1) {
 				// saturate the level to 100%
 				level = 1;
 			}
+
 			// Sensor status: O.K.
-			veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)ok);
+			veVariantUn32(&sensor->variant.tank_level.status, (un32)ok);
 		} else {
 			// Sensor status: error- unknown value
-			veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.status, (un32)unknown_value);
+			veVariantUn32(&sensor->variant.tank_level.status, (un32)unknown_value);
 		}
 	}
+
 	// measure is ok and R2 resistance was correctlly calculated
-	veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.analogpinFunc,
-			(un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float);
+	veVariantUn32(&sensor->variant.tank_level.analogpinFunc,
+			(un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float);
+
 	// if status = o.k. publish valid value otherwise publish invalid value
-	if (analog_sensor[analog_sensors_index].variant.tank_level.status.value.UN8 == (un8)ok) {
-		veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.level, (un32)(100 * level));
-		veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.remaining,
-			level * analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
+	if (sensor->variant.tank_level.status.value.UN8 == (un8)ok) {
+		veVariantUn32(&sensor->variant.tank_level.level, (un32)(100 * level));
+		veVariantFloat(&sensor->variant.tank_level.remaining,
+			level * sensor->dbus_info[capacity].value->variant.value.Float);
 	} else {
-		veVariantInvalidate(&analog_sensor[analog_sensors_index].variant.tank_level.level);
-		veVariantInvalidate(&analog_sensor[analog_sensors_index].variant.tank_level.remaining);
-		veItemOwnerSet(sensors_info[analog_sensors_index][level_item].item, sensors_info[analog_sensors_index][level_item].local);
-		veItemOwnerSet(sensors_info[analog_sensors_index][remaining_item].item, sensors_info[analog_sensors_index][remaining_item].local);
+		veVariantInvalidate(&sensor->variant.tank_level.level);
+		veVariantInvalidate(&sensor->variant.tank_level.remaining);
+		veItemOwnerSet(sensor_info[level_item].item, sensor_info[level_item].local);
+		veItemOwnerSet(sensor_info[remaining_item].item, sensor_info[remaining_item].local);
 	}
 
-	veVariantFloat(&analog_sensor[analog_sensors_index].variant.tank_level.capacity,
-			analog_sensor[analog_sensors_index].dbus_info[capacity].value->variant.value.Float);
-	veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.fluidType,
-			(un32)analog_sensor[analog_sensors_index].dbus_info[fluidType].value->variant.value.Float);
-	veVariantUn32(&analog_sensor[analog_sensors_index].variant.tank_level.standard,
-			(un32)analog_sensor[analog_sensors_index].dbus_info[standard].value->variant.value.Float);
+	veVariantFloat(&sensor->variant.tank_level.capacity,
+			sensor->dbus_info[capacity].value->variant.value.Float);
+	veVariantUn32(&sensor->variant.tank_level.fluidType,
+			(un32)sensor->dbus_info[fluidType].value->variant.value.Float);
+	veVariantUn32(&sensor->variant.tank_level.standard,
+			(un32)sensor->dbus_info[standard].value->variant.value.Float);
+
 	return veTrue;
 }
 
@@ -272,48 +307,51 @@ veBool sensors_tankType_data_process(analog_sensors_index_t analog_sensors_index
  */
 veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensors_index)
 {
+	analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+	const ItemInfo *sensor_info = sensors_info[analog_sensors_index];
 	float tempC;
 
-	if (VALUE_BETWEEN(analog_sensor[analog_sensors_index].interface.adc_sample, TEMP_SENS_MIN_ADCIN, TEMP_SENS_MAX_ADCIN)) {
+	if (VALUE_BETWEEN(sensor->interface.adc_sample, TEMP_SENS_MIN_ADCIN, TEMP_SENS_MAX_ADCIN)) {
 		// calculate the output of the LM335 temperature sensor from the adc pin sample
-		un32 divider_supply = adc_potDiv_calc(analog_sensor[analog_sensors_index].interface.adc_sample, &sensor_temperature_pd, calc_type_Vin, 1);
+		un32 divider_supply = adc_potDiv_calc(sensor->interface.adc_sample, &sensor_temperature_pd, calc_type_Vin, 1);
 		// convert from Fahrenheit to Celsius
 		tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
 		// Signal scale correction
-		tempC *= (analog_sensor[analog_sensors_index].variant.temperature.scale.value.Float);
+		tempC *= (sensor->variant.temperature.scale.value.Float);
 		// Signal offset correction
-		tempC += (analog_sensor[analog_sensors_index].variant.temperature.offset.value.SN32);
+		tempC += (sensor->variant.temperature.offset.value.SN32);
 		// update sensor status
-		veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)ok);
-	} else if (analog_sensor[analog_sensors_index].interface.adc_sample > TEMP_SENS_MAX_ADCIN) {
+		veVariantUn32(&sensor->variant.temperature.status, (un32)ok);
+	} else if (sensor->interface.adc_sample > TEMP_SENS_MAX_ADCIN) {
 		// open circuit error
-		veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)disconnected);
-	} else if (analog_sensor[analog_sensors_index].interface.adc_sample < TEMP_SENS_S_C_ADCIN ) {
+		veVariantUn32(&sensor->variant.temperature.status, (un32)disconnected);
+	} else if (sensor->interface.adc_sample < TEMP_SENS_S_C_ADCIN ) {
 		// short circuit error
-		veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)short_circuited);
-	} else if (VALUE_BETWEEN(analog_sensor[analog_sensors_index].interface.adc_sample, TEMP_SENS_INV_PLRTY_ADCIN_LB, TEMP_SENS_INV_PLRTY_ADCIN_HB)) {
+		veVariantUn32(&sensor->variant.temperature.status, (un32)short_circuited);
+	} else if (VALUE_BETWEEN(sensor->interface.adc_sample, TEMP_SENS_INV_PLRTY_ADCIN_LB, TEMP_SENS_INV_PLRTY_ADCIN_HB)) {
 		// lm335 probably connected in reverse polarity
-		veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)reverse_polarity);
+		veVariantUn32(&sensor->variant.temperature.status, (un32)reverse_polarity);
 	} else {
 		// low temperature or unknown error
-		veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.status, (un32)unknown_value);
+		veVariantUn32(&sensor->variant.temperature.status, (un32)unknown_value);
 	}
 
 	// if status = o.k. publish valid value otherwise publish invalid value
-	if (analog_sensor[analog_sensors_index].variant.temperature.status.value.UN8 == (un8)ok) {
-		veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperature, (sn32)tempC);
+	if (sensor->variant.temperature.status.value.UN8 == (un8)ok) {
+		veVariantSn32(&sensor->variant.temperature.temperature, (sn32)tempC);
 	} else {
-		veVariantInvalidate(&analog_sensor[analog_sensors_index].variant.temperature.temperature);
-		veItemOwnerSet(sensors_info[analog_sensors_index][temperature_item].item, sensors_info[analog_sensors_index][temperature_item].local);
+		veVariantInvalidate(&sensor->variant.temperature.temperature);
+		veItemOwnerSet(sensor_info[temperature_item].item, sensor_info[temperature_item].local);
 	}
-	veVariantUn32(&analog_sensor[analog_sensors_index].variant.temperature.analogpinFunc,
-			(un32)analog_sensor[analog_sensors_index].dbus_info[analogpinFunc].value->variant.value.Float);
-	veVariantFloat(&analog_sensor[analog_sensors_index].variant.temperature.scale,
-			analog_sensor[analog_sensors_index].dbus_info[scale].value->variant.value.Float);
-	veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.offset,
-			(sn32)analog_sensor[analog_sensors_index].dbus_info[offset].value->variant.value.Float);
-	veVariantSn32(&analog_sensor[analog_sensors_index].variant.temperature.temperatureType,
-			(sn32)analog_sensor[analog_sensors_index].dbus_info[TempType].value->variant.value.Float);
+
+	veVariantUn32(&sensor->variant.temperature.analogpinFunc,
+			(un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float);
+	veVariantFloat(&sensor->variant.temperature.scale,
+			sensor->dbus_info[scale].value->variant.value.Float);
+	veVariantSn32(&sensor->variant.temperature.offset,
+			(sn32)sensor->dbus_info[offset].value->variant.value.Float);
+	veVariantSn32(&sensor->variant.temperature.temperatureType,
+			(sn32)sensor->dbus_info[TempType].value->variant.value.Float);
 
 	return veTrue;
 }
@@ -324,7 +362,9 @@ veBool sensors_temperatureType_data_process(analog_sensors_index_t analog_sensor
  */
 void sensors_addSettings(analog_sensors_index_t sensor_index)
 {
-	values_dbus_service_addSettings(&analog_sensor[sensor_index]);
+	analog_sensor_t *sensor = &analog_sensor[sensor_index];
+
+	values_dbus_service_addSettings(sensor);
 }
 
 /**
@@ -333,18 +373,20 @@ void sensors_addSettings(analog_sensors_index_t sensor_index)
  */
 void sensors_dbusInit(analog_sensors_index_t sensor_index)
 {
+	analog_sensor_t *sensor = &analog_sensor[sensor_index];
 	VeVariant variant;
 	static un8 instance = 20;
 
-	veItemOwnerSet(&analog_sensor[sensor_index].items.product.connected, veVariantUn32(&variant, veTrue));
-	veItemOwnerSet(&analog_sensor[sensor_index].items.product.instance, veVariantUn8(&variant, instance++));
+	veItemOwnerSet(&sensor->items.product.connected, veVariantUn32(&variant, veTrue));
+	veItemOwnerSet(&sensor->items.product.instance, veVariantUn8(&variant, instance++));
+
 	/* Product info */
-	if (analog_sensor[sensor_index].sensor_type == tank_level_t) {
-		veItemOwnerSet(&analog_sensor[sensor_index].items.product.id, veVariantUn16(&variant, VE_PROD_ID_TANK_SENSOR_INPUT));
-		veItemOwnerSet(&analog_sensor[sensor_index].items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TANK_SENSOR_INPUT)));
-	} else if (analog_sensor[sensor_index].sensor_type == temperature_t) {
-		veItemOwnerSet(&analog_sensor[sensor_index].items.product.id, veVariantUn16(&variant, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT));
-		veItemOwnerSet(&analog_sensor[sensor_index].items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
+	if (sensor->sensor_type == tank_level_t) {
+		veItemOwnerSet(&sensor->items.product.id, veVariantUn16(&variant, VE_PROD_ID_TANK_SENSOR_INPUT));
+		veItemOwnerSet(&sensor->items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TANK_SENSOR_INPUT)));
+	} else if (sensor->sensor_type == temperature_t) {
+		veItemOwnerSet(&sensor->items.product.id, veVariantUn16(&variant, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT));
+		veItemOwnerSet(&sensor->items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
 	} else {
 
 	}
@@ -370,6 +412,7 @@ veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	veItemSet(settingsItem, variant);
 
 	p_analog_sensor->variant.tank_level.analogpinFunc.value.Float = variant->value.Float;
+
 	return veTrue;
 }
 
@@ -385,6 +428,7 @@ veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	veItemSet(settingsItem, variant);
 
 	p_analog_sensor->variant.tank_level.capacity.value.Float = variant->value.Float;
+
 	return veTrue;
 }
 
@@ -400,6 +444,7 @@ veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	veItemSet(settingsItem, variant);
 
 	p_analog_sensor->variant.tank_level.fluidType.value.UN32 = variant->value.UN32;
+
 	return veTrue;
 }
 
@@ -415,6 +460,7 @@ veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	veItemSet(settingsItem, variant);
 
 	p_analog_sensor->variant.tank_level.standard.value.Float = variant->value.Float;
+
 	return veTrue;
 }
 
@@ -431,6 +477,7 @@ veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	veItemSet(settingsItem, variant);
 
 	p_analog_sensor->variant.temperature.scale.value.Float = variant->value.Float;
+
 	return veTrue;
 }
 
@@ -462,6 +509,7 @@ veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	veItemSet(settingsItem, variant);
 
 	p_analog_sensor->variant.temperature.temperatureType.value.SN32 = variant->value.SN32;
+
 	return veTrue;
 }
 
@@ -476,18 +524,22 @@ size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **options
 	if (var->type.tp != VE_UNKNOWN) {
 		un32 optionIndex = 0;
 		const char *option = NULL;
+
 		veVariantToN32(var);
 		optionIndex = var->value.UN32;
+
 		if (optionIndex < optionCount) {
 			option = options[optionIndex];
 			strncpy(buf, option, len);
 			return strlen(option);
 		}
 	}
+
 	/* Invalid or unknown value, set an empty string if possible */
 	if (len > 0) {
 		*buf = 0;
 	}
+
 	return 0;
 }
 
