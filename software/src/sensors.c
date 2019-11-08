@@ -48,8 +48,55 @@ static FormatInfo statusFormat = {{0, ""}, statusFormatter};
 static FormatInfo fluidTypeFormat = {{0, ""}, fluidTypeFormatter};
 static FormatInfo standardFormat = {{0, ""}, standardItemFormatter};
 
-// a pointers container for interfacing the sensor structure to the various dbus services
-static ItemInfo const sensors_info[num_of_analog_sensors][SENSORS_INFO_ARRAY_SIZE] = SENSOR_ITEM_CONTAINER;
+static void init_item_info(ItemInfo *info, VeItem *item, VeVariant *local,
+			const char *id, FormatInfo *fmt, int timeout,
+			VeItemSetterFun *cb)
+{
+	info->item = item;
+	info->local = local;
+	info->id = id;
+	info->fmt = fmt;
+	info->timeout = timeout;
+	info->setValueCallback = cb;
+}
+
+static void sensor_item_info_init(analog_sensor_t *sensor)
+{
+	ProductInfo *prod = &sensor->items.product;
+	ItemInfo *info = sensor->info;
+
+	init_item_info(&info[0], &prod->connected, NULL, "Connected",		&units, 0, NULL);
+	init_item_info(&info[1], &prod->name,	   NULL, "ProductName",		&units, 0, NULL);
+	init_item_info(&info[2], &prod->id,		   NULL, "ProductId",		&units, 0, NULL);
+	init_item_info(&info[3], &prod->instance,  NULL, "DeviceInstance",	&units, 0, NULL);
+
+#define IV(n) &item->n, &var->n
+
+	if (sensor->sensor_type == SENSOR_TYPE_TANK) {
+		tank_level_sensor_item_t *item = &sensor->items.tank_level;
+		tank_level_sensor_variant_t *var = &sensor->variant.tank_level;
+
+		init_item_info(&info[4], IV(level),			"Level",			&units,				5, NULL);
+		init_item_info(&info[5], IV(remaining),		"Remaining",		&units,				5, NULL);
+		init_item_info(&info[6], IV(status),		"Status",			&statusFormat,		5, NULL);
+		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
+		init_item_info(&info[8], IV(capacity),		"Capacity",			&units,				5, capacityChange);
+		init_item_info(&info[9], IV(fluidType),		"FluidType",		&fluidTypeFormat,	5, fluidTypeChange);
+		init_item_info(&info[10],IV(standard),		"Standard",			&standardFormat,	5, standardChange);
+	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
+		temperature_sensor_item_t *item = &sensor->items.temperature;
+		temperature_sensor_variant_t *var = &sensor->variant.temperature;
+
+		init_item_info(&info[4], IV(temperature),	"Temperature",		&units,				5, NULL);
+		init_item_info(&info[6], IV(status),		"Status",			&statusFormat,		5, NULL);
+		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
+		init_item_info(&info[8], IV(scale),			"Scale",			&units,				5, scaleChange);
+		init_item_info(&info[9], IV(offset),		"Offset",			&units,				5, offsetChange);
+		init_item_info(&info[10],IV(temperatureType),"TemperatureType", &units,				5, TempTypeChange);
+	}
+
+#undef IV
+}
 
 /**
  * @brief sensor_init - hook the sensor items to their dbus services
@@ -60,7 +107,7 @@ analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index)
 {
 	analog_sensor_t *sensor = &analog_sensor[sensor_index];
 
-	sensor->info = sensors_info[sensor_index];
+	sensor_item_info_init(sensor);
 
 	for (int i = 0; i < SENSORS_INFO_ARRAY_SIZE; i++) {
 		const ItemInfo *itemInfo = &sensor->info[i];
