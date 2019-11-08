@@ -12,9 +12,6 @@
 
 #define ADC_MAX_COUNT						4095
 #define POTENTIAL_DIV_MAX_SAMPLE			11375 // = 4095 * 5/adc_vref
-#define ADC_4_VOLTS							9100
-#define ADC_2p73VOLTS						6211
-#define ADC_1p6VOLTS						3640
 #define ADC_1p4VOLTS						3185
 #define ADC_1p3VOLTS						2957
 // -22.78 degrees, invalidate results below that temperature

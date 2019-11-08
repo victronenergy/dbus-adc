@@ -24,7 +24,6 @@
 // defines for the temperature sensor analog front end parameters
 #define TEMP_SENS_VOLT_DIVID_R1				(10000) // ohms
 #define TEMP_SENS_VOLT_DIVID_R2				(4700) // ohms
-#define KELVIN_2_CELCIUS(X)					(X+273)
 #define TEMP_SENS_MAX_ADCIN					ADC_1p3VOLTS // ~400K
 #define TEMP_SENS_MIN_ADCIN					ADC_0p8VOLTS // ~(-22) dgrees C
 #define TEMP_SENS_S_C_ADCIN					50 // samples

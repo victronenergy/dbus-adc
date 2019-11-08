@@ -15,8 +15,6 @@
 #include "adc.h"
 #endif
 
-#define MODULE	"ADC"
-#define MGRNUM	8
 /**
  * @brief adc_read - performs an adc sample read
  * @param value - a pointer to the variable which will store the result

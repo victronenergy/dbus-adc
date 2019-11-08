@@ -16,9 +16,6 @@
 #include "values.h"
 #include "sensors.h"
 
-#define MODULE					"VALUES"
-
-
 // timer divider for the app ticking
 static un16 values_task_timer;
 

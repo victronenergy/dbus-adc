@@ -6,8 +6,6 @@
 #include <velib/utils/ve_logger.h>
 #include <velib/utils/ve_arg.h>
 
-#define MODULE	"console"
-
 struct option consoleOptions[] =
 {
 	{0,					0,					0,							0}
