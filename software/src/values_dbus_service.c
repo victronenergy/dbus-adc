@@ -15,7 +15,6 @@
 
 #include "values.h"
 #include "sensors.h"
-#include "dev_reg.h"
 
 #define MODULE					"VALUES"
 
