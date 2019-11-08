@@ -133,6 +133,9 @@ static void sensor_set_defaults_tank(analog_sensor_t *sensor)
 	snprintf(dbi[3].path, sizeof(dbi[3].path),
 			 "Settings/Tank/%d/Standard", tank_num);
 
+	snprintf(sensor->iface_name, sizeof(sensor->iface_name),
+			 "Tank Level sensor input %d", tank_num);
+
 	tank_num++;
 }
 
@@ -170,6 +173,9 @@ static void sensor_set_defaults_temp(analog_sensor_t *sensor)
 	dbi[3].max = num_of_temperature_sensor_type - 1;
 	snprintf(dbi[3].path, sizeof(dbi[3].path),
 			 "Settings/Temperature/%d/TemperatureType", temp_num);
+
+	snprintf(sensor->iface_name, sizeof(sensor->iface_name),
+			 "Temperature sensor input %d", temp_num);
 
 	temp_num++;
 }

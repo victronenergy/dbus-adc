@@ -229,7 +229,7 @@ typedef struct {
 	VeItem processName;
 	VeItem processVersion;
 	VeItem connection;
-	const char *iface_name;
+	char iface_name[32];
 } analog_sensor_t;
 
 analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index, int pin, sensor_type_t type);

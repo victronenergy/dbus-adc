@@ -20,27 +20,6 @@
 static un16 values_task_timer;
 
 static VeVariantUnitFmt none = {0, ""};
-/**
- * @brief interface
- * @return the interface of the system
- */
-static char const *interface(analog_sensors_index_t analog_sensors_index)
-{
-	switch (analog_sensors_index) {
-	case index_tankLevel1:
-		return ("Tank Level sensor input 1");
-	case index_tankLevel2:
-		return ("Tank Level sensor input 2");
-	case index_tankLevel3:
-		return ("Tank Level sensor input 3");
-	case index_temperature1:
-		return ("Temperature sensor input 1");
-	case index_temperature2:
-		return ("Temperature sensor input 2");
-	default:
-		return ("");
-	}
-}
 
 static int sensor_pins[] = {
 	4, 6, 2, 5, 3,
@@ -82,7 +61,6 @@ void valuesInit(analog_sensors_index_t sensor_index)
 	veItemSetFmt(&sensor->processName, veVariantFmt, &none);
 	veItemSetFmt(&sensor->processVersion, veVariantFmt, &none);
 	veItemSetFmt(&sensor->connection, veVariantFmt, &none);
-	sensor->iface_name = interface(sensor_index);
 
 	values_dbus_service_addSettings(sensor);
 	sensors_dbusInit(sensor);
