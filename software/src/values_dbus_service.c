@@ -50,8 +50,7 @@ void valuesInit(analog_sensors_index_t sensor_index)
 	analog_sensor_t *sensor;
 
 	values_task_timer = VALUES_TASK_INTERVAL;
-	sensor = sensor_init(sensor_index,
-						 sensor_pins[sensor_index],
+	sensor = sensor_init(sensor_pins[sensor_index],
 						 sensor_types[sensor_index]);
 
 	/* App info */

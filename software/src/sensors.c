@@ -36,7 +36,8 @@ static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, siz
 /**
  * @brief analog_sensor - array of analog sensor structures
  */
-analog_sensor_t analog_sensor[num_of_analog_sensors];
+static analog_sensor_t *analog_sensor[MAX_SENSORS];
+static int sensor_count;
 
 // potential divider for the tank level sender
 const potential_divider_t sensor_tankLevel_pd = {TANK_LEVEL_SENSOR_DIVIDER, (POTENTIAL_DIV_MAX_SAMPLE - 1)};
@@ -196,14 +197,15 @@ static void sensor_set_defaults(analog_sensor_t *sensor)
 
 /**
  * @brief sensor_init - hook the sensor items to their dbus services
- * @param sensor_index - the sensor index array number
  * @param pin - ADC pin number
  * @param type - type of sensor
  * @return Pointer to sensor struct
  */
-analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index, int pin, sensor_type_t type)
+analog_sensor_t *sensor_init(int pin, sensor_type_t type)
 {
-	analog_sensor_t *sensor = &analog_sensor[sensor_index];
+	analog_sensor_t *sensor = calloc(1, sizeof(*sensor));
+
+	analog_sensor[sensor_count++] = sensor;
 
 	sensor->interface.adc_pin = pin;
 	sensor->sensor_type = type;
@@ -392,8 +394,8 @@ static veBool sensors_data_process(analog_sensor_t *sensor)
  */
 static void updateValues(void)
 {
-	for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {
-		analog_sensor_t *sensor = &analog_sensor[sensor_index];
+	for (int sensor_index = 0; sensor_index < sensor_count; sensor_index++) {
+		analog_sensor_t *sensor = analog_sensor[sensor_index];
 
 		// update only variables values
 		for (sensor_items_container_items_t i = 0; i < num_of_container_items; i++) {
@@ -413,12 +415,12 @@ static void updateValues(void)
  */
 void sensors_handle(void)
 {
-	analog_sensors_index_t analog_sensors_index;
+	int analog_sensors_index;
 
 	// first read fast all the analog inputs and mark which read is valid
 	// We reading always the same number of analog inputs to try to keep the timing of the system constant.
-	for (analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++) {
-		analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+	for (analog_sensors_index = 0; analog_sensors_index < sensor_count; analog_sensors_index++) {
+		analog_sensor_t *sensor = analog_sensor[analog_sensors_index];
 
 		// reading all the analog inputs adc values
 		if (!adc_read(&sensor->interface.adc_sample, sensor->interface.adc_pin)) {
@@ -428,8 +430,8 @@ void sensors_handle(void)
 	}
 
 	// Now handle the adc read to update the sensor
-	for (analog_sensors_index = 0; analog_sensors_index < num_of_analog_sensors; analog_sensors_index++) {
-		analog_sensor_t *sensor = &analog_sensor[analog_sensors_index];
+	for (analog_sensors_index = 0; analog_sensors_index < sensor_count; analog_sensors_index++) {
+		analog_sensor_t *sensor = analog_sensor[analog_sensors_index];
 
 		// proceed if the adc reading is valid
 		if (sensor->valid == veTrue) {

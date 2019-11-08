@@ -8,6 +8,8 @@
 #include "adc.h"
 #include "values.h"
 
+#define MAX_SENSORS							8
+
 // defines for the on-board sensors interface configurations to firmware application
 #define NUM_OF_SENSOR_SETTINGS_PARAMS		4
 #define NUM_OF_PROD_ITEMS					4
@@ -232,7 +234,7 @@ typedef struct {
 	char iface_name[32];
 } analog_sensor_t;
 
-analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index, int pin, sensor_type_t type);
+analog_sensor_t *sensor_init(int pin, sensor_type_t type);
 void sensors_handle(void);
 void sensors_dbusInit(analog_sensor_t *sensor);
 void values_dbus_service_addSettings(analog_sensor_t *sensor);
