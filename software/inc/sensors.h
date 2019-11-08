@@ -231,42 +231,12 @@ typedef struct {
 	const ItemInfo *info;
 } analog_sensor_t;
 
-/**
- * @brief sensor_init
- * @param root
- * @param sensor_index
- */
 void sensor_init(VeItem *root, analog_sensors_index_t sensor_index);
-/**
- * @brief sensors_handle
- */
 void sensors_handle(void);
-/**
- * @brief sensors_addSettings
- * @param sensor_index
- */
 void sensors_addSettings(analog_sensors_index_t sensor_index);
-/**
- * @brief sensors_dbusInit
- * @param sensor_index
- */
 void sensors_dbusInit(analog_sensors_index_t sensor_index);
-/**
- * @brief values_dbus_service_addSettings
- * @param sensor
- */
 void values_dbus_service_addSettings(analog_sensor_t *sensor);
-/**
- * @brief sensors_dbusConnect
- * @param sensor
- * @param sensor_index
- */
 void sensors_dbusConnect(analog_sensor_t *sensor, analog_sensors_index_t sensor_index);
-/**
- * @brief sensors_dbusDisconnect
- * @param sensor
- * @param sensor_index
- */
 void sensors_dbusDisconnect(analog_sensor_t *sensor, analog_sensors_index_t sensor_index);
 
 // a define to hold all the required predetermind variables and constants of the analog sensor structure

@@ -57,37 +57,9 @@ typedef struct {
 } filter_iir_lpf_t;
 
 // Public functions
-/**
- * @brief adc_read
- * @param value
- * @param pin
- * @return
- */
 veBool adc_read(un32 *value, adc_analogPin_t pin);
-/**
- * @brief adc_sample2volts
- * @param sample
- * @return
- */
 float adc_sample2volts(un32 sample);
-/**
- * @brief adc_filter
- * @param x
- * @param y
- * @param Fc
- * @param Fs
- * @param FF
- * @return
- */
 float adc_filter(float x, float *y, float Fc, float Fs, un16 FF);
-/**
- * @brief adc_potDiv_calc
- * @param sample
- * @param pd
- * @param type
- * @param mltpty
- * @return
- */
 un32 adc_potDiv_calc(un32 sample, const potential_divider_t *pd, pd_calc_type_t type, un32 mltpty);
 
 #endif // ADC_H

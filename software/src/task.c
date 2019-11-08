@@ -49,14 +49,8 @@ void taskTick(void)
 	valuesTick();
 }
 
-/**
- * @brief version
- */
 static char const version[] = VERSION_STR;
-/**
- * @brief pltProgramVersion
- * @return the firmware version
- */
+
 char const *pltProgramVersion(void)
 {
 	return version;

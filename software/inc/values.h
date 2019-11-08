@@ -48,15 +48,7 @@ typedef struct {
 
 /***********************************************/
 // Public function prototypes
-/**
- * @brief valuesTick
- */
 void valuesTick(void);
-
-/**
- * @brief getConsumerRoot
- * @return
- */
 VeItem *getConsumerRoot(void);
 
 /**

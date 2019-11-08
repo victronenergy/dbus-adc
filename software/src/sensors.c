@@ -18,13 +18,6 @@
 #endif
 
 // Callbacks to be called when the paramters are changing
-/**
- * @brief xxxChange
- * @param item
- * @param ctx
- * @param variant
- * @return
- */
 static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
 static veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
