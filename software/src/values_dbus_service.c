@@ -45,7 +45,7 @@ VeItem *getConsumerRoot(void)
  * @brief valuesInit
  * @param sensor_index - the sensor index array number
  */
-void valuesInit(analog_sensors_index_t sensor_index)
+void valuesInit(int sensor_index)
 {
 	analog_sensor_t *sensor;
 

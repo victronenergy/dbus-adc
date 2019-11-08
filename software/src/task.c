@@ -15,6 +15,9 @@
 #include <velib/utils/ve_logger.h>
 
 #include <velib/platform/plt.h>
+
+#define NUM_SENSORS 5
+
 /**
  * @brief taskInit
  * initiate the system and enable the interrupts to start ticking the app
@@ -24,7 +27,7 @@ void taskInit(void)
 	// Connect to settings service to dbus
 	values_dbus_service_connectSettings();
 	// brief hook the sensor items to their dbus services
-	for (analog_sensors_index_t sensor_index = 0; sensor_index < num_of_analog_sensors; sensor_index++) {
+	for (int sensor_index = 0; sensor_index < NUM_SENSORS; sensor_index++) {
 		valuesInit(sensor_index);
 	}
 	// Interrupt enable now

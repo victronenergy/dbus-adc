@@ -79,16 +79,6 @@ typedef enum {
 	num_of_parameters = 4
 } parameter_name_t;
 
-// sensors array index
-typedef enum {
-	index_tankLevel1 = 0,
-	index_tankLevel2,
-	index_tankLevel3,
-	index_temperature1,
-	index_temperature2,
-	num_of_analog_sensors
-} analog_sensors_index_t;
-
 // sensor statuses
 typedef enum {
 	ok = 0,
