@@ -119,10 +119,9 @@ typedef enum {
 
 // types of sensors that the app can handle
 typedef enum {
-	tank_level_t = 0,
-	temperature_t,
-	num_of_sensorsTypes
-} sensors_type_t;
+	SENSOR_TYPE_TANK = 0,
+	SENSOR_TYPE_TEMP,
+} sensor_type_t;
 
 // sensor product items for dbus service
 typedef struct {
@@ -221,7 +220,7 @@ typedef struct {
 
 // building a sensor structure
 typedef struct {
-	const sensors_type_t sensor_type;
+	const sensor_type_t sensor_type;
 	veBool valid;
 	sensors_interface_t interface;
 	dbus_info_t dbus_info[NUM_OF_SENSOR_SETTINGS_PARAMS];
@@ -247,7 +246,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 #define SENSORS_CONSTANT_DATA \
 {		\
 	{	\
-		tank_level_t,\
+		SENSOR_TYPE_TANK,\
 		veFalse,\
 		{\
 			adc_pin4,\
@@ -286,7 +285,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 		}\
 	},\
 	{\
-		tank_level_t,\
+		SENSOR_TYPE_TANK,\
 		veFalse,\
 		{\
 			adc_pin6,\
@@ -325,7 +324,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 		}\
 	},\
 	{\
-		tank_level_t,\
+		SENSOR_TYPE_TANK,\
 		veFalse,\
 		{\
 			adc_pin2,\
@@ -364,7 +363,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 		}\
 	},\
 	{\
-		temperature_t,\
+		SENSOR_TYPE_TEMP,\
 		veFalse,\
 		{\
 			adc_pin5,\
@@ -403,7 +402,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 		}\
 	},\
 	{\
-		temperature_t,\
+		SENSOR_TYPE_TEMP,\
 		veFalse,\
 		{\
 			adc_pin3,\

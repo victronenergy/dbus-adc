@@ -223,11 +223,11 @@ static veBool sensors_data_process(analog_sensor_t *sensor)
 {
 	// check the type of sensor before starting
 	switch (sensor->sensor_type) {
-	case tank_level_t:
+	case SENSOR_TYPE_TANK:
 		sensors_tankType_data_process(sensor);
 		break;
 
-	case temperature_t:
+	case SENSOR_TYPE_TEMP:
 		sensors_temperatureType_data_process(sensor);
 		break;
 
@@ -340,10 +340,10 @@ void sensors_dbusInit(analog_sensor_t *sensor)
 	veItemOwnerSet(&sensor->items.product.instance, veVariantUn8(&variant, instance++));
 
 	/* Product info */
-	if (sensor->sensor_type == tank_level_t) {
+	if (sensor->sensor_type == SENSOR_TYPE_TANK) {
 		veItemOwnerSet(&sensor->items.product.id, veVariantUn16(&variant, VE_PROD_ID_TANK_SENSOR_INPUT));
 		veItemOwnerSet(&sensor->items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TANK_SENSOR_INPUT)));
-	} else if (sensor->sensor_type == temperature_t) {
+	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
 		veItemOwnerSet(&sensor->items.product.id, veVariantUn16(&variant, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT));
 		veItemOwnerSet(&sensor->items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
 	} else {
