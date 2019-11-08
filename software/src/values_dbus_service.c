@@ -44,10 +44,7 @@ static char const *interface(analog_sensors_index_t analog_sensors_index)
 		return ("");
 	}
 }
-// required dbus connection information of the settings service
-dbus_info_t dbus_info;
-const char *settingsService = "com.victronenergy.settings";
-VeItem *input_root;
+
 VeItem *consumer;
 
 /**
@@ -88,14 +85,16 @@ void valuesInit(analog_sensors_index_t sensor_index)
  */
 void values_dbus_service_connectSettings(void)
 {
-	input_root = veValueTree();
+	const char *settingsService = "com.victronenergy.settings";
+	VeItem *input_root = veValueTree();
+	struct VeDbus *dbus;
 
-	if (!(dbus_info.connect = veDbusGetDefaultBus())) {
+	if (!(dbus = veDbusGetDefaultBus())) {
 		printf("dbus connection failed\n");
 		pltExit(5);
 	}
 	/* Listen to D-Bus.. */
-	veDbusSetListeningDbus(dbus_info.connect);
+	veDbusSetListeningDbus(dbus);
 
 	/* Connect to settings service */
 	consumer = veItemGetOrCreateUid(input_root, settingsService);
