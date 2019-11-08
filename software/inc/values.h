@@ -51,20 +51,4 @@ typedef struct {
 void valuesTick(void);
 VeItem *getConsumerRoot(void);
 
-/**
- * @brief valuesInvalidate
- */
-void valuesInvalidate(void);
-
-/**
- * @brief valuesAddItemByInfo
- * @param itemInfo
- */
-void valuesAddItemByInfo(ItemInfo const *itemInfo);
-
-/**
- * @brief valuesDisconnectedEvent
- */
-void valuesDisconnectedEvent(void);
-
 #endif
