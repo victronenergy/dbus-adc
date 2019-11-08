@@ -16,14 +16,6 @@ $T_DEPS += $(call subtree_tgts,$(d)/ext/velib)
 SUBDIRS += src
 $T_DEPS += $(call subtree_tgts,$(d)/src)
 
-ifeq ($(TARGET),pc)
-INCLUDES += src/platform/pc
-endif
-
-ifeq ($(TARGET),ccgx)
-INCLUDES += src/platform/pc
-endif
-
 #ifdef DBUS
 DEFINES += DBUS
 override CFLAGS += $(shell pkg-config --cflags dbus-1)
