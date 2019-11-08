@@ -14,7 +14,6 @@
 #include <velib/types/ve_item_def.h>
 
 #include "values.h"
-#include "serial_hal.h"
 #include "sensors.h"
 #include "dev_reg.h"
 
