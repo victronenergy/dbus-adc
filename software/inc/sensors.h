@@ -33,9 +33,6 @@
 #define TEMP_SENS_INV_PLRTY_ADCIN_HB		(TEMP_SENS_INV_PLRTY_ADCIN + TEMP_SENS_INV_PLRTY_ADCIN_BAND)
 #define VALUE_BETWEEN(V,L,H)				((((L)<(V))&&((V)<(H)))?1:0)
 
-// defines to reset filter values
-#define INIT_ADC_SAMPLE_VAL					0
-#define INIT_ADC_SAMPLE_MEMORY_VAL			0
 // defines to tank level sensor filter parameters
 #define TANK_SENSOR_IIR_LPF_FF_VALUE		1000	// samples
 #define TANK_SENSOR_CUTOFF_FREQ				0.001	// Hz
@@ -177,7 +174,7 @@ typedef struct {
 
 // parameters to interface the sensor to dbus service
 typedef struct {
-	const char *service;
+	char service[64];
 	veBool connected;
 } sensors_dbus_interface_t;
 
@@ -212,7 +209,7 @@ typedef struct {
 
 // building a sensor interface structure
 typedef struct {
-	const int adc_pin;
+	int adc_pin;
 	un32 adc_sample;
 	signal_condition_t sig_cond;
 	sensors_dbus_interface_t dbus;
@@ -220,7 +217,7 @@ typedef struct {
 
 // building a sensor structure
 typedef struct {
-	const sensor_type_t sensor_type;
+	sensor_type_t sensor_type;
 	veBool valid;
 	sensors_interface_t interface;
 	dbus_info_t dbus_info[NUM_OF_SENSOR_SETTINGS_PARAMS];
@@ -235,212 +232,12 @@ typedef struct {
 	const char *iface_name;
 } analog_sensor_t;
 
-analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index);
+analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index, int pin, sensor_type_t type);
 void sensors_handle(void);
 void sensors_dbusInit(analog_sensor_t *sensor);
 void values_dbus_service_addSettings(analog_sensor_t *sensor);
 void sensors_dbusConnect(analog_sensor_t *sensor);
 void sensors_dbusDisconnect(analog_sensor_t *sensor);
-
-// a define to hold all the required predetermined variables and constants of the analog sensor structure
-#define SENSORS_CONSTANT_DATA \
-{		\
-	{	\
-		SENSOR_TYPE_TANK,\
-		veFalse,\
-		{\
-			4,\
-			INIT_ADC_SAMPLE_VAL,\
-			{{},{TANK_SENSOR_IIR_LPF_FF_VALUE, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
-			{\
-				"com.victronenergy.tank.builtin_adc4_di0",\
-				veFalse\
-			}		\
-		},		\
-		{\
-			{\
-				default_function,\
-				no_function,\
-				(num_of_functions-1),\
-				"Settings/AnalogInput/Resistive/1/Function"\
-			},\
-			{\
-				DEFAULT_TANK_CAPACITY,\
-				MIN_OF_TANK_CAPACITY,\
-				MAX_OF_TANK_CAPACITY,\
-				"Settings/Tank/1/Capacity"\
-			},\
-			{\
-				DEFAULT_FLUID_TYPE,\
-				MIN_OF_FLUID_TYPE,\
-				MAX_OF_FLUID_TYPE,\
-				"Settings/Tank/1/FluidType"\
-			},\
-			{\
-				european_std,\
-				european_std,\
-				(num_of_stds - 1),\
-				"Settings/Tank/1/Standard"\
-			}\
-		}\
-	},\
-	{\
-		SENSOR_TYPE_TANK,\
-		veFalse,\
-		{\
-			6,\
-			INIT_ADC_SAMPLE_VAL,\
-			{{},{TANK_SENSOR_IIR_LPF_FF_VALUE, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
-			{\
-				"com.victronenergy.tank.builtin_adc6_di1",\
-				veFalse\
-			}\
-		},\
-		{\
-			{\
-				default_function,\
-				no_function,\
-				(num_of_functions-1),\
-				"Settings/AnalogInput/Resistive/2/Function"\
-			},\
-			{\
-				DEFAULT_TANK_CAPACITY,\
-				MIN_OF_TANK_CAPACITY,\
-				MAX_OF_TANK_CAPACITY,\
-				"Settings/Tank/2/Capacity"\
-			},\
-			{\
-				DEFAULT_FLUID_TYPE,\
-				MIN_OF_FLUID_TYPE,\
-				MAX_OF_FLUID_TYPE,\
-				"Settings/Tank/2/FluidType"\
-			},\
-			{\
-				european_std,\
-				european_std,\
-				(num_of_stds - 1),\
-				"Settings/Tank/2/Standard"\
-			}\
-		}\
-	},\
-	{\
-		SENSOR_TYPE_TANK,\
-		veFalse,\
-		{\
-			2,\
-			INIT_ADC_SAMPLE_VAL,\
-			{{},{TANK_SENSOR_IIR_LPF_FF_VALUE, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
-			{\
-				"com.victronenergy.tank.builtin_adc2_di2",\
-				veFalse\
-			}\
-		},\
-		{\
-			{\
-				default_function,\
-				no_function,\
-				(num_of_functions-1),\
-				"Settings/AnalogInput/Resistive/3/Function"\
-			},\
-			{\
-				DEFAULT_TANK_CAPACITY,\
-				MIN_OF_TANK_CAPACITY,\
-				MAX_OF_TANK_CAPACITY,\
-				"Settings/Tank/3/Capacity"\
-			},\
-			{\
-				DEFAULT_FLUID_TYPE,\
-				MIN_OF_FLUID_TYPE,\
-				MAX_OF_FLUID_TYPE,\
-				"Settings/Tank/3/FluidType"\
-			},\
-			{\
-				european_std,\
-				european_std,\
-				(num_of_stds - 1),\
-				"Settings/Tank/3/Standard"\
-			}\
-		}\
-	},\
-	{\
-		SENSOR_TYPE_TEMP,\
-		veFalse,\
-		{\
-			5,\
-			INIT_ADC_SAMPLE_VAL,\
-			{{},{TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
-			{\
-				"com.victronenergy.temperature.builtin_adc5_di0",\
-				veFalse\
-			}\
-		},\
-		{\
-			{\
-				default_function,\
-				no_function,\
-				(num_of_functions-1),\
-				"Settings/AnalogInput/Temperature/1/Function"\
-			},\
-			{\
-				TEMPERATURE_SCALE,\
-				MIN_OF_TEMPERATURE_SCALE,\
-				MAX_OF_TEMPERATURE_SCALE,\
-				"Settings/Temperature/1/Scale"\
-			},\
-			{\
-				TEMPERATURE_OFFSET,\
-				MIN_OF_TEMPERATURE_OFFSET,\
-				MAX_OF_TEMPERATURE_OFFSET,\
-				"Settings/Temperature/1/Offset"\
-			},\
-			{\
-				DEFAULT_TEMPERATURE_TYPE,\
-				MIN_TEMPERATURE_TYPE,\
-				(num_of_temperature_sensor_type-1),\
-				"Settings/Temperature/1/TemperatureType"\
-			}\
-		}\
-	},\
-	{\
-		SENSOR_TYPE_TEMP,\
-		veFalse,\
-		{\
-			3,\
-			INIT_ADC_SAMPLE_VAL,\
-			{{},{TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
-			{\
-				"com.victronenergy.temperature.builtin_adc3_di1",\
-				veFalse\
-			}\
-		},\
-		{\
-			{\
-				default_function,\
-				no_function,\
-				(num_of_functions-1),\
-				"Settings/AnalogInput/Temperature/2/Function"\
-			},\
-			{\
-				TEMPERATURE_SCALE,\
-				MIN_OF_TEMPERATURE_SCALE,\
-				MAX_OF_TEMPERATURE_SCALE,\
-				"Settings/Temperature/2/Scale"\
-			},\
-			{\
-				TEMPERATURE_OFFSET,\
-				MIN_OF_TEMPERATURE_OFFSET,\
-				MAX_OF_TEMPERATURE_OFFSET,\
-				"Settings/Temperature/2/Offset"\
-			},\
-			{\
-				DEFAULT_TEMPERATURE_TYPE,\
-				MIN_TEMPERATURE_TYPE,\
-				(num_of_temperature_sensor_type-1),\
-				"Settings/Temperature/2/TemperatureType"\
-			}\
-		}\
-	}\
-}
 
 typedef enum {
 	Connected_item = 0,

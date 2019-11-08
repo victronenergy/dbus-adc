@@ -38,10 +38,10 @@ typedef struct {
 
 // structure to hold the information required to dbus interfacing
 typedef struct {
-	const float def;
-	const float min;
-	const float max;
-	const char *path;
+	float def;
+	float min;
+	float max;
+	char path[64];
 	struct VeDbus *connect;
 	VeItem *value;
 } dbus_info_t;

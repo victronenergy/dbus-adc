@@ -36,7 +36,7 @@ static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, siz
 /**
  * @brief analog_sensor - array of analog sensor structures
  */
-analog_sensor_t analog_sensor[num_of_analog_sensors] = SENSORS_CONSTANT_DATA;
+analog_sensor_t analog_sensor[num_of_analog_sensors];
 
 // potential divider for the tank level sender
 const potential_divider_t sensor_tankLevel_pd = {TANK_LEVEL_SENSOR_DIVIDER, (POTENTIAL_DIV_MAX_SAMPLE - 1)};
@@ -98,15 +98,111 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 #undef IV
 }
 
+static void sensor_set_defaults_tank(analog_sensor_t *sensor)
+{
+	sensors_dbus_interface_t *dbus = &sensor->interface.dbus;
+	filter_iir_lpf_t *lpf = &sensor->interface.sig_cond.filter_iir_lpf;
+	dbus_info_t *dbi = sensor->dbus_info;
+
+	static int tank_num = 1;
+
+	lpf->FF = TANK_SENSOR_IIR_LPF_FF_VALUE;
+	lpf->fc = TANK_SENSOR_CUTOFF_FREQ;
+
+	snprintf(dbus->service, sizeof(dbus->service),
+			 "com.victronenergy.tank.builtin_adc%d", sensor->interface.adc_pin);
+
+	snprintf(dbi[0].path, sizeof(dbi[0].path),
+			 "Settings/AnalogInput/Resistive/%d/Function", tank_num);
+
+	dbi[1].def = DEFAULT_TANK_CAPACITY;
+	dbi[1].min = MIN_OF_TANK_CAPACITY;
+	dbi[1].max = MAX_OF_TANK_CAPACITY;
+	snprintf(dbi[1].path, sizeof(dbi[1].path),
+			 "Settings/Tank/%d/Capacity", tank_num);
+
+	dbi[2].def = DEFAULT_FLUID_TYPE;
+	dbi[2].min = MIN_OF_FLUID_TYPE;
+	dbi[2].max = MAX_OF_FLUID_TYPE;
+	snprintf(dbi[2].path, sizeof(dbi[2].path),
+			 "Settings/Tank/%d/FluidType", tank_num);
+
+	dbi[3].def = european_std;
+	dbi[3].min = european_std;
+	dbi[3].max = num_of_stds - 1;
+	snprintf(dbi[3].path, sizeof(dbi[3].path),
+			 "Settings/Tank/%d/Standard", tank_num);
+
+	tank_num++;
+}
+
+static void sensor_set_defaults_temp(analog_sensor_t *sensor)
+{
+	sensors_dbus_interface_t *dbus = &sensor->interface.dbus;
+	filter_iir_lpf_t *lpf = &sensor->interface.sig_cond.filter_iir_lpf;
+	dbus_info_t *dbi = sensor->dbus_info;
+
+	static int temp_num = 1;
+
+	lpf->FF = TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE;
+	lpf->fc = TEMPERATURE_SENSOR_CUTOFF_FREQ;
+
+	snprintf(dbus->service, sizeof(dbus->service),
+			 "com.victronenergy.temperature.builtin_adc%d", sensor->interface.adc_pin);
+
+	snprintf(dbi[0].path, sizeof(dbi[0].path),
+			 "Settings/AnalogInput/Temperature/%d/Function", temp_num);
+
+	dbi[1].def = TEMPERATURE_SCALE;
+	dbi[1].min = MIN_OF_TEMPERATURE_SCALE;
+	dbi[1].max = MAX_OF_TEMPERATURE_SCALE;
+	snprintf(dbi[1].path, sizeof(dbi[1].path),
+			 "Settings/Temperature/%d/Scale", temp_num);
+
+	dbi[2].def = TEMPERATURE_OFFSET;
+	dbi[2].min = MIN_OF_TEMPERATURE_OFFSET;
+	dbi[2].max = MAX_OF_TEMPERATURE_OFFSET;
+	snprintf(dbi[2].path, sizeof(dbi[2].path),
+			 "Settings/Temperature/%d/Offset", temp_num);
+
+	dbi[3].def = DEFAULT_TEMPERATURE_TYPE;
+	dbi[3].min = MIN_TEMPERATURE_TYPE;
+	dbi[3].max = num_of_temperature_sensor_type - 1;
+	snprintf(dbi[3].path, sizeof(dbi[3].path),
+			 "Settings/Temperature/%d/TemperatureType", temp_num);
+
+	temp_num++;
+}
+
+static void sensor_set_defaults(analog_sensor_t *sensor)
+{
+	dbus_info_t *dbi = sensor->dbus_info;
+
+	dbi[0].def = default_function;
+	dbi[0].min = no_function;
+	dbi[0].max = num_of_functions - 1;
+
+	if (sensor->sensor_type == SENSOR_TYPE_TANK)
+		sensor_set_defaults_tank(sensor);
+	else if (sensor->sensor_type == SENSOR_TYPE_TEMP)
+		sensor_set_defaults_temp(sensor);
+}
+
 /**
  * @brief sensor_init - hook the sensor items to their dbus services
  * @param sensor_index - the sensor index array number
+ * @param pin - ADC pin number
+ * @param type - type of sensor
  * @return Pointer to sensor struct
  */
-analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index)
+analog_sensor_t *sensor_init(analog_sensors_index_t sensor_index, int pin, sensor_type_t type)
 {
 	analog_sensor_t *sensor = &analog_sensor[sensor_index];
 
+	sensor->interface.adc_pin = pin;
+	sensor->sensor_type = type;
+
+	sensor_set_defaults(sensor);
 	sensor_item_info_init(sensor);
 
 	for (int i = 0; i < SENSORS_INFO_ARRAY_SIZE; i++) {
