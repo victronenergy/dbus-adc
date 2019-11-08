@@ -8,7 +8,6 @@
 
 #include "values.h"
 #include "sensors.h"
-#include "version.h"
 #include "adc.h"
 
 #include <string.h>
@@ -23,7 +22,6 @@
 #define CONNECTION_TIMEOUT			(5 * 20)	/* 50ms */
 
 static un16 timeout;
-const char version[] = VERSION_STR;
 
 // Local function prototypes
 /**
