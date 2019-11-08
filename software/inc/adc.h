@@ -20,18 +20,6 @@
 #define ADC_0p208VOLTS						473
 #define ADC_0p15VOLTS						341
 
-// adc interfacing pins
-typedef enum {
-	adc_pin0 = 0,
-	adc_pin1,
-	adc_pin2,
-	adc_pin3,
-	adc_pin4,
-	adc_pin5,
-	adc_pin6,
-	num_of_adc_pins
-} adc_analogPin_t;
-
 // Potential divider calculations types
 typedef enum {
 	calc_type_Vin = 0,
@@ -54,7 +42,7 @@ typedef struct {
 } filter_iir_lpf_t;
 
 // Public functions
-veBool adc_read(un32 *value, adc_analogPin_t pin);
+veBool adc_read(un32 *value, int pin);
 float adc_sample2volts(un32 sample);
 float adc_filter(float x, float *y, float Fc, float Fs, un16 FF);
 un32 adc_potDiv_calc(un32 sample, const potential_divider_t *pd, pd_calc_type_t type, un32 mltpty);

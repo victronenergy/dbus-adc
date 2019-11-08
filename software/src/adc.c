@@ -21,7 +21,7 @@
  * @param pin - which adc interface pin to sample
  * @return - Boolean status veFalse-success, veTrue-fail
  */
-veBool adc_read(un32 *value, adc_analogPin_t pin)
+veBool adc_read(un32 *value, int pin)
 {
 	int fd;
 	char buf[ADC_SYSFS_READ_BUF_SIZE];

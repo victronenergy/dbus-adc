@@ -212,7 +212,7 @@ typedef struct {
 
 // building a sensor interface structure
 typedef struct {
-	const adc_analogPin_t adc_pin;
+	const int adc_pin;
 	un32 adc_sample;
 	signal_condition_t sig_cond;
 	sensors_dbus_interface_t dbus;
@@ -249,7 +249,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 		SENSOR_TYPE_TANK,\
 		veFalse,\
 		{\
-			adc_pin4,\
+			4,\
 			INIT_ADC_SAMPLE_VAL,\
 			{{},{TANK_SENSOR_IIR_LPF_FF_VALUE, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
 			{\
@@ -288,7 +288,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 		SENSOR_TYPE_TANK,\
 		veFalse,\
 		{\
-			adc_pin6,\
+			6,\
 			INIT_ADC_SAMPLE_VAL,\
 			{{},{TANK_SENSOR_IIR_LPF_FF_VALUE, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
 			{\
@@ -327,7 +327,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 		SENSOR_TYPE_TANK,\
 		veFalse,\
 		{\
-			adc_pin2,\
+			2,\
 			INIT_ADC_SAMPLE_VAL,\
 			{{},{TANK_SENSOR_IIR_LPF_FF_VALUE, TANK_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
 			{\
@@ -366,7 +366,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 		SENSOR_TYPE_TEMP,\
 		veFalse,\
 		{\
-			adc_pin5,\
+			5,\
 			INIT_ADC_SAMPLE_VAL,\
 			{{},{TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
 			{\
@@ -405,7 +405,7 @@ void sensors_dbusDisconnect(analog_sensor_t *sensor);
 		SENSOR_TYPE_TEMP,\
 		veFalse,\
 		{\
-			adc_pin3,\
+			3,\
 			INIT_ADC_SAMPLE_VAL,\
 			{{},{TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE, TEMPERATURE_SENSOR_CUTOFF_FREQ, INIT_ADC_SAMPLE_MEMORY_VAL}},\
 			{\
