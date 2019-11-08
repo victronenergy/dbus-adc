@@ -1,5 +1,4 @@
-SUBDIRS += platform
-
+SRCS += console.c
 SRCS += task.c
 SRCS += values_dbus_service.c
 SRCS += adc.c
