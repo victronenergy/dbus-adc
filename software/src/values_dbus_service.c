@@ -17,7 +17,7 @@
 #include "sensors.h"
 
 // timer divider for the app ticking
-static un16 values_task_timer;
+static un16 values_task_timer = VALUES_TASK_INTERVAL;
 
 static VeVariantUnitFmt none = {0, ""};
 
@@ -49,7 +49,6 @@ void valuesInit(int sensor_index)
 {
 	analog_sensor_t *sensor;
 
-	values_task_timer = VALUES_TASK_INTERVAL;
 	sensor = sensor_init(sensor_pins[sensor_index],
 						 sensor_types[sensor_index]);
 
