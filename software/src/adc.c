@@ -56,15 +56,10 @@ float adc_sample2volts(un32 sample)
  */
 float adc_filter(float x, filter_iir_lpf_t *f)
 {
-	if (f->FF) {
-		if (fabs(f->last - x) > f->FF) {
-			f->last = x;
-		}
-	}
-	if (f->fc > 0) {
-		return (f->last = f->last + (x - f->last)*OMEGA*f->fc);
-	}
-	return x;
+	if (f->FF && fabs(f->last - x) > f->FF)
+		f->last = x;
+
+	return f->last += (x - f->last) * 2 * M_PI * f->fc;
 }
 
 /**

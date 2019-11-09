@@ -8,7 +8,6 @@
 #define ADC_SYSFS_READ_BUF_SIZE				50
 
 #define ADC_VREF							(float)(1.8)
-#define OMEGA								(float)6.283185307179586476925286766559
 
 #define ADC_MAX_COUNT						4095
 #define POTENTIAL_DIV_MAX_SAMPLE			11375 // = 4095 * 5/adc_vref
