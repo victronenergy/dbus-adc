@@ -196,16 +196,18 @@ static void sensor_set_defaults(analog_sensor_t *sensor)
 /**
  * @brief sensor_init - hook the sensor items to their dbus services
  * @param pin - ADC pin number
+ * @param scale - ADC scale in volts / unit
  * @param type - type of sensor
  * @return Pointer to sensor struct
  */
-analog_sensor_t *sensor_init(int pin, sensor_type_t type)
+analog_sensor_t *sensor_init(int pin, float scale, sensor_type_t type)
 {
 	analog_sensor_t *sensor = calloc(1, sizeof(*sensor));
 
 	analog_sensor[sensor_count++] = sensor;
 
 	sensor->interface.adc_pin = pin;
+	sensor->interface.adc_scale = scale;
 	sensor->sensor_type = type;
 
 	sensor_set_defaults(sensor);
@@ -423,7 +425,7 @@ void sensors_handle(void)
 		un32 val;
 
 		if (!adc_read(&val, sensor->interface.adc_pin)) {
-			sensor->interface.adc_sample = val * ADC_VREF / ADC_MAX_COUNT;
+			sensor->interface.adc_sample = val * sensor->interface.adc_scale;
 			sensor->valid = veTrue;
 		}
 	}

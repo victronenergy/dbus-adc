@@ -50,6 +50,7 @@ void valuesInit(int sensor_index)
 	analog_sensor_t *sensor;
 
 	sensor = sensor_init(sensor_pins[sensor_index],
+						 ADC_VREF / ADC_MAX_COUNT,
 						 sensor_types[sensor_index]);
 
 	/* App info */
