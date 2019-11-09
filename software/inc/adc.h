@@ -36,7 +36,7 @@ typedef struct {
 
 // Single pole iir low pass filter variables
 typedef struct {
-	un32 FF;
+	float FF;
 	float fc;
 	float last;
 } filter_iir_lpf_t;
