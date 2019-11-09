@@ -202,7 +202,14 @@ static void sensor_set_defaults(analog_sensor_t *sensor)
  */
 analog_sensor_t *sensor_init(int pin, float scale, sensor_type_t type)
 {
-	analog_sensor_t *sensor = calloc(1, sizeof(*sensor));
+	analog_sensor_t *sensor;
+
+	if (sensor_count == MAX_SENSORS)
+		return NULL;
+
+	sensor = calloc(1, sizeof(*sensor));
+	if (!sensor)
+		return NULL;
 
 	analog_sensor[sensor_count++] = sensor;
 

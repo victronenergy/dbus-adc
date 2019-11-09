@@ -52,6 +52,8 @@ void valuesInit(int sensor_index)
 	sensor = sensor_init(sensor_pins[sensor_index],
 						 ADC_VREF / ADC_MAX_COUNT,
 						 sensor_types[sensor_index]);
+	if (!sensor)
+		return;
 
 	/* App info */
 	veItemAddChildByUid(&sensor->root, "Mgmt/ProcessName", &sensor->processName);
