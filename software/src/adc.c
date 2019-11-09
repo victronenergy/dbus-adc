@@ -51,20 +51,18 @@ float adc_sample2volts(un32 sample)
 /**
  * @brief adc_filter - a single pole IIR low pass filter
  * @param x - the current sample
- * @param y - pointer to the filter tap
- * @param Fc - cutoff frequency
- * @param FF - filter feedforward threshold
+ * @param f - filter parameters
  * @return the next filtered value (filter output)
  */
-float adc_filter(float x, float *y, float Fc, un16 FF)
+float adc_filter(float x, filter_iir_lpf_t *f)
 {
-	if (FF) {
-		if (fabs(*y - x) > FF) {
-			*y = x;
+	if (f->FF) {
+		if (fabs(f->last - x) > f->FF) {
+			f->last = x;
 		}
 	}
-	if (Fc > 0) {
-		return (*y = *y + (x - *y)*OMEGA*Fc);
+	if (f->fc > 0) {
+		return (f->last = f->last + (x - f->last)*OMEGA*f->fc);
 	}
 	return x;
 }

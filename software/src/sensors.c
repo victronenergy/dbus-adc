@@ -438,11 +438,7 @@ void sensors_handle(void)
 			filter_iir_lpf_t *filter = &sensor->interface.sig_cond.filter_iir_lpf;
 
 			// filter the input ADC sample and store it in adc var
-			sensor->interface.adc_sample = adc_filter(
-				(float)sensor->interface.adc_sample,
-				&filter->adc_mem,
-				filter->fc,
-				filter->FF);
+			sensor->interface.adc_sample = adc_filter(sensor->interface.adc_sample, filter);
 
 			// reset the adc valid reading flag for next sampling cycle
 			sensor->valid = veFalse;

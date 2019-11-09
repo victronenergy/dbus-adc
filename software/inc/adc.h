@@ -38,13 +38,13 @@ typedef struct {
 typedef struct {
 	un32 FF;
 	float fc;
-	float adc_mem;
+	float last;
 } filter_iir_lpf_t;
 
 // Public functions
 veBool adc_read(un32 *value, int pin);
 float adc_sample2volts(un32 sample);
-float adc_filter(float x, float *y, float Fc, un16 FF);
+float adc_filter(float x, filter_iir_lpf_t *f);
 un32 adc_potDiv_calc(un32 sample, const potential_divider_t *pd, pd_calc_type_t type, un32 mltpty);
 
 #endif // ADC_H
