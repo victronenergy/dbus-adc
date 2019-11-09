@@ -39,10 +39,6 @@ static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, siz
 static analog_sensor_t *analog_sensor[MAX_SENSORS];
 static int sensor_count;
 
-// potential divider for the tank level sender
-const potential_divider_t sensor_tankLevel_pd = {TANK_LEVEL_SENSOR_DIVIDER, (POTENTIAL_DIV_MAX_SAMPLE - 1)};
-const potential_divider_t sensor_temperature_pd = {TEMP_SENS_VOLT_DIVID_R1, TEMP_SENS_VOLT_DIVID_R2};
-
 // instantiate a container structure for the interface with dbus API's interface.
 static FormatInfo units = {{9, ""}, NULL};
 static FormatInfo statusFormat = {{0, ""}, statusFormatter};
@@ -257,7 +253,8 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 		veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_SHORT);
 	} else {
 		// calculate the resistance of the tank level sensor from the adc pin sample
-		float R2 = adc_potDiv_calc(sensor->interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
+		float vdiff = TANK_SENS_VREF - sensor->interface.adc_sample;
+		float R2 = TANK_SENS_R1 * sensor->interface.adc_sample / vdiff;
 
 		// check the integrity of the resistance
 		if (R2>0) { // calculate the tank level
@@ -322,7 +319,7 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 
 	if (VALUE_BETWEEN(sensor->interface.adc_sample, TEMP_SENS_MIN_ADCIN, TEMP_SENS_MAX_ADCIN)) {
 		// calculate the output of the LM335 temperature sensor from the adc pin sample
-		un32 divider_supply = adc_potDiv_calc(sensor->interface.adc_sample, &sensor_temperature_pd, calc_type_Vin, 1);
+		un32 divider_supply = sensor->interface.adc_sample * TEMP_SENS_V_RATIO;
 		// convert from Fahrenheit to Celsius
 		tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
 		// Signal scale correction

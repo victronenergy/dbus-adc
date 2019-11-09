@@ -19,14 +19,16 @@
 #define SENSORS_INFO_ARRAY_SIZE				NUM_OF_SENSOR_VARIANTS + NUM_OF_PROD_ITEMS
 
 // defines for the tank level sensor analog front end parameters
-#define TANK_LEVEL_SENSOR_DIVIDER			(680) // ohms
+#define TANK_SENS_VREF						(5.0 * ADC_MAX_COUNT / ADC_VREF)
+#define TANK_SENS_R1						680.0 // ohms
 #define EUR_MAX_TANK_LEVEL_RESISTANCE		(180) //ohms
 #define USA_MAX_TANK_LEVEL_RESISTANCE		(240) //ohms
 #define USA_MIN_TANK_LEVEL_RESISTANCE		(30) //ohms
 
 // defines for the temperature sensor analog front end parameters
-#define TEMP_SENS_VOLT_DIVID_R1				(10000) // ohms
-#define TEMP_SENS_VOLT_DIVID_R2				(4700) // ohms
+#define TEMP_SENS_R1						10000.0 // ohms
+#define TEMP_SENS_R2						4700.0  // ohms
+#define TEMP_SENS_V_RATIO					((TEMP_SENS_R1 + TEMP_SENS_R2) / TEMP_SENS_R2)
 #define TEMP_SENS_MAX_ADCIN					ADC_1p3VOLTS // ~400K
 #define TEMP_SENS_MIN_ADCIN					ADC_0p8VOLTS // ~(-22) dgrees C
 #define TEMP_SENS_S_C_ADCIN					50 // samples
