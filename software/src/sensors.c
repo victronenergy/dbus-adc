@@ -469,8 +469,6 @@ void sensors_handle(void)
 				}
 				break;
 			}
-		} else {
-			// adc reading error
 		}
 	}
 
@@ -497,8 +495,6 @@ void sensors_dbusInit(analog_sensor_t *sensor)
 	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
 		veItemOwnerSet(&sensor->items.product.id, veVariantUn16(&variant, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT));
 		veItemOwnerSet(&sensor->items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
-	} else {
-
 	}
 }
 
