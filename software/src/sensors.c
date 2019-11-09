@@ -421,10 +421,10 @@ void sensors_handle(void)
 	// We reading always the same number of analog inputs to try to keep the timing of the system constant.
 	for (analog_sensors_index = 0; analog_sensors_index < sensor_count; analog_sensors_index++) {
 		analog_sensor_t *sensor = analog_sensor[analog_sensors_index];
+		un32 val;
 
-		// reading all the analog inputs adc values
-		if (!adc_read(&sensor->interface.adc_sample, sensor->interface.adc_pin)) {
-			// validate the sample
+		if (!adc_read(&val, sensor->interface.adc_pin)) {
+			sensor->interface.adc_sample = val;
 			sensor->valid = veTrue;
 		}
 	}

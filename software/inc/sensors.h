@@ -202,7 +202,7 @@ typedef struct {
 // building a sensor interface structure
 typedef struct {
 	int adc_pin;
-	un32 adc_sample;
+	float adc_sample;
 	signal_condition_t sig_cond;
 	sensors_dbus_interface_t dbus;
 } sensors_interface_t;
