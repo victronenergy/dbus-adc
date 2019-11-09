@@ -39,15 +39,7 @@ veBool adc_read(un32 *value, int pin)
 	*value = (un32)atoi(val);
 	return veFalse;
 }
-/**
- * @brief adc_sample2volts - converts the adc sample from counts to volts
- * @param sample - adc sample in counts
- * @return - the value in volts
- */
-float adc_sample2volts(un32 sample)
-{
-	return ((float)sample*ADC_VREF/ADC_MAX_COUNT);
-}
+
 /**
  * @brief adc_filter - a single pole IIR low pass filter
  * @param x - the current sample

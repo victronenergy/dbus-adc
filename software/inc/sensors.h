@@ -19,7 +19,7 @@
 #define SENSORS_INFO_ARRAY_SIZE				NUM_OF_SENSOR_VARIANTS + NUM_OF_PROD_ITEMS
 
 // defines for the tank level sensor analog front end parameters
-#define TANK_SENS_VREF						(5.0 * ADC_MAX_COUNT / ADC_VREF)
+#define TANK_SENS_VREF						5.0
 #define TANK_SENS_R1						680.0 // ohms
 #define EUR_MAX_TANK_LEVEL_RESISTANCE		(180) //ohms
 #define USA_MAX_TANK_LEVEL_RESISTANCE		(240) //ohms
@@ -29,20 +29,20 @@
 #define TEMP_SENS_R1						10000.0 // ohms
 #define TEMP_SENS_R2						4700.0  // ohms
 #define TEMP_SENS_V_RATIO					((TEMP_SENS_R1 + TEMP_SENS_R2) / TEMP_SENS_R2)
-#define TEMP_SENS_MAX_ADCIN					ADC_1p3VOLTS // ~400K
-#define TEMP_SENS_MIN_ADCIN					ADC_0p8VOLTS // ~(-22) dgrees C
-#define TEMP_SENS_S_C_ADCIN					50 // samples
-#define TEMP_SENS_INV_PLRTY_ADCIN			ADC_0p208VOLTS // 0.7 volts at divider input
-#define TEMP_SENS_INV_PLRTY_ADCIN_BAND		ADC_0p15VOLTS
+#define TEMP_SENS_MAX_ADCIN					1.3 // ~400K
+#define TEMP_SENS_MIN_ADCIN					0.8 // ~(-22) degrees C
+#define TEMP_SENS_S_C_ADCIN					0.02
+#define TEMP_SENS_INV_PLRTY_ADCIN			0.208 // 0.7 volts at divider input
+#define TEMP_SENS_INV_PLRTY_ADCIN_BAND		0.15
 #define TEMP_SENS_INV_PLRTY_ADCIN_LB		(TEMP_SENS_INV_PLRTY_ADCIN - TEMP_SENS_INV_PLRTY_ADCIN_BAND)
 #define TEMP_SENS_INV_PLRTY_ADCIN_HB		(TEMP_SENS_INV_PLRTY_ADCIN + TEMP_SENS_INV_PLRTY_ADCIN_BAND)
 #define VALUE_BETWEEN(V,L,H)				((((L)<(V))&&((V)<(H)))?1:0)
 
 // defines to tank level sensor filter parameters
-#define TANK_SENSOR_IIR_LPF_FF_VALUE		1000	// samples
+#define TANK_SENSOR_IIR_LPF_FF_VALUE		0.4
 #define TANK_SENSOR_CUTOFF_FREQ				(0.001 / SAMPLE_RATE)
 // defines to temperature sensor filter parameters
-#define TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE	500		// samples
+#define TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE	0.2
 #define TEMPERATURE_SENSOR_CUTOFF_FREQ		(0.01 / SAMPLE_RATE)
 
 // defines to initialize the sensors settings parameters

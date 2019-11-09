@@ -244,11 +244,11 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 	float level;
 	un8 Std = (un8)sensor->variant.tank_level.standard.value.UN32;
 
-	if (sensor->interface.adc_sample > ADC_1p4VOLTS) {
+	if (sensor->interface.adc_sample > 1.4) {
 		// Sensor status: error - not connected
 		veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_NCONN);
 	// this condition applies only for the US standard
-	} else if (Std && (sensor->interface.adc_sample < ADC_0p15VOLTS)) {
+	} else if (Std && (sensor->interface.adc_sample < 0.15)) {
 		// Sensor status: error - short circuited
 		veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_SHORT);
 	} else {
@@ -319,9 +319,9 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 
 	if (VALUE_BETWEEN(sensor->interface.adc_sample, TEMP_SENS_MIN_ADCIN, TEMP_SENS_MAX_ADCIN)) {
 		// calculate the output of the LM335 temperature sensor from the adc pin sample
-		un32 divider_supply = sensor->interface.adc_sample * TEMP_SENS_V_RATIO;
-		// convert from Fahrenheit to Celsius
-		tempC = ( 100 * adc_sample2volts(divider_supply) ) - 273;
+		float v_sens = sensor->interface.adc_sample * TEMP_SENS_V_RATIO;
+		// convert from Kelvin to Celsius
+		tempC = 100 * v_sens - 273;
 		// Signal scale correction
 		tempC *= (sensor->variant.temperature.scale.value.Float);
 		// Signal offset correction
@@ -421,7 +421,7 @@ void sensors_handle(void)
 		un32 val;
 
 		if (!adc_read(&val, sensor->interface.adc_pin)) {
-			sensor->interface.adc_sample = val;
+			sensor->interface.adc_sample = val * ADC_VREF / ADC_MAX_COUNT;
 			sensor->valid = veTrue;
 		}
 	}
