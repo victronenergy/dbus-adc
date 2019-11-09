@@ -250,11 +250,11 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 
 	if (sensor->interface.adc_sample > ADC_1p4VOLTS) {
 		// Sensor status: error - not connected
-		veVariantUn32(&sensor->variant.tank_level.status, (un32)disconnected);
+		veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_NCONN);
 	// this condition applies only for the US standard
 	} else if (Std && (sensor->interface.adc_sample < ADC_0p15VOLTS)) {
 		// Sensor status: error - short circuited
-		veVariantUn32(&sensor->variant.tank_level.status, (un32)short_circuited);
+		veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_SHORT);
 	} else {
 		// calculate the resistance of the tank level sensor from the adc pin sample
 		float R2 = adc_potDiv_calc(sensor->interface.adc_sample, &sensor_tankLevel_pd, calc_type_R2, 100);
@@ -278,10 +278,10 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 			}
 
 			// Sensor status: O.K.
-			veVariantUn32(&sensor->variant.tank_level.status, (un32)ok);
+			veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_OK);
 		} else {
 			// Sensor status: error - unknown value
-			veVariantUn32(&sensor->variant.tank_level.status, (un32)unknown_value);
+			veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_UNKNOWN);
 		}
 	}
 
@@ -290,7 +290,7 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 			(un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float);
 
 	// if status = o.k. publish valid value otherwise publish invalid value
-	if (sensor->variant.tank_level.status.value.UN8 == (un8)ok) {
+	if (sensor->variant.tank_level.status.value.UN8 == SENSOR_STATUS_OK) {
 		veVariantUn32(&sensor->variant.tank_level.level, (un32)(100 * level));
 		veVariantFloat(&sensor->variant.tank_level.remaining,
 			level * sensor->dbus_info[capacity].value->variant.value.Float);
@@ -330,23 +330,23 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 		// Signal offset correction
 		tempC += (sensor->variant.temperature.offset.value.SN32);
 		// update sensor status
-		veVariantUn32(&sensor->variant.temperature.status, (un32)ok);
+		veVariantUn32(&sensor->variant.temperature.status, SENSOR_STATUS_OK);
 	} else if (sensor->interface.adc_sample > TEMP_SENS_MAX_ADCIN) {
 		// open circuit error
-		veVariantUn32(&sensor->variant.temperature.status, (un32)disconnected);
+		veVariantUn32(&sensor->variant.temperature.status, SENSOR_STATUS_NCONN);
 	} else if (sensor->interface.adc_sample < TEMP_SENS_S_C_ADCIN ) {
 		// short circuit error
-		veVariantUn32(&sensor->variant.temperature.status, (un32)short_circuited);
+		veVariantUn32(&sensor->variant.temperature.status, SENSOR_STATUS_SHORT);
 	} else if (VALUE_BETWEEN(sensor->interface.adc_sample, TEMP_SENS_INV_PLRTY_ADCIN_LB, TEMP_SENS_INV_PLRTY_ADCIN_HB)) {
 		// lm335 probably connected in reverse polarity
-		veVariantUn32(&sensor->variant.temperature.status, (un32)reverse_polarity);
+		veVariantUn32(&sensor->variant.temperature.status, SENSOR_STATUS_REVPOL);
 	} else {
 		// low temperature or unknown error
-		veVariantUn32(&sensor->variant.temperature.status, (un32)unknown_value);
+		veVariantUn32(&sensor->variant.temperature.status, SENSOR_STATUS_UNKNOWN);
 	}
 
 	// if status = o.k. publish valid value otherwise publish invalid value
-	if (sensor->variant.temperature.status.value.UN8 == (un8)ok) {
+	if (sensor->variant.temperature.status.value.UN8 == SENSOR_STATUS_OK) {
 		veVariantSn32(&sensor->variant.temperature.temperature, (sn32)tempC);
 	} else {
 		veVariantInvalidate(&sensor->variant.temperature.temperature);

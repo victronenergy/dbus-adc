@@ -81,12 +81,11 @@ typedef enum {
 
 // sensor statuses
 typedef enum {
-	ok = 0,
-	disconnected,
-	short_circuited,
-	reverse_polarity,
-	unknown_value,
-	num_of_sensor_statuses
+	SENSOR_STATUS_OK = 0,
+	SENSOR_STATUS_NCONN,
+	SENSOR_STATUS_SHORT,
+	SENSOR_STATUS_REVPOL,
+	SENSOR_STATUS_UNKNOWN,
 } sensor_status_t;
 
 // tank level sensor standards that the app can handle
