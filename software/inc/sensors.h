@@ -9,6 +9,7 @@
 #include "values.h"
 
 #define MAX_SENSORS							8
+#define SAMPLE_RATE							10
 
 // defines for the on-board sensors interface configurations to firmware application
 #define NUM_OF_SENSOR_SETTINGS_PARAMS		4
@@ -37,10 +38,10 @@
 
 // defines to tank level sensor filter parameters
 #define TANK_SENSOR_IIR_LPF_FF_VALUE		1000	// samples
-#define TANK_SENSOR_CUTOFF_FREQ				0.001	// Hz
+#define TANK_SENSOR_CUTOFF_FREQ				(0.001 / SAMPLE_RATE)
 // defines to temperature sensor filter parameters
 #define TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE	500		// samples
-#define TEMPERATURE_SENSOR_CUTOFF_FREQ		0.01		// Hz
+#define TEMPERATURE_SENSOR_CUTOFF_FREQ		(0.01 / SAMPLE_RATE)
 
 // defines to initialize the sensors settings parameters
 // tank level capacity

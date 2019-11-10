@@ -442,7 +442,7 @@ void sensors_handle(void)
 				(float)sensor->interface.adc_sample,
 				&filter->adc_mem,
 				filter->fc,
-				10, filter->FF);
+				filter->FF);
 
 			// reset the adc valid reading flag for next sampling cycle
 			sensor->valid = veFalse;

@@ -44,7 +44,7 @@ typedef struct {
 // Public functions
 veBool adc_read(un32 *value, int pin);
 float adc_sample2volts(un32 sample);
-float adc_filter(float x, float *y, float Fc, float Fs, un16 FF);
+float adc_filter(float x, float *y, float Fc, un16 FF);
 un32 adc_potDiv_calc(un32 sample, const potential_divider_t *pd, pd_calc_type_t type, un32 mltpty);
 
 #endif // ADC_H

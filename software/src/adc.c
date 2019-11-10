@@ -53,11 +53,10 @@ float adc_sample2volts(un32 sample)
  * @param x - the current sample
  * @param y - pointer to the filter tap
  * @param Fc - cutoff frequency
- * @param Fs - sampling rate
  * @param FF - filter feedforward threshold
  * @return the next filtered value (filter output)
  */
-float adc_filter(float x, float *y, float Fc, float Fs, un16 FF)
+float adc_filter(float x, float *y, float Fc, un16 FF)
 {
 	if (FF) {
 		if (fabs(*y - x) > FF) {
@@ -65,7 +64,7 @@ float adc_filter(float x, float *y, float Fc, float Fs, un16 FF)
 		}
 	}
 	if (Fc > 0) {
-		return (*y = *y + (x - *y)*OMEGA*Fc/Fs);
+		return (*y = *y + (x - *y)*OMEGA*Fc);
 	}
 	return x;
 }
