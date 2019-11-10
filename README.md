@@ -10,7 +10,6 @@ This is a [velib](https://github.com/victronenergy/velib/) project.
 
 Besides on velib, it also depends on:
 
-- python
 - dbus libs + headers
 - libevent libs + headers
 
