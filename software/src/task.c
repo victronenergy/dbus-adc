@@ -6,7 +6,6 @@
 
 #include "values.h"
 #include "version.h"
-#include "adc.h"
 #include "task.h"
 
 #include <velib/types/ve_values.h>

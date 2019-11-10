@@ -8,7 +8,6 @@
 
 #include "values.h"
 #include "sensors.h"
-#include "adc.h"
 
 #include <string.h>
 #ifdef WIN32

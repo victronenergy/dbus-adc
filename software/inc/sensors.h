@@ -5,7 +5,6 @@
 #include <velib/types/ve_item.h>
 #include <velib/types/ve_item_def.h>
 
-#include "adc.h"
 #include "values.h"
 
 #define MAX_SENSORS							8
@@ -195,6 +194,13 @@ typedef struct {
 	float offset;
 } signal_correction_t;
 
+// Single pole iir low pass filter variables
+typedef struct {
+	float FF;
+	float fc;
+	float last;
+} filter_iir_lpf_t;
+
 // building a sensor signal conditioning structure
 typedef struct {
 	signal_correction_t sig_correct;
@@ -233,6 +239,8 @@ void sensors_dbusInit(analog_sensor_t *sensor);
 void values_dbus_service_addSettings(analog_sensor_t *sensor);
 void sensors_dbusConnect(analog_sensor_t *sensor);
 void sensors_dbusDisconnect(analog_sensor_t *sensor);
+veBool adc_read(un32 *value, int pin);
+float adc_filter(float x, filter_iir_lpf_t *f);
 
 typedef enum {
 	Connected_item = 0,

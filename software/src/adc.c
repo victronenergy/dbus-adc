@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 #include "values.h"
-#include "adc.h"
+#include "sensors.h"
 #endif
 
 /**
