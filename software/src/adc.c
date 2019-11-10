@@ -18,10 +18,10 @@
 /**
  * @brief adc_read - performs an adc sample read
  * @param value - a pointer to the variable which will store the result
- * @param pin - which adc interface pin to sample
+ * @param sensor - pointer to sensor struct
  * @return - veTrue on success, veFalse on error
  */
-veBool adc_read(un32 *value, int pin)
+veBool adc_read(un32 *value, analog_sensor_t *sensor)
 {
 	char file[64];
 	char val[16];
@@ -29,7 +29,8 @@ veBool adc_read(un32 *value, int pin)
 	int n;
 
 	snprintf(file, sizeof(file),
-			 "/sys/bus/iio/devices/iio:device0/in_voltage%d_raw", pin);
+			 "/sys/bus/iio/devices/iio:device0/in_voltage%d_raw",
+			 sensor->interface.adc_pin);
 
 	fd = open(file, O_RDONLY);
 	if (fd < 0) {

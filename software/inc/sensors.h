@@ -239,7 +239,7 @@ void sensors_dbusInit(analog_sensor_t *sensor);
 void values_dbus_service_addSettings(analog_sensor_t *sensor);
 void sensors_dbusConnect(analog_sensor_t *sensor);
 void sensors_dbusDisconnect(analog_sensor_t *sensor);
-veBool adc_read(un32 *value, int pin);
+veBool adc_read(un32 *value, analog_sensor_t *sensor);
 float adc_filter(float x, filter_iir_lpf_t *f);
 
 typedef enum {
