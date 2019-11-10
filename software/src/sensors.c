@@ -431,7 +431,7 @@ void sensors_handle(void)
 		analog_sensor_t *sensor = analog_sensor[analog_sensors_index];
 		un32 val;
 
-		if (!adc_read(&val, sensor->interface.adc_pin)) {
+		if (adc_read(&val, sensor->interface.adc_pin)) {
 			sensor->interface.adc_sample = val * sensor->interface.adc_scale;
 			sensor->valid = veTrue;
 		}

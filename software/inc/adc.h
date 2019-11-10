@@ -5,8 +5,6 @@
 #include <velib/types/ve_item.h>
 #include <velib/types/ve_item_def.h>
 
-#define ADC_SYSFS_READ_BUF_SIZE				50
-
 #define ADC_VREF							(float)(1.8)
 
 #define ADC_MAX_COUNT						4095

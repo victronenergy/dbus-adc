@@ -19,25 +19,36 @@
  * @brief adc_read - performs an adc sample read
  * @param value - a pointer to the variable which will store the result
  * @param pin - which adc interface pin to sample
- * @return - Boolean status veFalse-success, veTrue-fail
+ * @return - veTrue on success, veFalse on error
  */
 veBool adc_read(un32 *value, int pin)
 {
+	char file[64];
+	char val[16];
 	int fd;
-	char buf[ADC_SYSFS_READ_BUF_SIZE];
-	char val[4];
-	snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/iio:device0/in_voltage%d_raw", pin);
-	fd = open(buf, O_RDONLY);
+	int n;
+
+	snprintf(file, sizeof(file),
+			 "/sys/bus/iio/devices/iio:device0/in_voltage%d_raw", pin);
+
+	fd = open(file, O_RDONLY);
 	if (fd < 0) {
-		return veTrue;
-		perror("adc/get-value");
+		perror(file);
+		return veFalse;
 	}
 
-	read(fd, val, 4);
+	n = read(fd, val, sizeof(val));
 	close(fd);
 
-	*value = (un32)atoi(val);
-	return veFalse;
+	if (n <= 0)
+		return veFalse;
+
+	if (val[n - 1] != '\n')
+		return veFalse;
+
+	*value = strtoul(val, NULL, 0);
+
+	return veTrue;
 }
 
 /**
