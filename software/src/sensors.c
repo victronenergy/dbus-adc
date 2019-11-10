@@ -105,6 +105,7 @@ static void sensor_set_defaults_tank(analog_sensor_t *sensor)
 
 	lpf->FF = TANK_SENSOR_IIR_LPF_FF_VALUE;
 	lpf->fc = TANK_SENSOR_CUTOFF_FREQ;
+	lpf->last = HUGE_VALF;
 
 	snprintf(dbus->service, sizeof(dbus->service),
 			 "com.victronenergy.tank.builtin_adc%d", sensor->interface.adc_pin);
@@ -146,6 +147,7 @@ static void sensor_set_defaults_temp(analog_sensor_t *sensor)
 
 	lpf->FF = TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE;
 	lpf->fc = TEMPERATURE_SENSOR_CUTOFF_FREQ;
+	lpf->last = HUGE_VALF;
 
 	snprintf(dbus->service, sizeof(dbus->service),
 			 "com.victronenergy.temperature.builtin_adc%d", sensor->interface.adc_pin);
