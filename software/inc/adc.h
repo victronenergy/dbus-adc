@@ -1,8 +1,6 @@
 #ifndef ADC_H
 #define ADC_H
 
-#define DEBUGING_APP
-
 #include <velib/base/base.h>
 #include <velib/types/ve_item.h>
 #include <velib/types/ve_item_def.h>

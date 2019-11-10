@@ -21,10 +21,6 @@
  */
 void taskInit(void)
 {
-#ifdef DEBUGING_APP
-	logI("DebugMsg", "init tasks");
-#endif
-
 	// Connect to settings service to dbus
 	values_dbus_service_connectSettings();
 	// brief hook the sensor items to their dbus services
