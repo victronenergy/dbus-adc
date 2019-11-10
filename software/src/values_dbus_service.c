@@ -21,15 +21,6 @@ static un16 values_task_timer = VALUES_TASK_INTERVAL;
 
 static VeVariantUnitFmt none = {0, ""};
 
-static int sensor_pins[] = {
-	4, 6, 2, 5, 3,
-};
-
-static int sensor_types[] = {
-	SENSOR_TYPE_TANK, SENSOR_TYPE_TANK, SENSOR_TYPE_TANK,
-	SENSOR_TYPE_TEMP, SENSOR_TYPE_TEMP,
-};
-
 VeItem *consumer;
 
 /**
@@ -42,18 +33,19 @@ VeItem *getConsumerRoot(void)
 }
 
 /**
- * @brief valuesInit
- * @param sensor_index - the sensor index array number
+ * @brief add_sensor
+ * @param pin - ADC pin number
+ * @param scale - ADC scale in volts / unit
+ * @param type - type of sensor
+ * @return 0 on success, -1 on error
  */
-void valuesInit(int sensor_index)
+int add_sensor(int pin, float scale, int type)
 {
 	analog_sensor_t *sensor;
 
-	sensor = sensor_init(sensor_pins[sensor_index],
-						 ADC_VREF / ADC_MAX_COUNT,
-						 sensor_types[sensor_index]);
+	sensor = sensor_init(pin, scale, type);
 	if (!sensor)
-		return;
+		return -1;
 
 	/* App info */
 	veItemAddChildByUid(&sensor->root, "Mgmt/ProcessName", &sensor->processName);
@@ -65,6 +57,8 @@ void valuesInit(int sensor_index)
 
 	values_dbus_service_addSettings(sensor);
 	sensors_dbusInit(sensor);
+
+	return 0;
 }
 
 /**

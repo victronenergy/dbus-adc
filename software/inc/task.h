@@ -3,7 +3,7 @@
 
 #include "sensors.h"
 
-void valuesInit(int sensor_index);
+int add_sensor(int pin, float scale, int type);
 void values_dbus_service_connectSettings(void);
 
 #endif // TASK_H

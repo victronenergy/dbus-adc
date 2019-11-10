@@ -5,10 +5,6 @@
 #include <velib/types/ve_item.h>
 #include <velib/types/ve_item_def.h>
 
-#define ADC_VREF							(float)(1.8)
-
-#define ADC_MAX_COUNT						4095
-
 // Single pole iir low pass filter variables
 typedef struct {
 	float FF;
