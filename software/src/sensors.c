@@ -431,48 +431,43 @@ void sensors_handle(void)
 		analog_sensor_t *sensor = analog_sensor[analog_sensors_index];
 		un32 val;
 
-		if (adc_read(&val, sensor->interface.adc_pin)) {
+		sensor->valid = adc_read(&val, sensor->interface.adc_pin);
+		if (sensor->valid)
 			sensor->interface.adc_sample = val * sensor->interface.adc_scale;
-			sensor->valid = veTrue;
-		}
 	}
 
 	// Now handle the adc read to update the sensor
 	for (analog_sensors_index = 0; analog_sensors_index < sensor_count; analog_sensors_index++) {
 		analog_sensor_t *sensor = analog_sensor[analog_sensors_index];
+		filter_iir_lpf_t *filter = &sensor->interface.sig_cond.filter_iir_lpf;
 
-		// proceed if the adc reading is valid
-		if (sensor->valid == veTrue) {
-			filter_iir_lpf_t *filter = &sensor->interface.sig_cond.filter_iir_lpf;
+		if (!sensor->valid)
+			continue;
 
-			// filter the input ADC sample and store it in adc var
-			sensor->interface.adc_sample = adc_filter(sensor->interface.adc_sample, filter);
+		// filter the input ADC sample and store it in adc var
+		sensor->interface.adc_sample = adc_filter(sensor->interface.adc_sample, filter);
 
-			// reset the adc valid reading flag for next sampling cycle
-			sensor->valid = veFalse;
+		// check if the sensor function - if it needed at all?
+		un32 sensor_analogpinFunc = (un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float;
 
-			// check if the sensor function - if it needed at all?
-			un32 sensor_analogpinFunc = (un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float;
-
-			switch (sensor_analogpinFunc) {
-			case default_function:
-				// check if dbus is disconnected and connect it
-				if (!sensor->interface.dbus.connected) {
-					sensors_dbusConnect(sensor);
-				}
-
-				// need to proces the data
-				sensors_data_process(sensor);
-				break;
-
-			case no_function:
-			default:
-				// check if dbus is connected and disconnect it
-				if (sensor->interface.dbus.connected) {
-					sensors_dbusDisconnect(sensor);
-				}
-				break;
+		switch (sensor_analogpinFunc) {
+		case default_function:
+			// check if dbus is disconnected and connect it
+			if (!sensor->interface.dbus.connected) {
+				sensors_dbusConnect(sensor);
 			}
+
+			// need to proces the data
+			sensors_data_process(sensor);
+			break;
+
+		case no_function:
+		default:
+			// check if dbus is connected and disconnect it
+			if (sensor->interface.dbus.connected) {
+				sensors_dbusDisconnect(sensor);
+			}
+			break;
 		}
 	}
 
