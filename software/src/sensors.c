@@ -194,12 +194,13 @@ static void sensor_set_defaults(analog_sensor_t *sensor)
 
 /**
  * @brief sensor_init - hook the sensor items to their dbus services
+ * @param devfd - file descriptor of ADC device sysfs directory
  * @param pin - ADC pin number
  * @param scale - ADC scale in volts / unit
  * @param type - type of sensor
  * @return Pointer to sensor struct
  */
-analog_sensor_t *sensor_init(int pin, float scale, sensor_type_t type)
+analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type)
 {
 	analog_sensor_t *sensor;
 
@@ -212,6 +213,7 @@ analog_sensor_t *sensor_init(int pin, float scale, sensor_type_t type)
 
 	analog_sensor[sensor_count++] = sensor;
 
+	sensor->interface.devfd = devfd;
 	sensor->interface.adc_pin = pin;
 	sensor->interface.adc_scale = scale;
 	sensor->sensor_type = type;

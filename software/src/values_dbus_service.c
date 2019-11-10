@@ -34,16 +34,17 @@ VeItem *getConsumerRoot(void)
 
 /**
  * @brief add_sensor
+ * @param devfd - file descriptor of ADC device sysfs directory
  * @param pin - ADC pin number
  * @param scale - ADC scale in volts / unit
  * @param type - type of sensor
  * @return 0 on success, -1 on error
  */
-int add_sensor(int pin, float scale, int type)
+int add_sensor(int devfd, int pin, float scale, int type)
 {
 	analog_sensor_t *sensor;
 
-	sensor = sensor_init(pin, scale, type);
+	sensor = sensor_init(devfd, pin, scale, type);
 	if (!sensor)
 		return -1;
 

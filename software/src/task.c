@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "values.h"
 #include "version.h"
@@ -91,10 +92,25 @@ static unsigned get_uint(const char *p, unsigned min, unsigned max,
 	return v;
 }
 
+static int open_dev(const char *dev, const char *file, int line)
+{
+	char buf[64];
+	int fd;
+
+	snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s", dev);
+
+	fd = open(buf, O_RDONLY);
+	if (fd < 0)
+		error(file, line, "bad device '%s'\n", dev);
+
+	return fd;
+}
+
 static void load_config(const char *file)
 {
 	FILE *f;
 	char buf[128];
+	int devfd = -1;
 	float vref = 0;
 	unsigned scale = 0;
 	int line = 0;
@@ -130,6 +146,11 @@ static void load_config(const char *file)
 		if (rest)
 			error(file, line, "trailing junk\n");
 
+		if (!strcmp(cmd, "device")) {
+			devfd = open_dev(arg, file, line);
+			continue;
+		}
+
 		if (!strcmp(cmd, "vref")) {
 			vref = get_float(arg, VREF_MIN, VREF_MAX, file, line);
 			continue;
@@ -147,6 +168,9 @@ static void load_config(const char *file)
 		else
 			error(file, line, "unknown directive\n");
 
+		if (devfd < 0)
+			error(file, line, "%s requires device\n", cmd);
+
 		if (!vref)
 			error(file, line, "%s requires vref\n", cmd);
 
@@ -155,7 +179,7 @@ static void load_config(const char *file)
 
 		pin = get_uint(arg, 0, -1u, file, line);
 
-		if (add_sensor(pin, vref / scale, type))
+		if (add_sensor(devfd, pin, vref / scale, type))
 			error(file, line, "error adding sensor\n");
 	}
 }

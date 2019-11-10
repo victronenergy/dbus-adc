@@ -209,6 +209,7 @@ typedef struct {
 
 // building a sensor interface structure
 typedef struct {
+	int devfd;
 	int adc_pin;
 	float adc_scale;
 	float adc_sample;
@@ -233,7 +234,7 @@ typedef struct {
 	char iface_name[32];
 } analog_sensor_t;
 
-analog_sensor_t *sensor_init(int pin, float scale, sensor_type_t type);
+analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type);
 void sensors_handle(void);
 void sensors_dbusInit(analog_sensor_t *sensor);
 void values_dbus_service_addSettings(analog_sensor_t *sensor);

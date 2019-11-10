@@ -28,11 +28,10 @@ veBool adc_read(un32 *value, analog_sensor_t *sensor)
 	int fd;
 	int n;
 
-	snprintf(file, sizeof(file),
-			 "/sys/bus/iio/devices/iio:device0/in_voltage%d_raw",
+	snprintf(file, sizeof(file), "in_voltage%d_raw",
 			 sensor->interface.adc_pin);
 
-	fd = open(file, O_RDONLY);
+	fd = openat(sensor->interface.devfd, file, O_RDONLY);
 	if (fd < 0) {
 		perror(file);
 		return veFalse;
