@@ -38,6 +38,7 @@ static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, siz
 static analog_sensor_t *analog_sensor[MAX_SENSORS];
 static int sensor_count;
 static VeVariantUnitFmt veUnitVolume = {3, "m3"};
+static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
 
 // instantiate a container structure for the interface with dbus API's interface.
 static FormatInfo units = {{9, ""}, NULL};
@@ -98,8 +99,9 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
 		temperature_sensor_item_t *item = &sensor->items.temperature;
 		temperature_sensor_variant_t *var = &sensor->variant.temperature;
+		struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 
-		init_item_info(&info[4], IV(temperature),	"Temperature",		&units,				5, NULL);
+		temperature->temperatureItem = veItemCreateQuantity(root, "Temperature", veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
 		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
 		init_item_info(&info[8], IV(scale),			"Scale",			&units,				5, scaleChange);
 		init_item_info(&info[9], IV(offset),		"Offset",			&units,				5, offsetChange);
@@ -353,6 +355,7 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 	float tempC;
 	sensor_status_t status;
 	float adc_sample = sensor->interface.adc_sample;
+	struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 	VeVariant v;
 
 	if (adc_sample > TEMP_SENS_MIN_ADCIN && adc_sample < TEMP_SENS_MAX_ADCIN) {
@@ -384,10 +387,9 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 
 	// if status = o.k. publish valid value otherwise publish invalid value
 	if (status == SENSOR_STATUS_OK) {
-		veVariantSn32(&sensor->variant.temperature.temperature, (sn32)tempC);
+		veItemOwnerSet(temperature->temperatureItem, veVariantSn32(&v, tempC));
 	} else {
-		veVariantInvalidate(&sensor->variant.temperature.temperature);
-		veItemOwnerSet(sensor->info[temperature_item].item, sensor->info[temperature_item].local);
+		veItemInvalidate(temperature->temperatureItem);
 	}
 
 	veVariantUn32(&sensor->variant.temperature.analogpinFunc,
