@@ -122,7 +122,6 @@ typedef struct {
 
 // sensors items for dbus tank level sensor service
 typedef struct {
-	VeItem level;
 	VeItem remaining;
 	VeItem analogpinFunc;
 	VeItem capacity;
@@ -142,7 +141,6 @@ typedef struct {
 
 // sensors variables for tank level sensor items
 typedef struct {
-	VeVariant level;
 	VeVariant remaining;
 	VeVariant analogpinFunc;
 	VeVariant capacity;
@@ -232,6 +230,7 @@ typedef struct {
 
 struct TankSensor {
 	analog_sensor_t sensor;
+	struct VeItem *levelItem;
 };
 
 struct TemperatureSensor {
@@ -252,7 +251,6 @@ typedef enum {
 	ProductName_item = 1,
 	productId_item = 2,
 	deviceInstance_item = 3,
-	level_item = 4,
 	temperature_item = 4,
 	remaining_item = 5,
 	analogpinFunc_item = 7,

@@ -71,6 +71,7 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 	ProductInfo *prod = &sensor->items.product;
 	ItemInfo *info = sensor->info;
 	VeVariant v;
+	struct VeItem *root = &sensor->root;
 
 	init_item_info(&info[0], &prod->connected, NULL, "Connected",		&units, 0, NULL);
 	init_item_info(&info[1], &prod->name,	   NULL, "ProductName",		&units, 0, NULL);
@@ -84,8 +85,10 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 	if (sensor->sensor_type == SENSOR_TYPE_TANK) {
 		tank_level_sensor_item_t *item = &sensor->items.tank_level;
 		tank_level_sensor_variant_t *var = &sensor->variant.tank_level;
+		struct TankSensor *tank = (struct TankSensor *) sensor;
 
-		init_item_info(&info[4], IV(level),			"Level",			&units,				5, NULL);
+		tank->levelItem = veItemCreateQuantity(root, "Level", veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
+
 		init_item_info(&info[5], IV(remaining),		"Remaining",		&units,				5, NULL);
 		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
 		init_item_info(&info[8], IV(capacity),		"Capacity",			&units,				5, capacityChange);
@@ -274,6 +277,7 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 	un8 Std = (un8)sensor->variant.tank_level.standard.value.UN32;
 	sensor_status_t status;
 	VeVariant v;
+	struct TankSensor *tank = (struct TankSensor *) sensor;
 
 	if (sensor->interface.adc_sample > 1.4) {
 		// Sensor status: error - not connected
@@ -321,13 +325,12 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 
 	// if status = o.k. publish valid value otherwise publish invalid value
 	if (status == SENSOR_STATUS_OK) {
-		veVariantUn32(&sensor->variant.tank_level.level, (un32)(100 * level));
+		veItemOwnerSet(tank->levelItem, veVariantUn32(&v, 100 * level));
 		veVariantFloat(&sensor->variant.tank_level.remaining,
 			level * sensor->dbus_info[capacity].value->variant.value.Float);
 	} else {
-		veVariantInvalidate(&sensor->variant.tank_level.level);
 		veVariantInvalidate(&sensor->variant.tank_level.remaining);
-		veItemOwnerSet(sensor->info[level_item].item, sensor->info[level_item].local);
+		veItemInvalidate(tank->levelItem);
 		veItemOwnerSet(sensor->info[remaining_item].item, sensor->info[remaining_item].local);
 	}
 
