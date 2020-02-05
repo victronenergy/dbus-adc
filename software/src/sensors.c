@@ -528,7 +528,6 @@ static veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
 	veItemOwnerSet(item, variant);
-	veItemOwnerSet(getConsumerRoot(), variant);
 
 	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[capacity].path);
 	veItemSet(settingsItem, variant);
@@ -544,7 +543,6 @@ static veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
 	veItemOwnerSet(item, variant);
-	veItemOwnerSet(getConsumerRoot(), variant);
 
 	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[fluidType].path);
 	veItemSet(settingsItem, variant);
@@ -560,7 +558,6 @@ static veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
 	veItemOwnerSet(item, variant);
-	veItemOwnerSet(getConsumerRoot(), variant);
 
 	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[standard].path);
 	veItemSet(settingsItem, variant);
@@ -576,7 +573,6 @@ static veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
 	veItemOwnerSet(item, variant);
-	veItemOwnerSet(getConsumerRoot(), variant);
 
 	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[scale].path);
 	veItemSet(settingsItem, variant);
@@ -592,7 +588,6 @@ static veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
 	veItemOwnerSet(item, variant);
-	veItemOwnerSet(getConsumerRoot(), variant);
 
 	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[offset].path);
 	veItemSet(settingsItem, variant);
@@ -608,7 +603,6 @@ static veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
 
 	veItemOwnerSet(item, variant);
-	veItemOwnerSet(getConsumerRoot(), variant);
 
 	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[TempType].path);
 	veItemSet(settingsItem, variant);
