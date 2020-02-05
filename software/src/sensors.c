@@ -414,8 +414,6 @@ static void updateValues(void)
 				veItemOwnerSet(itemInfo->item, itemInfo->local);
 			}
 		}
-
-		veDbusItemUpdate(sensor->dbus);
 	}
 }
 
