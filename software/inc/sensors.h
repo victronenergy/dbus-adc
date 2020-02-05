@@ -230,6 +230,14 @@ typedef struct {
 	VeItem *statusItem;
 } analog_sensor_t;
 
+struct TankSensor {
+	analog_sensor_t sensor;
+};
+
+struct TemperatureSensor {
+	analog_sensor_t sensor;
+};
+
 analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type);
 void sensors_handle(void);
 void sensors_dbusInit(analog_sensor_t *sensor);

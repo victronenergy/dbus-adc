@@ -218,7 +218,13 @@ analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type
 	if (sensor_count == MAX_SENSORS)
 		return NULL;
 
-	sensor = calloc(1, sizeof(*sensor));
+	if (type == SENSOR_TYPE_TANK)
+		sensor = calloc(1, sizeof(struct TankSensor));
+	else if (type == SENSOR_TYPE_TEMP)
+		sensor = calloc(1, sizeof(struct TemperatureSensor));
+	else
+		return NULL;
+
 	if (!sensor)
 		return NULL;
 
