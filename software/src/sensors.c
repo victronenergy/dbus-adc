@@ -4,7 +4,7 @@
 #include <velib/utils/ve_logger.h>
 #include <velib/types/ve_dbus_item.h>
 #include <velib/vecan/products.h>
-
+#include <velib/utils/ve_item_utils.h>
 
 #include "values.h"
 #include "sensors.h"
@@ -40,7 +40,6 @@ static int sensor_count;
 
 // instantiate a container structure for the interface with dbus API's interface.
 static FormatInfo units = {{9, ""}, NULL};
-static FormatInfo statusFormat = {{0, ""}, statusFormatter};
 static FormatInfo fluidTypeFormat = {{0, ""}, fluidTypeFormatter};
 static FormatInfo standardFormat = {{0, ""}, standardItemFormatter};
 
@@ -56,15 +55,29 @@ static void init_item_info(ItemInfo *info, VeItem *item, VeVariant *local,
 	info->setValueCallback = cb;
 }
 
+static struct VeItem *createEnumItem(analog_sensor_t *sensor, const char *id,
+						   VeVariant *initial, VeItemValueFmt *fmt, VeItemSetterFun *cb)
+{
+	struct VeItem *item = veItemCreateBasic(&sensor->root, id, initial);
+	veItemSetTimeout(item, 5);
+	veItemSetSetter(item, cb, sensor);
+	veItemSetFmt(item, fmt, NULL);
+
+	return item;
+}
+
 static void sensor_item_info_init(analog_sensor_t *sensor)
 {
 	ProductInfo *prod = &sensor->items.product;
 	ItemInfo *info = sensor->info;
+	VeVariant v;
 
 	init_item_info(&info[0], &prod->connected, NULL, "Connected",		&units, 0, NULL);
 	init_item_info(&info[1], &prod->name,	   NULL, "ProductName",		&units, 0, NULL);
 	init_item_info(&info[2], &prod->id,		   NULL, "ProductId",		&units, 0, NULL);
 	init_item_info(&info[3], &prod->instance,  NULL, "DeviceInstance",	&units, 0, NULL);
+
+	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NCONN), statusFormatter, NULL);
 
 #define IV(n) &item->n, &var->n
 
@@ -74,7 +87,6 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 
 		init_item_info(&info[4], IV(level),			"Level",			&units,				5, NULL);
 		init_item_info(&info[5], IV(remaining),		"Remaining",		&units,				5, NULL);
-		init_item_info(&info[6], IV(status),		"Status",			&statusFormat,		5, NULL);
 		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
 		init_item_info(&info[8], IV(capacity),		"Capacity",			&units,				5, capacityChange);
 		init_item_info(&info[9], IV(fluidType),		"FluidType",		&fluidTypeFormat,	5, fluidTypeChange);
@@ -84,7 +96,6 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 		temperature_sensor_variant_t *var = &sensor->variant.temperature;
 
 		init_item_info(&info[4], IV(temperature),	"Temperature",		&units,				5, NULL);
-		init_item_info(&info[6], IV(status),		"Status",			&statusFormat,		5, NULL);
 		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
 		init_item_info(&info[8], IV(scale),			"Scale",			&units,				5, scaleChange);
 		init_item_info(&info[9], IV(offset),		"Offset",			&units,				5, offsetChange);
@@ -256,6 +267,7 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 	float level;
 	un8 Std = (un8)sensor->variant.tank_level.standard.value.UN32;
 	sensor_status_t status;
+	VeVariant v;
 
 	if (sensor->interface.adc_sample > 1.4) {
 		// Sensor status: error - not connected
@@ -299,8 +311,9 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 	veVariantUn32(&sensor->variant.tank_level.analogpinFunc,
 			(un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float);
 
+	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
+
 	// if status = o.k. publish valid value otherwise publish invalid value
-	veVariantUn32(&sensor->variant.tank_level.status, status);
 	if (status == SENSOR_STATUS_OK) {
 		veVariantUn32(&sensor->variant.tank_level.level, (un32)(100 * level));
 		veVariantFloat(&sensor->variant.tank_level.remaining,
@@ -332,6 +345,7 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 	float tempC;
 	sensor_status_t status;
 	float adc_sample = sensor->interface.adc_sample;
+	VeVariant v;
 
 	if (adc_sample > TEMP_SENS_MIN_ADCIN && adc_sample < TEMP_SENS_MAX_ADCIN) {
 		// calculate the output of the LM335 temperature sensor from the adc pin sample
@@ -358,8 +372,9 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 		status = SENSOR_STATUS_UNKNOWN;
 	}
 
+	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
+
 	// if status = o.k. publish valid value otherwise publish invalid value
-	veVariantUn32(&sensor->variant.temperature.status, status);
 	if (status == SENSOR_STATUS_OK) {
 		veVariantSn32(&sensor->variant.temperature.temperature, (sn32)tempC);
 	} else {

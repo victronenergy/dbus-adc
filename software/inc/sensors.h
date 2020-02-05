@@ -124,7 +124,6 @@ typedef struct {
 typedef struct {
 	VeItem level;
 	VeItem remaining;
-	VeItem status;
 	VeItem analogpinFunc;
 	VeItem capacity;
 	VeItem fluidType;
@@ -134,7 +133,6 @@ typedef struct {
 // sensors items for dbus temperature sensor service
 typedef struct {
 	VeItem temperature;
-	VeItem status;
 	VeItem analogpinFunc;
 	VeItem scale;
 	VeItem offset;
@@ -146,7 +144,6 @@ typedef struct {
 typedef struct {
 	VeVariant level;
 	VeVariant remaining;
-	VeVariant status;
 	VeVariant analogpinFunc;
 	VeVariant capacity;
 	VeVariant fluidType;
@@ -156,7 +153,6 @@ typedef struct {
 // sensors variables for temperature sensor items
 typedef struct {
 	VeVariant temperature;
-	VeVariant status;
 	VeVariant analogpinFunc;
 	VeVariant scale;
 	VeVariant offset;
@@ -231,6 +227,7 @@ typedef struct {
 	VeItem processVersion;
 	VeItem connection;
 	char iface_name[32];
+	VeItem *statusItem;
 } analog_sensor_t;
 
 analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type);
@@ -250,7 +247,6 @@ typedef enum {
 	level_item = 4,
 	temperature_item = 4,
 	remaining_item = 5,
-	status_item = 6,
 	analogpinFunc_item = 7,
 	tank_level_sens_capacity_item = 8,
 	temp_sens_Scale_item = 8,
