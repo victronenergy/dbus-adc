@@ -37,6 +37,7 @@ static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, siz
  */
 static analog_sensor_t *analog_sensor[MAX_SENSORS];
 static int sensor_count;
+static VeVariantUnitFmt veUnitVolume = {3, "m3"};
 
 // instantiate a container structure for the interface with dbus API's interface.
 static FormatInfo units = {{9, ""}, NULL};
@@ -88,8 +89,8 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 		struct TankSensor *tank = (struct TankSensor *) sensor;
 
 		tank->levelItem = veItemCreateQuantity(root, "Level", veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
+		tank->remaingItem = veItemCreateQuantity(root, "Remaining", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolume);
 
-		init_item_info(&info[5], IV(remaining),		"Remaining",		&units,				5, NULL);
 		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
 		init_item_info(&info[8], IV(capacity),		"Capacity",			&units,				5, capacityChange);
 		init_item_info(&info[9], IV(fluidType),		"FluidType",		&fluidTypeFormat,	5, fluidTypeChange);
@@ -326,12 +327,10 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 	// if status = o.k. publish valid value otherwise publish invalid value
 	if (status == SENSOR_STATUS_OK) {
 		veItemOwnerSet(tank->levelItem, veVariantUn32(&v, 100 * level));
-		veVariantFloat(&sensor->variant.tank_level.remaining,
-			level * sensor->dbus_info[capacity].value->variant.value.Float);
+		veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, level * sensor->dbus_info[capacity].value->variant.value.Float));
 	} else {
-		veVariantInvalidate(&sensor->variant.tank_level.remaining);
 		veItemInvalidate(tank->levelItem);
-		veItemOwnerSet(sensor->info[remaining_item].item, sensor->info[remaining_item].local);
+		veItemInvalidate(tank->remaingItem);
 	}
 
 	veVariantFloat(&sensor->variant.tank_level.capacity,
