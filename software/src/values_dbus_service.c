@@ -9,6 +9,7 @@
 #include <velib/utils/ve_logger.h>
 #include <velib/platform/console.h>
 #include <velib/platform/plt.h>
+#include <velib/utils/ve_item_utils.h>
 
 #include <velib/types/ve_values.h>
 #include <velib/types/ve_item_def.h>
@@ -18,8 +19,6 @@
 
 // timer divider for the app ticking
 static un16 values_task_timer = VALUES_TASK_INTERVAL;
-
-static VeVariantUnitFmt none = {0, ""};
 
 VeItem *consumer;
 
@@ -43,18 +42,16 @@ VeItem *getConsumerRoot(void)
 int add_sensor(int devfd, int pin, float scale, int type)
 {
 	analog_sensor_t *sensor;
+	VeVariant v;
 
 	sensor = sensor_init(devfd, pin, scale, type);
 	if (!sensor)
 		return -1;
 
 	/* App info */
-	veItemAddChildByUid(&sensor->root, "Mgmt/ProcessName", &sensor->processName);
-	veItemAddChildByUid(&sensor->root, "Mgmt/ProcessVersion", &sensor->processVersion);
-	veItemAddChildByUid(&sensor->root, "Mgmt/Connection", &sensor->connection);
-	veItemSetFmt(&sensor->processName, veVariantFmt, &none);
-	veItemSetFmt(&sensor->processVersion, veVariantFmt, &none);
-	veItemSetFmt(&sensor->connection, veVariantFmt, &none);
+	sensor->processName = veItemCreateBasic(&sensor->root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
+	sensor->processVersion = veItemCreateBasic(&sensor->root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
+	sensor->connection = veItemCreateBasic(&sensor->root, "Mgmt/Connection", veVariantStr(&v, sensor->iface_name));
 
 	values_dbus_service_addSettings(sensor);
 	sensors_dbusInit(sensor);
@@ -138,8 +135,6 @@ void valuesTick(void)
  */
 void sensors_dbusConnect(analog_sensor_t *sensor)
 {
-	VeVariant variant;
-
 	sensor->dbus = veDbusConnect(DBUS_BUS_SYSTEM);
 	if (!sensor->dbus) {
 		logE(sensor->interface.dbus.service, "dbus connect failed");
@@ -152,10 +147,6 @@ void sensors_dbusConnect(analog_sensor_t *sensor)
 	veDbusChangeName(sensor->dbus, sensor->interface.dbus.service);
 
 	logI(sensor->interface.dbus.service, "connected to dbus");
-
-	veItemOwnerSet(&sensor->processName, veVariantStr(&variant, pltProgramName()));
-	veItemOwnerSet(&sensor->processVersion, veVariantStr(&variant, pltProgramVersion()));
-	veItemOwnerSet(&sensor->connection, veVariantStr(&variant, sensor->iface_name));
 }
 
 /**

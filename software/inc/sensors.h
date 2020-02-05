@@ -217,9 +217,9 @@ typedef struct {
 	ItemInfo info[SENSORS_INFO_ARRAY_SIZE];
 	struct VeDbus *dbus;
 	VeItem root;
-	VeItem processName;
-	VeItem processVersion;
-	VeItem connection;
+	struct VeItem *processName;
+	struct VeItem *processVersion;
+	struct VeItem *connection;
 	char iface_name[32];
 	VeItem *statusItem;
 } analog_sensor_t;
