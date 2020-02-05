@@ -255,14 +255,15 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 	// process the data of the analog input with respect to its function
 	float level;
 	un8 Std = (un8)sensor->variant.tank_level.standard.value.UN32;
+	sensor_status_t status;
 
 	if (sensor->interface.adc_sample > 1.4) {
 		// Sensor status: error - not connected
-		veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_NCONN);
+		status = SENSOR_STATUS_NCONN;
 	// this condition applies only for the US standard
 	} else if (Std && (sensor->interface.adc_sample < 0.15)) {
 		// Sensor status: error - short circuited
-		veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_SHORT);
+		status = SENSOR_STATUS_SHORT;
 	} else {
 		// calculate the resistance of the tank level sensor from the adc pin sample
 		float vdiff = TANK_SENS_VREF - sensor->interface.adc_sample;
@@ -287,10 +288,10 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 			}
 
 			// Sensor status: O.K.
-			veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_OK);
+			status = SENSOR_STATUS_OK;
 		} else {
 			// Sensor status: error - unknown value
-			veVariantUn32(&sensor->variant.tank_level.status, SENSOR_STATUS_UNKNOWN);
+			status = SENSOR_STATUS_UNKNOWN;
 		}
 	}
 
@@ -299,7 +300,8 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 			(un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float);
 
 	// if status = o.k. publish valid value otherwise publish invalid value
-	if (sensor->variant.tank_level.status.value.UN8 == SENSOR_STATUS_OK) {
+	veVariantUn32(&sensor->variant.tank_level.status, status);
+	if (status == SENSOR_STATUS_OK) {
 		veVariantUn32(&sensor->variant.tank_level.level, (un32)(100 * level));
 		veVariantFloat(&sensor->variant.tank_level.remaining,
 			level * sensor->dbus_info[capacity].value->variant.value.Float);
