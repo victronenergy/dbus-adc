@@ -2,7 +2,6 @@
 #define _VALUES_H_
 
 #include <velib/types/ve_item.h>
-#include <velib/types/ve_item_def.h>
 #include <velib/types/variant_print.h>
 
 /**
@@ -21,7 +20,7 @@ typedef struct {
 
 // information for interfacing to dbus service
 typedef struct {
-	VeItem *item;
+	struct VeItem *item;
 	VeVariant *local;
 	char const *id;
 	FormatInfo *fmt;
@@ -43,12 +42,12 @@ typedef struct {
 	float max;
 	char path[64];
 	struct VeDbus *connect;
-	VeItem *value;
+	struct VeItem *value;
 } dbus_info_t;
 
 /***********************************************/
 // Public function prototypes
 void valuesTick(void);
-VeItem *getConsumerRoot(void);
+struct VeItem *getConsumerRoot(void);
 
 #endif
