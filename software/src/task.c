@@ -182,7 +182,7 @@ static void load_config(const char *file)
 	}
 }
 
-void values_dbus_service_connectSettings(void)
+static void connectToDbus(void)
 {
 	const char *settingsService = "com.victronenergy.settings";
 	struct VeItem *input_root = veValueTree();
@@ -213,9 +213,7 @@ struct VeItem *getConsumerRoot(void)
  */
 void taskInit(void)
 {
-	// Connect to settings service to dbus
-	values_dbus_service_connectSettings();
-
+	connectToDbus();
 	load_config(CONFIG_FILE);
 }
 
