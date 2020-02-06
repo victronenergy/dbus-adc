@@ -19,10 +19,6 @@
 // Callbacks to be called when the parameters are changing
 static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
-static veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
-static veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant);
-static veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant);
-
 //static variables
 /**
  * @brief analog_sensor - array of analog sensor structures
@@ -196,13 +192,12 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 
 		temperature->temperatureItem = veItemCreateQuantity(root, "Temperature", veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
 
-		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
-		init_item_info(&info[8], IV(scale),			"Scale",			&units,				5, scaleChange);
-		init_item_info(&info[9], IV(offset),		"Offset",			&units,				5, offsetChange);
-		init_item_info(&info[10],IV(temperatureType),"TemperatureType", &units,				5, TempTypeChange);
+		snprintf(prefix, sizeof(prefix), "Settings/Temperature/%d", sensor->number);
+		temperature->scaleItem = createSettingsProxy(sensor, prefix, "Scale", veVariantFmt, &veUnitNone);
+		temperature->offsetItem = createSettingsProxy(sensor, prefix, "Offset", veVariantFmt, &veUnitNone);
+		createSettingsProxy(sensor, prefix, "TemperatureType", veVariantFmt, &veUnitNone);
 
-		temperature->scaleItem = &sensor->items.temperature.scale;
-		temperature->offsetItem = &sensor->items.temperature.offset;
+		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
 	}
 
 #undef IV
@@ -502,12 +497,6 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 
 	veVariantUn32(&sensor->variant.temperature.analogpinFunc,
 			(un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float);
-	veVariantFloat(&sensor->variant.temperature.scale,
-			sensor->dbus_info[scale].value->variant.value.Float);
-	veVariantSn32(&sensor->variant.temperature.offset,
-			(sn32)sensor->dbus_info[offset].value->variant.value.Float);
-	veVariantSn32(&sensor->variant.temperature.temperatureType,
-			(sn32)sensor->dbus_info[TempType].value->variant.value.Float);
 
 	return veTrue;
 }
@@ -654,51 +643,6 @@ static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *var
 	veItemSet(settingsItem, variant);
 
 	p_analog_sensor->variant.tank_level.analogpinFunc.value.Float = variant->value.Float;
-
-	return veTrue;
-}
-
-// Callback when the scale is changing
-static veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant)
-{
-	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
-
-	veItemOwnerSet(item, variant);
-
-	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[scale].path);
-	veItemSet(settingsItem, variant);
-
-	p_analog_sensor->variant.temperature.scale.value.Float = variant->value.Float;
-
-	return veTrue;
-}
-
-// Callback when the offset is changing
-static veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant)
-{
-	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
-
-	veItemOwnerSet(item, variant);
-
-	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[offset].path);
-	veItemSet(settingsItem, variant);
-
-	p_analog_sensor->variant.temperature.offset.value.SN32 = variant->value.SN32;
-
-	return veTrue;
-}
-
-//
-static veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
-{
-	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
-
-	veItemOwnerSet(item, variant);
-
-	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[TempType].path);
-	veItemSet(settingsItem, variant);
-
-	p_analog_sensor->variant.temperature.temperatureType.value.SN32 = variant->value.SN32;
 
 	return veTrue;
 }

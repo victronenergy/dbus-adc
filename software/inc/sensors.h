@@ -128,10 +128,6 @@ typedef struct {
 // sensors items for dbus temperature sensor service
 typedef struct {
 	VeItem analogpinFunc;
-	VeItem scale;
-	VeItem offset;
-	VeItem temperatureType;
-	VeItem spareParam;
 } temperature_sensor_item_t;
 
 // sensors variables for tank level sensor items
@@ -142,10 +138,6 @@ typedef struct {
 // sensors variables for temperature sensor items
 typedef struct {
 	VeVariant analogpinFunc;
-	VeVariant scale;
-	VeVariant offset;
-	VeVariant temperatureType;
-	VeVariant spareParam;
 } temperature_sensor_variant_t;
 
 // parameters to interface the sensor to dbus service
