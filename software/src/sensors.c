@@ -10,7 +10,7 @@
 #include <velib/utils/ve_item_utils.h>
 #include <velib/platform/plt.h>
 
-#include "values.h"
+#include "task.h"
 #include "sensors.h"
 
 struct SettingProperties {
@@ -490,9 +490,28 @@ static veBool sensors_data_process(analog_sensor_t *sensor)
 	return veTrue;
 }
 
-/**
- * @brief sensors_handle - handles the sensors
- */
+static void sensors_dbusConnect(analog_sensor_t *sensor)
+{
+	sensor->dbus = veDbusConnectString(veDbusGetDefaultConnectString());
+	if (!sensor->dbus) {
+		logE(sensor->interface.dbus.service, "dbus connect failed");
+		pltExit(1);
+	}
+	sensor->interface.dbus.connected = veTrue;
+	/* Device found */
+
+	veDbusItemInit(sensor->dbus, &sensor->root);
+	veDbusChangeName(sensor->dbus, sensor->interface.dbus.service);
+
+	logI(sensor->interface.dbus.service, "connected to dbus");
+}
+
+static void sensors_dbusDisconnect(analog_sensor_t *sensor)
+{
+	veDbusDisconnect(sensor->dbus);
+	sensor->interface.dbus.connected = veFalse;
+}
+
 void sensors_handle(void)
 {
 	int analog_sensors_index;
@@ -545,4 +564,29 @@ void sensors_handle(void)
 			break;
 		}
 	}
+}
+
+/**
+ * @brief add_sensor
+ * @param devfd - file descriptor of ADC device sysfs directory
+ * @param pin - ADC pin number
+ * @param scale - ADC scale in volts / unit
+ * @param type - type of sensor
+ * @return 0 on success, -1 on error
+ */
+int add_sensor(int devfd, int pin, float scale, int type)
+{
+	analog_sensor_t *sensor;
+	VeVariant v;
+
+	sensor = sensor_init(devfd, pin, scale, type);
+	if (!sensor)
+		return -1;
+
+	/* App info */
+	sensor->processName = veItemCreateBasic(&sensor->root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
+	sensor->processVersion = veItemCreateBasic(&sensor->root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
+	sensor->connection = veItemCreateBasic(&sensor->root, "Mgmt/Connection", veVariantStr(&v, sensor->iface_name));
+
+	return 0;
 }

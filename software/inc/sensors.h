@@ -5,8 +5,6 @@
 #include <velib/types/ve_item.h>
 #include <velib/types/ve_item_def.h>
 
-#include "values.h"
-
 #define MAX_SENSORS							8
 #define SAMPLE_RATE							10
 
@@ -135,8 +133,7 @@ struct TemperatureSensor {
 
 analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type);
 void sensors_handle(void);
-void sensors_dbusConnect(analog_sensor_t *sensor);
-void sensors_dbusDisconnect(analog_sensor_t *sensor);
+int add_sensor(int devfd, int pin, float scale, int type);
 veBool adc_read(un32 *value, analog_sensor_t *sensor);
 float adc_filter(float x, filter_iir_lpf_t *f);
 

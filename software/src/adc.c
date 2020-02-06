@@ -8,7 +8,6 @@
 #include <velib/types/ve_item.h>
 #include <velib/utils/ve_logger.h>
 
-#include "values.h"
 #include "sensors.h"
 
 /**

@@ -5,8 +5,8 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#include "values.h"
 #include "version.h"
+#include "sensors.h"
 #include "task.h"
 
 #include <velib/types/ve_values.h>
@@ -19,6 +19,8 @@
 
 #include <velib/platform/plt.h>
 
+#define SENSOR_TICKS	2 /* 100ms */
+
 #define CONFIG_FILE	"/etc/venus/dbus-adc.conf"
 
 #define VREF_MIN	1.0
@@ -26,6 +28,8 @@
 
 #define SCALE_MIN	1023
 #define SCALE_MAX	65535
+
+static VeItem *consumer;
 
 static void error(const char *file, int line, const char *fmt, ...)
 {
@@ -184,6 +188,31 @@ static void load_config(const char *file)
 	}
 }
 
+void values_dbus_service_connectSettings(void)
+{
+	const char *settingsService = "com.victronenergy.settings";
+	VeItem *input_root = veValueTree();
+	struct VeDbus *dbus;
+
+	if (!(dbus = veDbusGetDefaultBus())) {
+		printf("dbus connection failed\n");
+		pltExit(5);
+	}
+	veDbusSetListeningDbus(dbus);
+
+	/* Connect to settings service */
+	consumer = veItemGetOrCreateUid(input_root, settingsService);
+	if (!veDbusAddRemoteService(settingsService, consumer, veTrue)) {
+		logE("task", "veDbusAddRemoteService failed");
+		pltExit(1);
+	}
+}
+
+VeItem *getConsumerRoot(void)
+{
+	return consumer;
+}
+
 /**
  * @brief taskInit
  * initiate the system and enable the interrupts to start ticking the app
@@ -203,13 +232,16 @@ void taskUpdate(void)
 {
 // Not in use
 }
-/**
- * @brief taskTick- will be executed every 50 ms and this is the app tick.
- */
+
+/* 50 ms time update. */
 void taskTick(void)
 {
-	// got to handle the sensors and update the dbus items
-	valuesTick();
+	static un16 values_task_timer = SENSOR_TICKS;
+
+	if (--values_task_timer == 0) {
+		values_task_timer = SENSOR_TICKS;
+		sensors_handle();
+	}
 }
 
 static char const version[] = VERSION_STR;
