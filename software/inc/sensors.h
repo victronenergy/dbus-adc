@@ -228,6 +228,9 @@ struct TankSensor {
 	analog_sensor_t sensor;
 	struct VeItem *levelItem;
 	struct VeItem *remaingItem;
+	struct VeItem *capacityItem;
+	struct VeItem *fluidTypeItem;
+	struct VeItem *standardItem; /* tanksensor standard, EU vs US e.g. */
 };
 
 struct TemperatureSensor {

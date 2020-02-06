@@ -96,6 +96,11 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 		init_item_info(&info[8], IV(capacity),		"Capacity",			&units,				5, capacityChange);
 		init_item_info(&info[9], IV(fluidType),		"FluidType",		&fluidTypeFormat,	5, fluidTypeChange);
 		init_item_info(&info[10],IV(standard),		"Standard",			&standardFormat,	5, standardChange);
+
+		tank->capacityItem = &sensor->items.tank_level.capacity;
+		tank->fluidTypeItem = &sensor->items.tank_level.fluidType;
+		tank->standardItem = &sensor->items.tank_level.standard;
+
 	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
 		temperature_sensor_item_t *item = &sensor->items.temperature;
 		temperature_sensor_variant_t *var = &sensor->variant.temperature;
@@ -276,17 +281,25 @@ analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type
 static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 {
 	// process the data of the analog input with respect to its function
-	float level;
-	un8 Std = (un8)sensor->variant.tank_level.standard.value.UN32;
+	float level, tankCapacity;
+	tank_sensor_std_t standard;
 	sensor_status_t status;
 	VeVariant v;
 	struct TankSensor *tank = (struct TankSensor *) sensor;
+
+	if (!veVariantIsValid(veItemLocalValue(tank->standardItem, &v)))
+		return veFalse;
+	standard = (tank_sensor_std_t) v.value.UN32;
+
+	if (!veVariantIsValid(veItemLocalValue(tank->capacityItem, &v)))
+		return veFalse;
+	tankCapacity = v.value.Float;
 
 	if (sensor->interface.adc_sample > 1.4) {
 		// Sensor status: error - not connected
 		status = SENSOR_STATUS_NCONN;
 	// this condition applies only for the US standard
-	} else if (Std && (sensor->interface.adc_sample < 0.15)) {
+	} else if (standard && (sensor->interface.adc_sample < 0.15)) {
 		// Sensor status: error - short circuited
 		status = SENSOR_STATUS_SHORT;
 	} else {
@@ -296,7 +309,7 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 
 		// check the integrity of the resistance
 		if (R2>0) { // calculate the tank level
-			if (Std == american_std) { // tank level calculation in the case it is an American standard sensor
+			if (standard == american_std) { // tank level calculation in the case it is an American standard sensor
 				level = (R2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
 				if (level < 0) {
 					level = 0;
@@ -329,7 +342,7 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 	// if status = o.k. publish valid value otherwise publish invalid value
 	if (status == SENSOR_STATUS_OK) {
 		veItemOwnerSet(tank->levelItem, veVariantUn32(&v, 100 * level));
-		veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, level * sensor->dbus_info[capacity].value->variant.value.Float));
+		veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, level * tankCapacity));
 	} else {
 		veItemInvalidate(tank->levelItem);
 		veItemInvalidate(tank->remaingItem);
