@@ -1,3 +1,6 @@
+#include <string.h>
+#include <stdlib.h>
+
 #include <velib/base/base.h>
 #include <velib/base/ve_string.h>
 #include <velib/types/ve_item.h>
@@ -9,13 +12,6 @@
 
 #include "values.h"
 #include "sensors.h"
-
-#include <string.h>
-#ifdef WIN32
-#include <stdio.h>
-#else
-#include <stdlib.h>
-#endif
 
 struct SettingProperties {
 	VeDataBasicType type;

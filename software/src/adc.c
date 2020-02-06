@@ -1,19 +1,15 @@
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <velib/base/base.h>
 #include <velib/base/ve_string.h>
 #include <velib/types/ve_item.h>
 #include <velib/utils/ve_logger.h>
 
-#include <string.h>
-#ifdef WIN32
-#include <stdio.h>
-#else
-#include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-
 #include "values.h"
 #include "sensors.h"
-#endif
 
 /**
  * @brief adc_read - performs an adc sample read
