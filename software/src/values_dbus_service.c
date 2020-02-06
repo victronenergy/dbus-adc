@@ -127,7 +127,7 @@ void valuesTick(void)
  */
 void sensors_dbusConnect(analog_sensor_t *sensor)
 {
-	sensor->dbus = veDbusConnect(DBUS_BUS_SYSTEM);
+	sensor->dbus = veDbusConnectString(veDbusGetDefaultConnectString());
 	if (!sensor->dbus) {
 		logE(sensor->interface.dbus.service, "dbus connect failed");
 		pltExit(1);
