@@ -9,7 +9,6 @@
 #include <velib/utils/ve_logger.h>
 #include <velib/vecan/products.h>
 
-#include "task.h"
 #include "sensors.h"
 
 #define MAX_SENSORS							8
@@ -193,7 +192,7 @@ static struct VeItem *createSettingsProxy(analog_sensor_t *sensor, char const *p
 										  char *id, VeItemValueFmt *fmt, void *fmtCtx,
 										  struct SettingProperties *properties)
 {
-	struct VeItem *localSettings = getConsumerRoot();
+	struct VeItem *localSettings = getLocalSettings();
 	struct VeItem *settingPrefixItem, *settingItem, *sensorItem;
 	VeVariant v;
 

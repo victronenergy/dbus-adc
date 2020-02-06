@@ -11,7 +11,6 @@
 #include <velib/utils/ve_logger.h>
 
 #include "sensors.h"
-#include "task.h"
 
 #define SENSOR_TICKS	2 /* 100ms */
 
@@ -23,7 +22,7 @@
 #define SCALE_MIN	1023
 #define SCALE_MAX	65535
 
-static struct VeItem *consumer;
+static struct VeItem *localSettings;
 
 static void error(const char *file, int line, const char *fmt, ...)
 {
@@ -195,16 +194,16 @@ static void connectToDbus(void)
 	veDbusSetListeningDbus(dbus);
 
 	/* Connect to settings service */
-	consumer = veItemGetOrCreateUid(input_root, settingsService);
-	if (!veDbusAddRemoteService(settingsService, consumer, veTrue)) {
+	localSettings = veItemGetOrCreateUid(input_root, settingsService);
+	if (!veDbusAddRemoteService(settingsService, localSettings, veTrue)) {
 		logE("task", "veDbusAddRemoteService failed");
 		pltExit(1);
 	}
 }
 
-struct VeItem *getConsumerRoot(void)
+struct VeItem *getLocalSettings(void)
 {
-	return consumer;
+	return localSettings;
 }
 
 /**
