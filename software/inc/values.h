@@ -26,7 +26,6 @@ typedef struct {
 	float min;
 	float max;
 	char path[64];
-	struct VeDbus *connect;
 	struct VeItem *value;
 } dbus_info_t;
 

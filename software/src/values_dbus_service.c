@@ -89,13 +89,6 @@ void values_dbus_service_connectSettings(void)
 void values_dbus_service_addSettings(analog_sensor_t *sensor)
 {
 	for (int i = 0; i < NUM_OF_SENSOR_SETTINGS_PARAMS; i++) {
-		/* Connect to the dbus */
-		if (!(sensor->dbus_info[i].connect = veDbusGetDefaultBus())) {
-			printf("dbus connection failed\n");
-			pltExit(5);
-		}
-		/* Listen to D-Bus.. */
-		veDbusSetListeningDbus(sensor->dbus_info[i].connect);
 		/* Create an item pointing to our new setting */
 		sensor->dbus_info[i].value = veItemGetOrCreateUid(consumer, sensor->dbus_info[i].path);
 		/* Set the properties of the new settings */
