@@ -12,6 +12,36 @@
 #include "task.h"
 #include "sensors.h"
 
+#define MAX_SENSORS							8
+#define SAMPLE_RATE							10
+
+// defines for the tank level sensor analog front end parameters
+#define TANK_SENS_VREF						5.0
+#define TANK_SENS_R1						680.0 // ohms
+#define EUR_MAX_TANK_LEVEL_RESISTANCE		(180) //ohms
+#define USA_MAX_TANK_LEVEL_RESISTANCE		(240) //ohms
+#define USA_MIN_TANK_LEVEL_RESISTANCE		(30) //ohms
+
+// defines for the temperature sensor analog front end parameters
+#define TEMP_SENS_R1						10000.0 // ohms
+#define TEMP_SENS_R2						4700.0  // ohms
+#define TEMP_SENS_V_RATIO					((TEMP_SENS_R1 + TEMP_SENS_R2) / TEMP_SENS_R2)
+#define TEMP_SENS_MAX_ADCIN					1.3 // ~400K
+#define TEMP_SENS_MIN_ADCIN					0.8 // ~(-22) degrees C
+#define TEMP_SENS_S_C_ADCIN					0.02
+#define TEMP_SENS_INV_PLRTY_ADCIN			0.208 // 0.7 volts at divider input
+#define TEMP_SENS_INV_PLRTY_ADCIN_BAND		0.15
+#define TEMP_SENS_INV_PLRTY_ADCIN_LB		(TEMP_SENS_INV_PLRTY_ADCIN - TEMP_SENS_INV_PLRTY_ADCIN_BAND)
+#define TEMP_SENS_INV_PLRTY_ADCIN_HB		(TEMP_SENS_INV_PLRTY_ADCIN + TEMP_SENS_INV_PLRTY_ADCIN_BAND)
+
+// defines to tank level sensor filter parameters
+#define TANK_SENSOR_IIR_LPF_FF_VALUE		0.4
+#define TANK_SENSOR_CUTOFF_FREQ				(0.001 / SAMPLE_RATE)
+
+// defines to temperature sensor filter parameters
+#define TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE	0.2
+#define TEMPERATURE_SENSOR_CUTOFF_FREQ		(0.01 / SAMPLE_RATE)
+
 struct SettingProperties {
 	VeDataBasicType type;
 	VeVariant def;
