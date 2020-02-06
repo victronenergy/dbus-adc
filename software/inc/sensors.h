@@ -236,6 +236,8 @@ struct TankSensor {
 struct TemperatureSensor {
 	analog_sensor_t sensor;
 	struct VeItem *temperatureItem;
+	struct VeItem *scaleItem;
+	struct VeItem *offsetItem;
 };
 
 analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type);

@@ -107,10 +107,14 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 		struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 
 		temperature->temperatureItem = veItemCreateQuantity(root, "Temperature", veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
+
 		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
 		init_item_info(&info[8], IV(scale),			"Scale",			&units,				5, scaleChange);
 		init_item_info(&info[9], IV(offset),		"Offset",			&units,				5, offsetChange);
 		init_item_info(&info[10],IV(temperatureType),"TemperatureType", &units,				5, TempTypeChange);
+
+		temperature->scaleItem = &sensor->items.temperature.scale;
+		temperature->offsetItem = &sensor->items.temperature.offset;
 	}
 
 #undef IV
@@ -365,11 +369,19 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
  */
 static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 {
-	float tempC;
+	float tempC, tempOffset, tempScale;
 	sensor_status_t status;
 	float adc_sample = sensor->interface.adc_sample;
 	struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 	VeVariant v;
+
+	if (!veVariantIsValid(veItemLocalValue(temperature->offsetItem, &v)))
+		return veFalse;
+	tempOffset = v.value.Float;
+
+	if (!veVariantIsValid(veItemLocalValue(temperature->scaleItem, &v)))
+		return veFalse;
+	tempScale = v.value.Float;
 
 	if (adc_sample > TEMP_SENS_MIN_ADCIN && adc_sample < TEMP_SENS_MAX_ADCIN) {
 		// calculate the output of the LM335 temperature sensor from the adc pin sample
@@ -377,9 +389,9 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 		// convert from Kelvin to Celsius
 		tempC = 100 * v_sens - 273;
 		// Signal scale correction
-		tempC *= (sensor->variant.temperature.scale.value.Float);
+		tempC *= tempScale;
 		// Signal offset correction
-		tempC += (sensor->variant.temperature.offset.value.SN32);
+		tempC += tempOffset;
 
 		status = SENSOR_STATUS_OK;
 	} else if (adc_sample > TEMP_SENS_MAX_ADCIN) {
