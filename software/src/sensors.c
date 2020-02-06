@@ -5,6 +5,7 @@
 #include <velib/types/ve_dbus_item.h>
 #include <velib/vecan/products.h>
 #include <velib/utils/ve_item_utils.h>
+#include <velib/platform/plt.h>
 
 #include "values.h"
 #include "sensors.h"
@@ -16,14 +17,61 @@
 #include <stdlib.h>
 #endif
 
-//static variables
-/**
- * @brief analog_sensor - array of analog sensor structures
- */
+struct SettingProperties {
+	VeDataBasicType type;
+	VeVariant def;
+	VeVariant min;
+	VeVariant max;
+};
+
 static analog_sensor_t *analog_sensor[MAX_SENSORS];
 static int sensor_count;
+
 static VeVariantUnitFmt veUnitVolume = {3, "m3"};
 static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
+
+/* Common */
+static struct SettingProperties functionProps = {
+	.type = VE_SN32,
+	.def.value.SN32 = default_function,
+	.max.value.SN32 = num_of_functions - 1,
+};
+
+/* Tank sensor */
+static struct SettingProperties tankCapacityProps = {
+	.type = VE_FLOAT,
+	.def.value.Float = 0.2f /* m3 */,
+	.max.value.Float = 1000.0f,
+};
+
+static struct SettingProperties tankFluidType = {
+	.type = VE_SN32,
+	.max.value.SN32 = INT32_MAX - 3,
+};
+
+static struct SettingProperties tankStandardProps = {
+	.type = VE_SN32,
+	.max.value.SN32 = num_of_stds - 1,
+};
+
+/* Temperature sensor */
+static struct SettingProperties scaleProps = {
+	.type = VE_FLOAT,
+	.def.value.Float = 1.0f,
+	.min.value.Float = 0.1f,
+	.max.value.Float = 10.0f,
+};
+
+static struct SettingProperties offsetProps = {
+	.type = VE_FLOAT,
+	.min.value.Float = -100.0f,
+	.max.value.Float = 100.0f,
+};
+
+static struct SettingProperties temperatureType = {
+	.type = VE_SN32,
+	.max.value.SN32 = INT32_MAX - 3,
+};
 
 /** Formats enum values. The content of `var` will converted to an integer. The integer will be used
   * as index to pick a string from options. This string is copied to buf.
@@ -117,10 +165,16 @@ static void onSettingChanged(struct VeItem *item)
  * in localsettings changed, also update the sensor value.
  */
 static struct VeItem *createSettingsProxy(analog_sensor_t *sensor, char const *prefix,
-										  char *id, VeItemValueFmt *fmt, void *fmtCtx)
+										  char *id, VeItemValueFmt *fmt, void *fmtCtx,
+										  struct SettingProperties *properties)
 {
 	struct VeItem *localSettings = getConsumerRoot();
 	struct VeItem *settingPrefixItem, *settingItem, *sensorItem;
+	VeVariant v;
+
+	properties->def.type.tp = properties->type;
+	properties->min.type.tp = properties->type;
+	properties->max.type.tp = properties->type;
 
 	settingPrefixItem = veItemGetOrCreateUid(localSettings, prefix);
 	settingItem = veItemGetOrCreateUid(settingPrefixItem, id);
@@ -131,7 +185,15 @@ static struct VeItem *createSettingsProxy(analog_sensor_t *sensor, char const *p
 
 	veItemSetSetter(sensorItem, forwardToLocalsettings, settingItem);
 	veItemSetFmt(sensorItem, fmt, fmtCtx);
+	veItemLocalSet(sensorItem, veVariantInvalidType(&v, properties->type));
+	veItemSetMax(sensorItem, &properties->max);
+	veItemSetMin(sensorItem, &properties->min);
+	veItemSetDefault(sensorItem, &properties->def);
 
+	if (!veDBusAddLocalSetting(settingItem, &properties->def, &properties->min, &properties->max, veFalse)) {
+		logE("task", "veDBusAddLocalSetting failed");
+		pltExit(1);
+	}
 	return sensorItem;
 }
 
@@ -140,7 +202,7 @@ static struct VeItem *createFunctionProxy(analog_sensor_t *sensor, const char *p
 	char prefix[VE_MAX_UID_SIZE];
 
 	snprintf(prefix, sizeof(prefix), prefixFormat, sensor->number);
-	return createSettingsProxy(sensor, prefix, "Function", veVariantFmt, &veUnitNone);
+	return createSettingsProxy(sensor, prefix, "Function", veVariantFmt, &veUnitNone, &functionProps);
 }
 
 static void sensor_item_info_init(analog_sensor_t *sensor)
@@ -163,9 +225,9 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 		tank->remaingItem = veItemCreateQuantity(root, "Remaining", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolume);
 
 		snprintf(prefix, sizeof(prefix), "Settings/Tank/%d", sensor->number);
-		tank->capacityItem = createSettingsProxy(sensor, prefix, "Capacity", veVariantFmt, &veUnitVolume);
-		tank->fluidTypeItem = createSettingsProxy(sensor, prefix, "FluidType", fluidTypeFormatter, NULL);
-		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard", standardItemFormatter, NULL);
+		tank->capacityItem = createSettingsProxy(sensor, prefix, "Capacity", veVariantFmt, &veUnitVolume, &tankCapacityProps);
+		tank->fluidTypeItem = createSettingsProxy(sensor, prefix, "FluidType", fluidTypeFormatter, NULL, &tankFluidType);
+		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard", standardItemFormatter, NULL, &tankStandardProps);
 
 		sensor->function = createFunctionProxy(sensor, "/Settings/AnalogInput/Resistive/%d");
 
@@ -178,9 +240,9 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 		temperature->temperatureItem = veItemCreateQuantity(root, "Temperature", veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
 
 		snprintf(prefix, sizeof(prefix), "Settings/Temperature/%d", sensor->number);
-		temperature->scaleItem = createSettingsProxy(sensor, prefix, "Scale", veVariantFmt, &veUnitNone);
-		temperature->offsetItem = createSettingsProxy(sensor, prefix, "Offset", veVariantFmt, &veUnitNone);
-		createSettingsProxy(sensor, prefix, "TemperatureType", veVariantFmt, &veUnitNone);
+		temperature->scaleItem = createSettingsProxy(sensor, prefix, "Scale", veVariantFmt, &veUnitNone, &scaleProps);
+		temperature->offsetItem = createSettingsProxy(sensor, prefix, "Offset", veVariantFmt, &veUnitNone, &offsetProps);
+		createSettingsProxy(sensor, prefix, "TemperatureType", veVariantFmt, &veUnitNone, &temperatureType);
 
 		sensor->function = createFunctionProxy(sensor, "/Settings/AnalogInput/Temperature/%d");
 	}
@@ -190,7 +252,6 @@ static void sensor_set_defaults_tank(analog_sensor_t *sensor)
 {
 	sensors_dbus_interface_t *dbus = &sensor->interface.dbus;
 	filter_iir_lpf_t *lpf = &sensor->interface.sig_cond.filter_iir_lpf;
-	dbus_info_t *dbi = sensor->dbus_info;
 
 	static int tank_num = 1;
 
@@ -200,27 +261,6 @@ static void sensor_set_defaults_tank(analog_sensor_t *sensor)
 
 	snprintf(dbus->service, sizeof(dbus->service),
 			 "com.victronenergy.tank.builtin_adc%d", sensor->interface.adc_pin);
-
-	snprintf(dbi[0].path, sizeof(dbi[0].path),
-			 "Settings/AnalogInput/Resistive/%d/Function", tank_num);
-
-	dbi[1].def = DEFAULT_TANK_CAPACITY;
-	dbi[1].min = MIN_OF_TANK_CAPACITY;
-	dbi[1].max = MAX_OF_TANK_CAPACITY;
-	snprintf(dbi[1].path, sizeof(dbi[1].path),
-			 "Settings/Tank/%d/Capacity", tank_num);
-
-	dbi[2].def = DEFAULT_FLUID_TYPE;
-	dbi[2].min = MIN_OF_FLUID_TYPE;
-	dbi[2].max = MAX_OF_FLUID_TYPE;
-	snprintf(dbi[2].path, sizeof(dbi[2].path),
-			 "Settings/Tank/%d/FluidType", tank_num);
-
-	dbi[3].def = european_std;
-	dbi[3].min = european_std;
-	dbi[3].max = num_of_stds - 1;
-	snprintf(dbi[3].path, sizeof(dbi[3].path),
-			 "Settings/Tank/%d/Standard", tank_num);
 
 	snprintf(sensor->iface_name, sizeof(sensor->iface_name),
 			 "Tank Level sensor input %d", tank_num);
@@ -233,7 +273,6 @@ static void sensor_set_defaults_temp(analog_sensor_t *sensor)
 {
 	sensors_dbus_interface_t *dbus = &sensor->interface.dbus;
 	filter_iir_lpf_t *lpf = &sensor->interface.sig_cond.filter_iir_lpf;
-	dbus_info_t *dbi = sensor->dbus_info;
 
 	static int temp_num = 1;
 
@@ -244,27 +283,6 @@ static void sensor_set_defaults_temp(analog_sensor_t *sensor)
 	snprintf(dbus->service, sizeof(dbus->service),
 			 "com.victronenergy.temperature.builtin_adc%d", sensor->interface.adc_pin);
 
-	snprintf(dbi[0].path, sizeof(dbi[0].path),
-			 "Settings/AnalogInput/Temperature/%d/Function", temp_num);
-
-	dbi[1].def = TEMPERATURE_SCALE;
-	dbi[1].min = MIN_OF_TEMPERATURE_SCALE;
-	dbi[1].max = MAX_OF_TEMPERATURE_SCALE;
-	snprintf(dbi[1].path, sizeof(dbi[1].path),
-			 "Settings/Temperature/%d/Scale", temp_num);
-
-	dbi[2].def = TEMPERATURE_OFFSET;
-	dbi[2].min = MIN_OF_TEMPERATURE_OFFSET;
-	dbi[2].max = MAX_OF_TEMPERATURE_OFFSET;
-	snprintf(dbi[2].path, sizeof(dbi[2].path),
-			 "Settings/Temperature/%d/Offset", temp_num);
-
-	dbi[3].def = DEFAULT_TEMPERATURE_TYPE;
-	dbi[3].min = MIN_TEMPERATURE_TYPE;
-	dbi[3].max = num_of_temperature_sensor_type - 1;
-	snprintf(dbi[3].path, sizeof(dbi[3].path),
-			 "Settings/Temperature/%d/TemperatureType", temp_num);
-
 	snprintf(sensor->iface_name, sizeof(sensor->iface_name),
 			 "Temperature sensor input %d", temp_num);
 
@@ -274,12 +292,6 @@ static void sensor_set_defaults_temp(analog_sensor_t *sensor)
 
 static void sensor_set_defaults(analog_sensor_t *sensor)
 {
-	dbus_info_t *dbi = sensor->dbus_info;
-
-	dbi[0].def = default_function;
-	dbi[0].min = no_function;
-	dbi[0].max = num_of_functions - 1;
-
 	if (sensor->sensor_type == SENSOR_TYPE_TANK)
 		sensor_set_defaults_tank(sensor);
 	else if (sensor->sensor_type == SENSOR_TYPE_TEMP)

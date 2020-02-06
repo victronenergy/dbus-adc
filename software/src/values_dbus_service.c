@@ -53,8 +53,6 @@ int add_sensor(int devfd, int pin, float scale, int type)
 	sensor->processVersion = veItemCreateBasic(&sensor->root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
 	sensor->connection = veItemCreateBasic(&sensor->root, "Mgmt/Connection", veVariantStr(&v, sensor->iface_name));
 
-	values_dbus_service_addSettings(sensor);
-
 	return 0;
 }
 
@@ -79,29 +77,6 @@ void values_dbus_service_connectSettings(void)
 	if (!veDbusAddRemoteService(settingsService, consumer, veTrue)) {
 		logE("task", "veDbusAddRemoteService failed");
 		pltExit(1);
-	}
-}
-
-/**
- * @brief values_dbus_service_addSettings
- * @param sensor - the pointer to the sensor structure array element
- */
-void values_dbus_service_addSettings(analog_sensor_t *sensor)
-{
-	for (int i = 0; i < NUM_OF_SENSOR_SETTINGS_PARAMS; i++) {
-		/* Create an item pointing to our new setting */
-		sensor->dbus_info[i].value = veItemGetOrCreateUid(consumer, sensor->dbus_info[i].path);
-		/* Set the properties of the new settings */
-		values_range_t values_range;
-		veVariantFloat(&values_range.def, sensor->dbus_info[i].def);
-		veVariantFloat(&values_range.max, sensor->dbus_info[i].max);
-		veVariantFloat(&values_range.min, sensor->dbus_info[i].min);
-
-		if (!veDBusAddLocalSetting(sensor->dbus_info[i].value, &values_range.def, &values_range.min, &values_range.max, veFalse)) {
-			logE("task", "veDBusAddLocalSetting failed");
-			pltExit(1);
-		}
-		veItemValue(sensor->dbus_info[i].value, &sensor->dbus_info[i].value->variant);
 	}
 }
 

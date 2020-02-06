@@ -13,22 +13,6 @@
 #define DESIRED_VALUES_TASK_INTERVAL	100 // ms
 #define VALUES_TASK_INTERVAL			DESIRED_VALUES_TASK_INTERVAL / 50 // 50ms base ticking
 
-// values variables structure for dbus settings parameters
-typedef struct {
-	VeVariant def;
-	VeVariant min;
-	VeVariant max;
-} values_range_t;
-
-// structure to hold the information required to dbus interfacing
-typedef struct {
-	float def;
-	float min;
-	float max;
-	char path[64];
-	struct VeItem *value;
-} dbus_info_t;
-
 /***********************************************/
 // Public function prototypes
 void valuesTick(void);

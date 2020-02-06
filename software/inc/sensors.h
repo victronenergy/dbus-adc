@@ -10,13 +10,6 @@
 #define MAX_SENSORS							8
 #define SAMPLE_RATE							10
 
-// defines for the on-board sensors interface configurations to firmware application
-#define NUM_OF_SENSOR_SETTINGS_PARAMS		4
-#define NUM_OF_PROD_ITEMS					4
-#define NUM_OF_SENSOR_OUTPUTS				3
-#define NUM_OF_SENSOR_VARIANTS				NUM_OF_SENSOR_OUTPUTS + NUM_OF_SENSOR_SETTINGS_PARAMS
-#define SENSORS_INFO_ARRAY_SIZE				NUM_OF_SENSOR_VARIANTS + NUM_OF_PROD_ITEMS
-
 // defines for the tank level sensor analog front end parameters
 #define TANK_SENS_VREF						5.0
 #define TANK_SENS_R1						680.0 // ohms
@@ -43,24 +36,6 @@
 #define TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE	0.2
 #define TEMPERATURE_SENSOR_CUTOFF_FREQ		(0.01 / SAMPLE_RATE)
 
-// defines to initialize the sensors settings parameters
-// tank level capacity
-#define DEFAULT_TANK_CAPACITY				(float)0.2 //m3
-#define MIN_OF_TANK_CAPACITY				0
-#define MAX_OF_TANK_CAPACITY				1000
-// tank level fluid type
-#define DEFAULT_FLUID_TYPE					0 // Fuel
-#define MIN_OF_FLUID_TYPE					0
-#define MAX_OF_FLUID_TYPE					5 //
-// temperature sensor signal scale correction
-#define TEMPERATURE_SCALE					(float)1.00
-#define MIN_OF_TEMPERATURE_SCALE			(float)0.10
-#define MAX_OF_TEMPERATURE_SCALE			(float)10.00
-// temperature sensor signal offset correction
-#define TEMPERATURE_OFFSET					0
-#define MIN_OF_TEMPERATURE_OFFSET			-100
-#define MAX_OF_TEMPERATURE_OFFSET			100
-
 // analog input function
 typedef enum {
 	no_function = 0,
@@ -83,16 +58,6 @@ typedef enum {
 	american_std,
 	num_of_stds
 } tank_sensor_std_t;
-
-// type of temperature sensors that the app can handle
-typedef enum {
-	battery = 0,
-	refrigerator,
-	other,
-	num_of_temperature_sensor_type
-} temperature_sensor_type_t;
-#define DEFAULT_TEMPERATURE_TYPE	battery
-#define MIN_TEMPERATURE_TYPE		0
 
 // types of sensors that the app can handle
 typedef enum {
@@ -142,7 +107,6 @@ typedef struct {
 	int instance;
 	veBool valid;
 	sensors_interface_t interface;
-	dbus_info_t dbus_info[NUM_OF_SENSOR_SETTINGS_PARAMS];
 	struct VeDbus *dbus;
 	VeItem root;
 	struct VeItem *processName;
@@ -171,7 +135,6 @@ struct TemperatureSensor {
 
 analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type);
 void sensors_handle(void);
-void values_dbus_service_addSettings(analog_sensor_t *sensor);
 void sensors_dbusConnect(analog_sensor_t *sensor);
 void sensors_dbusDisconnect(analog_sensor_t *sensor);
 veBool adc_read(un32 *value, analog_sensor_t *sensor);
