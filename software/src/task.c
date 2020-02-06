@@ -217,14 +217,11 @@ void taskInit(void)
 	values_dbus_service_connectSettings();
 
 	load_config(CONFIG_FILE);
-
-	// Interrupt enable now
-	pltInterruptEnable();
 }
 
 void taskUpdate(void)
 {
-// Not in use
+	// Not in use
 }
 
 /* 50 ms time update. */
