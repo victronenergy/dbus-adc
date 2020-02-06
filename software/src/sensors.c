@@ -27,10 +27,6 @@ static veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 static veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant);
 static veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
-static size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
-static size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
-static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len);
-
 //static variables
 /**
  * @brief analog_sensor - array of analog sensor structures
@@ -39,6 +35,62 @@ static analog_sensor_t *analog_sensor[MAX_SENSORS];
 static int sensor_count;
 static VeVariantUnitFmt veUnitVolume = {3, "m3"};
 static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
+
+/** Formats enum values. The content of `var` will converted to an integer. The integer will be used
+  * as index to pick a string from options. This string is copied to buf.
+  * If `var` is invalid or its value exceeds `optionCount`, buf will be an empty string
+  * @returns The size of the selected option (or 0 if no option could be selected).
+  */
+static size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **options,
+					 un32 optionCount)
+{
+	if (var->type.tp != VE_UNKNOWN) {
+		un32 optionIndex = 0;
+		const char *option = NULL;
+
+		veVariantToN32(var);
+		optionIndex = var->value.UN32;
+
+		if (optionIndex < optionCount) {
+			option = options[optionIndex];
+			strncpy(buf, option, len);
+			return strlen(option);
+		}
+	}
+
+	/* Invalid or unknown value, set an empty string if possible */
+	if (len > 0) {
+		*buf = 0;
+	}
+
+	return 0;
+}
+
+/** Used to format the /Status D-Bus entry */
+static size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
+{
+	const char *options[] = { "Ok", "Disconnected", "Short circuited", "Reverse polarity",
+							  "Unknown" };
+	VE_UNUSED(ctx);
+	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
+}
+
+/** Used to format the /FluidType D-Bus entry */
+static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
+{
+	const char *options[] = { "Fuel", "Fresh water", "Waste water", "Live well", "Oil",
+							  "Black water (sewage)" };
+	VE_UNUSED(ctx);
+	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
+}
+
+/** Used to format the /Standard D-Bus entry */
+static size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
+{
+	const char *options[] = { "European", "American" };
+	VE_UNUSED(ctx);
+	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
+}
 
 // instantiate a container structure for the interface with dbus API's interface.
 static FormatInfo units = {{9, ""}, NULL};
@@ -663,60 +715,4 @@ static veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
 	p_analog_sensor->variant.temperature.temperatureType.value.SN32 = variant->value.SN32;
 
 	return veTrue;
-}
-
-/** Formats enum values. The content of `var` will converted to an integer. The integer will be used
-  * as index to pick a string from options. This string is copied to buf.
-  * If `var` is invalid or its value exceeds `optionCount`, buf will be an empty string
-  * @returns The size of the selected option (or 0 if no option could be selected).
-  */
-static size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **options,
-					 un32 optionCount)
-{
-	if (var->type.tp != VE_UNKNOWN) {
-		un32 optionIndex = 0;
-		const char *option = NULL;
-
-		veVariantToN32(var);
-		optionIndex = var->value.UN32;
-
-		if (optionIndex < optionCount) {
-			option = options[optionIndex];
-			strncpy(buf, option, len);
-			return strlen(option);
-		}
-	}
-
-	/* Invalid or unknown value, set an empty string if possible */
-	if (len > 0) {
-		*buf = 0;
-	}
-
-	return 0;
-}
-
-/** Used to format the /Status D-Bus entry */
-static size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
-{
-	const char *options[] = { "Ok", "Disconnected", "Short circuited", "Reverse polarity",
-							  "Unknown" };
-	VE_UNUSED(ctx);
-	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
-}
-
-/** Used to format the /FluidType D-Bus entry */
-static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
-{
-	const char *options[] = { "Fuel", "Fresh water", "Waste water", "Live well", "Oil",
-							  "Black water (sewage)" };
-	VE_UNUSED(ctx);
-	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
-}
-
-/** Used to format the /Standard D-Bus entry */
-static size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
-{
-	const char *options[] = { "European", "American" };
-	VE_UNUSED(ctx);
-	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
 }
