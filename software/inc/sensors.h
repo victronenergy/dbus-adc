@@ -112,24 +112,11 @@ typedef enum {
 	SENSOR_TYPE_TEMP,
 } sensor_type_t;
 
-// sensor product items for dbus service
-typedef struct {
-	VeItem name;
-	VeItem id;
-	VeItem instance;
-	VeItem connected;
-} ProductInfo;
-
 // parameters to interface the sensor to dbus service
 typedef struct {
 	char service[64];
 	veBool connected;
 } sensors_dbus_interface_t;
-
-// building a sensor items structure to be published to dbus service
-typedef struct {
-	ProductInfo product;
-} sensors_items_t;
 
 // sensor signal correction parameters
 typedef struct {
@@ -164,10 +151,10 @@ typedef struct {
 typedef struct {
 	sensor_type_t sensor_type;
 	int number; /* per type */
+	int instance;
 	veBool valid;
 	sensors_interface_t interface;
 	dbus_info_t dbus_info[NUM_OF_SENSOR_SETTINGS_PARAMS];
-	sensors_items_t items;
 	ItemInfo info[SENSORS_INFO_ARRAY_SIZE];
 	struct VeDbus *dbus;
 	VeItem root;
@@ -197,7 +184,6 @@ struct TemperatureSensor {
 
 analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type);
 void sensors_handle(void);
-void sensors_dbusInit(analog_sensor_t *sensor);
 void values_dbus_service_addSettings(analog_sensor_t *sensor);
 void sensors_dbusConnect(analog_sensor_t *sensor);
 void sensors_dbusDisconnect(analog_sensor_t *sensor);

@@ -54,7 +54,6 @@ int add_sensor(int devfd, int pin, float scale, int type)
 	sensor->connection = veItemCreateBasic(&sensor->root, "Mgmt/Connection", veVariantStr(&v, sensor->iface_name));
 
 	values_dbus_service_addSettings(sensor);
-	sensors_dbusInit(sensor);
 
 	return 0;
 }

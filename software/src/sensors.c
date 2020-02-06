@@ -81,21 +81,6 @@ static size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, 
 	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
 }
 
-// instantiate a container structure for the interface with dbus API's interface.
-static FormatInfo units = {{9, ""}, NULL};
-
-static void init_item_info(ItemInfo *info, VeItem *item, VeVariant *local,
-			const char *id, FormatInfo *fmt, int timeout,
-			VeItemSetterFun *cb)
-{
-	info->item = item;
-	info->local = local;
-	info->id = id;
-	info->fmt = fmt;
-	info->timeout = timeout;
-	info->setValueCallback = cb;
-}
-
 static struct VeItem *createEnumItem(analog_sensor_t *sensor, const char *id,
 						   VeVariant *initial, VeItemValueFmt *fmt, VeItemSetterFun *cb)
 {
@@ -160,21 +145,19 @@ static struct VeItem *createFunctionProxy(analog_sensor_t *sensor, const char *p
 
 static void sensor_item_info_init(analog_sensor_t *sensor)
 {
-	ProductInfo *prod = &sensor->items.product;
-	ItemInfo *info = sensor->info;
 	VeVariant v;
 	struct VeItem *root = &sensor->root;
 	char prefix[VE_MAX_UID_SIZE];
 
-	init_item_info(&info[0], &prod->connected, NULL, "Connected",		&units, 0, NULL);
-	init_item_info(&info[1], &prod->name,	   NULL, "ProductName",		&units, 0, NULL);
-	init_item_info(&info[2], &prod->id,		   NULL, "ProductId",		&units, 0, NULL);
-	init_item_info(&info[3], &prod->instance,  NULL, "DeviceInstance",	&units, 0, NULL);
-
+	veItemCreateBasic(root, "Connected", veVariantUn32(&v, veTrue));
+	veItemCreateBasic(root, "DeviceInstance", veVariantUn32(&v, sensor->instance));
 	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NCONN), statusFormatter, NULL);
 
 	if (sensor->sensor_type == SENSOR_TYPE_TANK) {
 		struct TankSensor *tank = (struct TankSensor *) sensor;
+
+		veItemCreateProductId(root, VE_PROD_ID_TANK_SENSOR_INPUT);
+		veItemCreateBasic(root, "ProductName", veVariantStr(&v, veProductGetName(VE_PROD_ID_TANK_SENSOR_INPUT)));
 
 		tank->levelItem = veItemCreateQuantity(root, "Level", veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
 		tank->remaingItem = veItemCreateQuantity(root, "Remaining", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolume);
@@ -188,6 +171,9 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 
 	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
 		struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
+
+		veItemCreateProductId(root, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT);
+		veItemCreateBasic(root, "ProductName", veVariantStr(&v, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
 
 		temperature->temperatureItem = veItemCreateQuantity(root, "Temperature", veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
 
@@ -311,6 +297,7 @@ static void sensor_set_defaults(analog_sensor_t *sensor)
 analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type)
 {
 	analog_sensor_t *sensor;
+	static un8 instance = 20;
 
 	if (sensor_count == MAX_SENSORS)
 		return NULL;
@@ -331,6 +318,7 @@ analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type
 	sensor->interface.adc_pin = pin;
 	sensor->interface.adc_scale = scale;
 	sensor->sensor_type = type;
+	sensor->instance = instance++;
 
 	sensor_set_defaults(sensor);
 	sensor_item_info_init(sensor);
@@ -592,26 +580,4 @@ void sensors_handle(void)
 
 	// call to update the dbus service with the new item values
 	updateValues();
-}
-
-/**
- * @brief sensors_dbusInit - connect sensor items to their dbus services
- * @param sensor - pointer to the sensor struct
- */
-void sensors_dbusInit(analog_sensor_t *sensor)
-{
-	VeVariant variant;
-	static un8 instance = 20;
-
-	veItemOwnerSet(&sensor->items.product.connected, veVariantUn32(&variant, veTrue));
-	veItemOwnerSet(&sensor->items.product.instance, veVariantUn8(&variant, instance++));
-
-	/* Product info */
-	if (sensor->sensor_type == SENSOR_TYPE_TANK) {
-		veItemOwnerSet(&sensor->items.product.id, veVariantUn16(&variant, VE_PROD_ID_TANK_SENSOR_INPUT));
-		veItemOwnerSet(&sensor->items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TANK_SENSOR_INPUT)));
-	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
-		veItemOwnerSet(&sensor->items.product.id, veVariantUn16(&variant, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT));
-		veItemOwnerSet(&sensor->items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
-	}
 }
