@@ -68,18 +68,6 @@ typedef enum {
 	num_of_functions
 } sensor_function_t;
 
-// index of sensors settings parameters array
-typedef enum {
-	analogpinFunc = 0,
-	capacity = 1,
-	fluidType = 2,
-	standard = 3,
-	scale = 1,
-	offset = 2,
-	TempType = 3,
-	num_of_parameters = 4
-} parameter_name_t;
-
 // sensor statuses
 typedef enum {
 	SENSOR_STATUS_OK = 0,
@@ -155,7 +143,6 @@ typedef struct {
 	veBool valid;
 	sensors_interface_t interface;
 	dbus_info_t dbus_info[NUM_OF_SENSOR_SETTINGS_PARAMS];
-	ItemInfo info[SENSORS_INFO_ARRAY_SIZE];
 	struct VeDbus *dbus;
 	VeItem root;
 	struct VeItem *processName;
@@ -189,21 +176,5 @@ void sensors_dbusConnect(analog_sensor_t *sensor);
 void sensors_dbusDisconnect(analog_sensor_t *sensor);
 veBool adc_read(un32 *value, analog_sensor_t *sensor);
 float adc_filter(float x, filter_iir_lpf_t *f);
-
-typedef enum {
-	Connected_item = 0,
-	ProductName_item = 1,
-	productId_item = 2,
-	deviceInstance_item = 3,
-	temperature_item = 4,
-	analogpinFunc_item = 7,
-	tank_level_sens_capacity_item = 8,
-	temp_sens_Scale_item = 8,
-	tank_level_sens_fluidType_item = 9,
-	temp_sens_offset_item = 9,
-	tank_level_sens_standard_item = 10,
-	temp_sens_type_item = 10,
-	num_of_container_items = 11
-} sensor_items_container_items_t;
 
 #endif // End of sensors.h file

@@ -323,27 +323,6 @@ analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type
 	sensor_set_defaults(sensor);
 	sensor_item_info_init(sensor);
 
-	for (int i = 0; i < SENSORS_INFO_ARRAY_SIZE; i++) {
-		const ItemInfo *itemInfo = &sensor->info[i];
-
-		if (itemInfo->item != NULL) {
-			veItemAddChildByUid(&sensor->root, itemInfo->id, itemInfo->item);
-
-			if (itemInfo->fmt->fun != NULL) {
-				veItemSetFmt(itemInfo->item, itemInfo->fmt->fun, NULL);
-			} else {
-				veItemSetFmt(itemInfo->item, veVariantFmt, &itemInfo->fmt->unit);
-			}
-
-			veItemSetTimeout(itemInfo->item, itemInfo->timeout);
-
-			// Register the change items value callbacks.
-			if (itemInfo->setValueCallback) {
-				veItemSetSetter(itemInfo->item, itemInfo->setValueCallback, (void *)sensor);
-			}
-		}
-	}
-
 	return sensor;
 }
 
@@ -504,25 +483,6 @@ static veBool sensors_data_process(analog_sensor_t *sensor)
 }
 
 /**
- * @brief updateValues - updates the dbus item values
- */
-static void updateValues(void)
-{
-	for (int sensor_index = 0; sensor_index < sensor_count; sensor_index++) {
-		analog_sensor_t *sensor = analog_sensor[sensor_index];
-
-		// update only variables values
-		for (sensor_items_container_items_t i = 0; i < num_of_container_items; i++) {
-			const ItemInfo *itemInfo = &sensor->info[i];
-
-			if (itemInfo->local && veVariantIsValid(itemInfo->local)) {
-				veItemOwnerSet(itemInfo->item, itemInfo->local);
-			}
-		}
-	}
-}
-
-/**
  * @brief sensors_handle - handles the sensors
  */
 void sensors_handle(void)
@@ -577,7 +537,4 @@ void sensors_handle(void)
 			break;
 		}
 	}
-
-	// call to update the dbus service with the new item values
-	updateValues();
 }
