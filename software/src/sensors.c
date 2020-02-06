@@ -128,7 +128,7 @@ static size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, 
 static struct VeItem *createEnumItem(analog_sensor_t *sensor, const char *id,
 						   VeVariant *initial, VeItemValueFmt *fmt, VeItemSetterFun *cb)
 {
-	struct VeItem *item = veItemCreateBasic(&sensor->root, id, initial);
+	struct VeItem *item = veItemCreateBasic(sensor->root, id, initial);
 	veItemSetTimeout(item, 5);
 	veItemSetSetter(item, cb, sensor);
 	veItemSetFmt(item, fmt, NULL);
@@ -174,7 +174,7 @@ static struct VeItem *createSettingsProxy(analog_sensor_t *sensor, char const *p
 
 	settingPrefixItem = veItemGetOrCreateUid(localSettings, prefix);
 	settingItem = veItemGetOrCreateUid(settingPrefixItem, id);
-	sensorItem = veItemGetOrCreateUid(&sensor->root, id);
+	sensorItem = veItemGetOrCreateUid(sensor->root, id);
 
 	veItemCtx(settingItem)->ptr = sensorItem;
 	veItemSetChanged(settingItem, onSettingChanged);
@@ -204,7 +204,7 @@ static struct VeItem *createFunctionProxy(analog_sensor_t *sensor, const char *p
 static void sensor_item_info_init(analog_sensor_t *sensor)
 {
 	VeVariant v;
-	struct VeItem *root = &sensor->root;
+	struct VeItem *root = sensor->root;
 	char prefix[VE_MAX_UID_SIZE];
 
 	veItemCreateBasic(root, "Connected", veVariantUn32(&v, veTrue));
@@ -327,6 +327,7 @@ analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type
 	sensor->interface.adc_scale = scale;
 	sensor->sensor_type = type;
 	sensor->instance = instance++;
+	sensor->root = veItemAlloc(NULL, "");
 
 	sensor_set_defaults(sensor);
 	sensor_item_info_init(sensor);
@@ -500,7 +501,7 @@ static void sensors_dbusConnect(analog_sensor_t *sensor)
 	sensor->interface.dbus.connected = veTrue;
 	/* Device found */
 
-	veDbusItemInit(sensor->dbus, &sensor->root);
+	veDbusItemInit(sensor->dbus, sensor->root);
 	veDbusChangeName(sensor->dbus, sensor->interface.dbus.service);
 
 	logI(sensor->interface.dbus.service, "connected to dbus");
@@ -584,9 +585,9 @@ int add_sensor(int devfd, int pin, float scale, int type)
 		return -1;
 
 	/* App info */
-	sensor->processName = veItemCreateBasic(&sensor->root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
-	sensor->processVersion = veItemCreateBasic(&sensor->root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
-	sensor->connection = veItemCreateBasic(&sensor->root, "Mgmt/Connection", veVariantStr(&v, sensor->iface_name));
+	sensor->processName = veItemCreateBasic(sensor->root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
+	sensor->processVersion = veItemCreateBasic(sensor->root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
+	sensor->connection = veItemCreateBasic(sensor->root, "Mgmt/Connection", veVariantStr(&v, sensor->iface_name));
 
 	return 0;
 }

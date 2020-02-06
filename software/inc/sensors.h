@@ -3,7 +3,6 @@
 
 #include <velib/base/base.h>
 #include <velib/types/ve_item.h>
-#include <velib/types/ve_item_def.h>
 
 #define MAX_SENSORS							8
 #define SAMPLE_RATE							10
@@ -106,13 +105,13 @@ typedef struct {
 	veBool valid;
 	sensors_interface_t interface;
 	struct VeDbus *dbus;
-	VeItem root;
+	struct VeItem *root;
 	struct VeItem *processName;
 	struct VeItem *processVersion;
 	struct VeItem *connection;
 	struct VeItem *function;
 	char iface_name[32];
-	VeItem *statusItem;
+	struct VeItem *statusItem;
 } analog_sensor_t;
 
 struct TankSensor {

@@ -12,10 +12,8 @@
 #include <velib/platform/console.h>
 #include <velib/types/variant_print.h>
 #include <velib/types/ve_item.h>
-#include <velib/types/ve_item_def.h>
 #include <velib/types/ve_dbus_item.h>
 #include <velib/utils/ve_logger.h>
-
 #include <velib/platform/plt.h>
 
 #define SENSOR_TICKS	2 /* 100ms */
@@ -28,7 +26,7 @@
 #define SCALE_MIN	1023
 #define SCALE_MAX	65535
 
-static VeItem *consumer;
+static struct VeItem *consumer;
 
 static void error(const char *file, int line, const char *fmt, ...)
 {
@@ -190,7 +188,7 @@ static void load_config(const char *file)
 void values_dbus_service_connectSettings(void)
 {
 	const char *settingsService = "com.victronenergy.settings";
-	VeItem *input_root = veValueTree();
+	struct VeItem *input_root = veValueTree();
 	struct VeDbus *dbus;
 
 	if (!(dbus = veDbusGetDefaultBus())) {
@@ -207,7 +205,7 @@ void values_dbus_service_connectSettings(void)
 	}
 }
 
-VeItem *getConsumerRoot(void)
+struct VeItem *getConsumerRoot(void)
 {
 	return consumer;
 }
