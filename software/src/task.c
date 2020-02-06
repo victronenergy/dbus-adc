@@ -5,7 +5,6 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#include "version.h"
 #include "sensors.h"
 #include "task.h"
 
@@ -244,9 +243,7 @@ void taskTick(void)
 	}
 }
 
-static char const version[] = VERSION_STR;
-
 char const *pltProgramVersion(void)
 {
-	return version;
+	return "1.18";
 }
