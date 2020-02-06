@@ -11,7 +11,7 @@
  * @param sensor - pointer to sensor struct
  * @return - veTrue on success, veFalse on error
  */
-veBool adc_read(un32 *value, analog_sensor_t *sensor)
+veBool adc_read(un32 *value, AnalogSensor *sensor)
 {
 	char file[64];
 	char val[16];
@@ -47,7 +47,7 @@ veBool adc_read(un32 *value, analog_sensor_t *sensor)
  * @param f - filter parameters
  * @return the next filtered value (filter output)
  */
-float adc_filter(float x, filter_iir_lpf_t *f)
+float adc_filter(float x, FilerIirLpf *f)
 {
 	if (f->FF && fabs(f->last - x) > f->FF)
 		f->last = x;

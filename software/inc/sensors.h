@@ -4,59 +4,54 @@
 #include <velib/base/base.h>
 #include <velib/types/ve_item.h>
 
-// analog input function
 typedef enum {
-	no_function = 0,
-	default_function,
-	num_of_functions
-} sensor_function_t;
+	SENSOR_FUNCTION_NONE,
+	SENSOR_FUNCTION_DEFAULT,
+	SENSOR_FUNCTION_COUNT
+} SensorFunction;
 
-// sensor statuses
 typedef enum {
-	SENSOR_STATUS_OK = 0,
-	SENSOR_STATUS_NCONN,
+	SENSOR_STATUS_OK,
+	SENSOR_STATUS_NOT_CONNECTED,
 	SENSOR_STATUS_SHORT,
-	SENSOR_STATUS_REVPOL,
+	SENSOR_STATUS_REVERSE_POLARITY,
 	SENSOR_STATUS_UNKNOWN,
-} sensor_status_t;
+} SensorStatus;
 
-// tank level sensor standards that the app can handle
 typedef enum {
-	european_std = 0,
-	american_std,
-	num_of_stds
-} tank_sensor_std_t;
+	TANK_STANDARD_EU,
+	TANK_STANDARD_US,
+	TANK_STANDARD_COUNT
+} TankStandard;
 
-// types of sensors that the app can handle
 typedef enum {
-	SENSOR_TYPE_TANK = 0,
+	SENSOR_TYPE_TANK,
 	SENSOR_TYPE_TEMP,
-} sensor_type_t;
+} SensorType;
 
-// parameters to interface the sensor to dbus service
 typedef struct {
 	char service[64];
 	veBool connected;
-} sensors_dbus_interface_t;
+} SensorDbusInterface;
 
 // sensor signal correction parameters
 typedef struct {
 	float scale;
 	float offset;
-} signal_correction_t;
+} SignalCorrection;
 
 // Single pole iir low pass filter variables
 typedef struct {
 	float FF;
 	float fc;
 	float last;
-} filter_iir_lpf_t;
+} FilerIirLpf;
 
 // building a sensor signal conditioning structure
 typedef struct {
-	signal_correction_t sig_correct;
-	filter_iir_lpf_t filter_iir_lpf;
-} signal_condition_t;
+	SignalCorrection sig_correct;
+	FilerIirLpf filterIirLpf;
+} SignalCondition;
 
 // building a sensor interface structure
 typedef struct {
@@ -64,17 +59,17 @@ typedef struct {
 	int adc_pin;
 	float adc_scale;
 	float adc_sample;
-	signal_condition_t sig_cond;
-	sensors_dbus_interface_t dbus;
-} sensors_interface_t;
+	SignalCondition sig_cond;
+	SensorDbusInterface dbus;
+} SensorInterface;
 
 // building a sensor structure
 typedef struct {
-	sensor_type_t sensor_type;
+	SensorType sensor_type;
 	int number; /* per type */
 	int instance;
 	veBool valid;
-	sensors_interface_t interface;
+	SensorInterface interface;
 	struct VeDbus *dbus;
 	struct VeItem *root;
 	struct VeItem *processName;
@@ -83,10 +78,10 @@ typedef struct {
 	struct VeItem *function;
 	char iface_name[32];
 	struct VeItem *statusItem;
-} analog_sensor_t;
+} AnalogSensor;
 
 struct TankSensor {
-	analog_sensor_t sensor;
+	AnalogSensor sensor;
 	struct VeItem *levelItem;
 	struct VeItem *remaingItem;
 	struct VeItem *capacityItem;
@@ -95,18 +90,18 @@ struct TankSensor {
 };
 
 struct TemperatureSensor {
-	analog_sensor_t sensor;
+	AnalogSensor sensor;
 	struct VeItem *temperatureItem;
 	struct VeItem *scaleItem;
 	struct VeItem *offsetItem;
 };
 
-analog_sensor_t *sensor_init(int devfd, int pin, float scale, sensor_type_t type);
+AnalogSensor *sensor_init(int devfd, int pin, float scale, SensorType type);
 void sensors_handle(void);
 int add_sensor(int devfd, int pin, float scale, int type);
-veBool adc_read(un32 *value, analog_sensor_t *sensor);
-float adc_filter(float x, filter_iir_lpf_t *f);
+veBool adc_read(un32 *value, AnalogSensor *sensor);
+float adc_filter(float x, FilerIirLpf *f);
 
 struct VeItem *getLocalSettings(void);
 
-#endif // End of sensors.h file
+#endif
