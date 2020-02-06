@@ -19,10 +19,6 @@
 // Callbacks to be called when the parameters are changing
 static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
 
-static veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant);
-static veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
-static veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant);
-
 static veBool TempTypeChange(struct VeItem *item, void *ctx, VeVariant *variant);
 static veBool scaleChange(struct VeItem *item, void *ctx, VeVariant *variant);
 static veBool offsetChange(struct VeItem *item, void *ctx, VeVariant *variant);
@@ -94,8 +90,6 @@ static size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, 
 
 // instantiate a container structure for the interface with dbus API's interface.
 static FormatInfo units = {{9, ""}, NULL};
-static FormatInfo fluidTypeFormat = {{0, ""}, fluidTypeFormatter};
-static FormatInfo standardFormat = {{0, ""}, standardItemFormatter};
 
 static void init_item_info(ItemInfo *info, VeItem *item, VeVariant *local,
 			const char *id, FormatInfo *fmt, int timeout,
@@ -120,12 +114,56 @@ static struct VeItem *createEnumItem(analog_sensor_t *sensor, const char *id,
 	return item;
 }
 
+/* sensor -> localsettings */
+static veBool forwardToLocalsettings(struct VeItem *item, void *ctx, VeVariant *variant)
+{
+	struct VeItem *settingsItem = (struct VeItem *) ctx;
+	VE_UNUSED(item);
+
+	return veItemSet(settingsItem, variant);
+}
+
+/* localsettings -> sensor */
+static void onSettingChanged(struct VeItem *item)
+{
+	struct VeItem *sensorItem = (struct VeItem *) veItemCtx(item)->ptr;
+	VeVariant v;
+
+	veItemLocalValue(item, &v);
+	veItemOwnerSet(sensorItem, &v);
+}
+
+/*
+ * The settings of a sensor service are stored in localsettings, so when
+ * the sensor value changes, send it to localsettings and if the setting
+ * in localsettings changed, also update the sensor value.
+ */
+static struct VeItem *createSettingsProxy(analog_sensor_t *sensor, char const *prefix,
+										  char *id, VeItemValueFmt *fmt, void *fmtCtx)
+{
+	struct VeItem *localSettings = getConsumerRoot();
+	struct VeItem *settingPrefixItem, *settingItem, *sensorItem;
+
+	settingPrefixItem = veItemGetOrCreateUid(localSettings, prefix);
+	settingItem = veItemGetOrCreateUid(settingPrefixItem, id);
+	sensorItem = veItemGetOrCreateUid(&sensor->root, id);
+
+	veItemCtx(settingItem)->ptr = sensorItem;
+	veItemSetChanged(settingItem, onSettingChanged);
+
+	veItemSetSetter(sensorItem, forwardToLocalsettings, settingItem);
+	veItemSetFmt(sensorItem, fmt, fmtCtx);
+
+	return sensorItem;
+}
+
 static void sensor_item_info_init(analog_sensor_t *sensor)
 {
 	ProductInfo *prod = &sensor->items.product;
 	ItemInfo *info = sensor->info;
 	VeVariant v;
 	struct VeItem *root = &sensor->root;
+	char prefix[VE_MAX_UID_SIZE];
 
 	init_item_info(&info[0], &prod->connected, NULL, "Connected",		&units, 0, NULL);
 	init_item_info(&info[1], &prod->name,	   NULL, "ProductName",		&units, 0, NULL);
@@ -144,14 +182,12 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 		tank->levelItem = veItemCreateQuantity(root, "Level", veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
 		tank->remaingItem = veItemCreateQuantity(root, "Remaining", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolume);
 
-		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
-		init_item_info(&info[8], IV(capacity),		"Capacity",			&units,				5, capacityChange);
-		init_item_info(&info[9], IV(fluidType),		"FluidType",		&fluidTypeFormat,	5, fluidTypeChange);
-		init_item_info(&info[10],IV(standard),		"Standard",			&standardFormat,	5, standardChange);
+		snprintf(prefix, sizeof(prefix), "Settings/Tank/%d", sensor->number);
+		tank->capacityItem = createSettingsProxy(sensor, prefix, "Capacity", veVariantFmt, &veUnitVolume);
+		tank->fluidTypeItem = createSettingsProxy(sensor, prefix, "FluidType", fluidTypeFormatter, NULL);
+		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard", standardItemFormatter, NULL);
 
-		tank->capacityItem = &sensor->items.tank_level.capacity;
-		tank->fluidTypeItem = &sensor->items.tank_level.fluidType;
-		tank->standardItem = &sensor->items.tank_level.standard;
+		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
 
 	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
 		temperature_sensor_item_t *item = &sensor->items.temperature;
@@ -211,6 +247,7 @@ static void sensor_set_defaults_tank(analog_sensor_t *sensor)
 	snprintf(sensor->iface_name, sizeof(sensor->iface_name),
 			 "Tank Level sensor input %d", tank_num);
 
+	sensor->number = tank_num;
 	tank_num++;
 }
 
@@ -253,6 +290,7 @@ static void sensor_set_defaults_temp(analog_sensor_t *sensor)
 	snprintf(sensor->iface_name, sizeof(sensor->iface_name),
 			 "Temperature sensor input %d", temp_num);
 
+	sensor->number = temp_num;
 	temp_num++;
 }
 
@@ -403,13 +441,6 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 		veItemInvalidate(tank->levelItem);
 		veItemInvalidate(tank->remaingItem);
 	}
-
-	veVariantFloat(&sensor->variant.tank_level.capacity,
-			sensor->dbus_info[capacity].value->variant.value.Float);
-	veVariantUn32(&sensor->variant.tank_level.fluidType,
-			(un32)sensor->dbus_info[fluidType].value->variant.value.Float);
-	veVariantUn32(&sensor->variant.tank_level.standard,
-			(un32)sensor->dbus_info[standard].value->variant.value.Float);
 
 	return veTrue;
 }
@@ -623,51 +654,6 @@ static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *var
 	veItemSet(settingsItem, variant);
 
 	p_analog_sensor->variant.tank_level.analogpinFunc.value.Float = variant->value.Float;
-
-	return veTrue;
-}
-
-// Callback when the capacity is changing
-static veBool capacityChange(struct VeItem *item, void *ctx, VeVariant *variant)
-{
-	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
-
-	veItemOwnerSet(item, variant);
-
-	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[capacity].path);
-	veItemSet(settingsItem, variant);
-
-	p_analog_sensor->variant.tank_level.capacity.value.Float = variant->value.Float;
-
-	return veTrue;
-}
-
-// Callback when the fluid type is changing
-static veBool fluidTypeChange(struct VeItem *item, void *ctx, VeVariant *variant)
-{
-	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
-
-	veItemOwnerSet(item, variant);
-
-	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[fluidType].path);
-	veItemSet(settingsItem, variant);
-
-	p_analog_sensor->variant.tank_level.fluidType.value.UN32 = variant->value.UN32;
-
-	return veTrue;
-}
-
-// Callback when the standard is changing
-static veBool standardChange(struct VeItem *item, void *ctx, VeVariant *variant)
-{
-	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
-
-	veItemOwnerSet(item, variant);
-
-	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[standard].path);
-	veItemSet(settingsItem, variant);
-
-	p_analog_sensor->variant.tank_level.standard.value.Float = variant->value.Float;
 
 	return veTrue;
 }

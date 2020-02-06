@@ -123,9 +123,6 @@ typedef struct {
 // sensors items for dbus tank level sensor service
 typedef struct {
 	VeItem analogpinFunc;
-	VeItem capacity;
-	VeItem fluidType;
-	VeItem standard;
 } tank_level_sensor_item_t;
 
 // sensors items for dbus temperature sensor service
@@ -140,9 +137,6 @@ typedef struct {
 // sensors variables for tank level sensor items
 typedef struct {
 	VeVariant analogpinFunc;
-	VeVariant capacity;
-	VeVariant fluidType;
-	VeVariant standard;
 } tank_level_sensor_variant_t;
 
 // sensors variables for temperature sensor items
@@ -209,6 +203,7 @@ typedef struct {
 // building a sensor structure
 typedef struct {
 	sensor_type_t sensor_type;
+	int number; /* per type */
 	veBool valid;
 	sensors_interface_t interface;
 	dbus_info_t dbus_info[NUM_OF_SENSOR_SETTINGS_PARAMS];
