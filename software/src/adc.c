@@ -1,12 +1,7 @@
-#include <string.h>
-#include <stdlib.h>
 #include <fcntl.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
-
-#include <velib/base/base.h>
-#include <velib/base/ve_string.h>
-#include <velib/types/ve_item.h>
-#include <velib/utils/ve_logger.h>
 
 #include "sensors.h"
 

@@ -1,14 +1,13 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
-#include <velib/base/base.h>
-#include <velib/base/ve_string.h>
-#include <velib/types/ve_item.h>
-#include <velib/utils/ve_logger.h>
-#include <velib/types/ve_dbus_item.h>
-#include <velib/vecan/products.h>
-#include <velib/utils/ve_item_utils.h>
 #include <velib/platform/plt.h>
+#include <velib/types/ve_dbus_item.h>
+#include <velib/types/ve_item.h>
+#include <velib/utils/ve_item_utils.h>
+#include <velib/utils/ve_logger.h>
+#include <velib/vecan/products.h>
 
 #include "task.h"
 #include "sensors.h"

@@ -1,20 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <velib/platform/plt.h>
+#include <velib/types/ve_dbus_item.h>
+#include <velib/types/ve_values.h>
+#include <velib/utils/ve_logger.h>
 
 #include "sensors.h"
 #include "task.h"
-
-#include <velib/types/ve_values.h>
-#include <velib/platform/console.h>
-#include <velib/types/variant_print.h>
-#include <velib/types/ve_item.h>
-#include <velib/types/ve_dbus_item.h>
-#include <velib/utils/ve_logger.h>
-#include <velib/platform/plt.h>
 
 #define SENSOR_TICKS	2 /* 100ms */
 
