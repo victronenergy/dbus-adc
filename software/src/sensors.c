@@ -17,9 +17,9 @@
 // defines for the tank level sensor analog front end parameters
 #define TANK_SENS_VREF						5.0
 #define TANK_SENS_R1						680.0 // ohms
-#define EUR_MAX_TANK_LEVEL_RESISTANCE		(180) //ohms
-#define USA_MAX_TANK_LEVEL_RESISTANCE		(240) //ohms
-#define USA_MIN_TANK_LEVEL_RESISTANCE		(30) //ohms
+#define EUR_MAX_TANK_LEVEL_RESISTANCE		180 // ohms
+#define USA_MAX_TANK_LEVEL_RESISTANCE		240 // ohms
+#define USA_MIN_TANK_LEVEL_RESISTANCE		30 // ohms
 
 // defines for the temperature sensor analog front end parameters
 #define TEMP_SENS_R1						10000.0 // ohms
@@ -48,8 +48,8 @@ struct SettingProperties {
 	VeVariant max;
 };
 
-static AnalogSensor *analog_sensor[MAX_SENSORS];
-static int sensor_count;
+static AnalogSensor *sensors[MAX_SENSORS];
+static int sensorCount;
 
 static VeVariantUnitFmt veUnitVolume = {3, "m3"};
 static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
@@ -97,11 +97,12 @@ static struct SettingProperties temperatureType = {
 	.max.value.SN32 = INT32_MAX - 3,
 };
 
-/** Formats enum values. The content of `var` will converted to an integer. The integer will be used
-  * as index to pick a string from options. This string is copied to buf.
-  * If `var` is invalid or its value exceeds `optionCount`, buf will be an empty string
-  * @returns The size of the selected option (or 0 if no option could be selected).
-  */
+/*
+ * Formats enum values. The content of `var` will converted to an integer. The integer will be used
+ * as index to pick a string from options. This string is copied to buf.
+ * If `var` is invalid or its value exceeds `optionCount`, buf will be an empty string
+ * @returns The size of the selected option (or 0 if no option could be selected).
+ */
 static size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **options,
 					 un32 optionCount)
 {
@@ -120,9 +121,8 @@ static size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **
 	}
 
 	/* Invalid or unknown value, set an empty string if possible */
-	if (len > 0) {
+	if (len > 0)
 		*buf = 0;
-	}
 
 	return 0;
 }
@@ -229,17 +229,22 @@ static struct VeItem *createFunctionProxy(AnalogSensor *sensor, const char *pref
 	return createSettingsProxy(sensor, prefix, "Function", veVariantFmt, &veUnitNone, &functionProps);
 }
 
-static void sensor_item_info_init(AnalogSensor *sensor)
+static void createItems(AnalogSensor *sensor)
 {
 	VeVariant v;
 	struct VeItem *root = sensor->root;
 	char prefix[VE_MAX_UID_SIZE];
 
+	/* App info */
+	sensor->processName = veItemCreateBasic(root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
+	sensor->processVersion = veItemCreateBasic(root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
+	sensor->connection = veItemCreateBasic(root, "Mgmt/Connection", veVariantStr(&v, sensor->ifaceName));
+
 	veItemCreateBasic(root, "Connected", veVariantUn32(&v, veTrue));
 	veItemCreateBasic(root, "DeviceInstance", veVariantUn32(&v, sensor->instance));
 	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NOT_CONNECTED), statusFormatter, NULL);
 
-	if (sensor->sensor_type == SENSOR_TYPE_TANK) {
+	if (sensor->sensorType == SENSOR_TYPE_TANK) {
 		struct TankSensor *tank = (struct TankSensor *) sensor;
 
 		veItemCreateProductId(root, VE_PROD_ID_TANK_SENSOR_INPUT);
@@ -255,7 +260,7 @@ static void sensor_item_info_init(AnalogSensor *sensor)
 
 		sensor->function = createFunctionProxy(sensor, "/Settings/AnalogInput/Resistive/%d");
 
-	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
+	} else if (sensor->sensorType == SENSOR_TYPE_TEMP) {
 		struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 
 		veItemCreateProductId(root, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT);
@@ -272,70 +277,62 @@ static void sensor_item_info_init(AnalogSensor *sensor)
 	}
 }
 
-static void sensor_set_defaults_tank(AnalogSensor *sensor)
+static void tankInit(AnalogSensor *sensor)
 {
 	SensorDbusInterface *dbus = &sensor->interface.dbus;
-	FilerIirLpf *lpf = &sensor->interface.sig_cond.filterIirLpf;
+	FilerIirLpf *lpf = &sensor->interface.sigCond.filterIirLpf;
 
-	static int tank_num = 1;
+	static int tankNum = 1;
 
 	lpf->FF = TANK_SENSOR_IIR_LPF_FF_VALUE;
 	lpf->fc = TANK_SENSOR_CUTOFF_FREQ;
 	lpf->last = HUGE_VALF;
 
 	snprintf(dbus->service, sizeof(dbus->service),
-			 "com.victronenergy.tank.builtin_adc%d", sensor->interface.adc_pin);
+			 "com.victronenergy.tank.builtin_adc%d", sensor->interface.adcPin);
 
-	snprintf(sensor->iface_name, sizeof(sensor->iface_name),
-			 "Tank Level sensor input %d", tank_num);
+	snprintf(sensor->ifaceName, sizeof(sensor->ifaceName),
+			 "Tank Level sensor input %d", tankNum);
 
-	sensor->number = tank_num;
-	tank_num++;
+	sensor->number = tankNum;
+	tankNum++;
 }
 
-static void sensor_set_defaults_temp(AnalogSensor *sensor)
+static void temperatureInit(AnalogSensor *sensor)
 {
 	SensorDbusInterface *dbus = &sensor->interface.dbus;
-	FilerIirLpf *lpf = &sensor->interface.sig_cond.filterIirLpf;
+	FilerIirLpf *lpf = &sensor->interface.sigCond.filterIirLpf;
 
-	static int temp_num = 1;
+	static int tempNum = 1;
 
 	lpf->FF = TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE;
 	lpf->fc = TEMPERATURE_SENSOR_CUTOFF_FREQ;
 	lpf->last = HUGE_VALF;
 
 	snprintf(dbus->service, sizeof(dbus->service),
-			 "com.victronenergy.temperature.builtin_adc%d", sensor->interface.adc_pin);
+			 "com.victronenergy.temperature.builtin_adc%d", sensor->interface.adcPin);
 
-	snprintf(sensor->iface_name, sizeof(sensor->iface_name),
-			 "Temperature sensor input %d", temp_num);
+	snprintf(sensor->ifaceName, sizeof(sensor->ifaceName),
+			 "Temperature sensor input %d", tempNum);
 
-	sensor->number = temp_num;
-	temp_num++;
-}
-
-static void sensor_set_defaults(AnalogSensor *sensor)
-{
-	if (sensor->sensor_type == SENSOR_TYPE_TANK)
-		sensor_set_defaults_tank(sensor);
-	else if (sensor->sensor_type == SENSOR_TYPE_TEMP)
-		sensor_set_defaults_temp(sensor);
+	sensor->number = tempNum;
+	tempNum++;
 }
 
 /**
- * @brief sensor_init - hook the sensor items to their dbus services
+ * @brief hook the sensor items to their dbus services
  * @param devfd - file descriptor of ADC device sysfs directory
  * @param pin - ADC pin number
  * @param scale - ADC scale in volts / unit
  * @param type - type of sensor
  * @return Pointer to sensor struct
  */
-AnalogSensor *sensor_init(int devfd, int pin, float scale, SensorType type)
+AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type)
 {
 	AnalogSensor *sensor;
 	static un8 instance = 20;
 
-	if (sensor_count == MAX_SENSORS)
+	if (sensorCount == MAX_SENSORS)
 		return NULL;
 
 	if (type == SENSOR_TYPE_TANK)
@@ -348,29 +345,32 @@ AnalogSensor *sensor_init(int devfd, int pin, float scale, SensorType type)
 	if (!sensor)
 		return NULL;
 
-	analog_sensor[sensor_count++] = sensor;
+	sensors[sensorCount++] = sensor;
 
 	sensor->interface.devfd = devfd;
-	sensor->interface.adc_pin = pin;
-	sensor->interface.adc_scale = scale;
-	sensor->sensor_type = type;
+	sensor->interface.adcPin = pin;
+	sensor->interface.adcScale = scale;
+	sensor->sensorType = type;
 	sensor->instance = instance++;
 	sensor->root = veItemAlloc(NULL, "");
 
-	sensor_set_defaults(sensor);
-	sensor_item_info_init(sensor);
+	if (sensor->sensorType == SENSOR_TYPE_TANK)
+		tankInit(sensor);
+	else if (sensor->sensorType == SENSOR_TYPE_TEMP)
+		temperatureInit(sensor);
+
+	createItems(sensor);
 
 	return sensor;
 }
 
 /**
- * @brief sensors_tankType_data_process - process the tank level sensor adc data (need to switch the oin function as when functions will be add)
+ * @brief process the tank level sensor adc data
  * @param sensor - pointer to the sensor struct
  * @return Boolean status veTrue - success, veFalse - fail
  */
-static veBool sensors_tankType_data_process(AnalogSensor *sensor)
+static veBool updateTank(AnalogSensor *sensor)
 {
-	// process the data of the analog input with respect to its function
 	float level, capacity;
 	TankStandard standard;
 	SensorStatus status;
@@ -385,35 +385,32 @@ static veBool sensors_tankType_data_process(AnalogSensor *sensor)
 		return veFalse;
 	capacity = v.value.Float;
 
-	if (sensor->interface.adc_sample > 1.4) {
+	if (sensor->interface.adcSample > 1.4) {
 		// Sensor status: error - not connected
 		status = SENSOR_STATUS_NOT_CONNECTED;
 	// this condition applies only for the US standard
-	} else if (standard && (sensor->interface.adc_sample < 0.15)) {
+	} else if (standard && (sensor->interface.adcSample < 0.15)) {
 		// Sensor status: error - short circuited
 		status = SENSOR_STATUS_SHORT;
 	} else {
 		// calculate the resistance of the tank level sensor from the adc pin sample
-		float vdiff = TANK_SENS_VREF - sensor->interface.adc_sample;
-		float R2 = TANK_SENS_R1 * sensor->interface.adc_sample / vdiff;
+		float vdiff = TANK_SENS_VREF - sensor->interface.adcSample;
+		float r2 = TANK_SENS_R1 * sensor->interface.adcSample / vdiff;
 
 		// check the integrity of the resistance
-		if (R2>0) { // calculate the tank level
+		if (r2 > 0) { // calculate the tank level
 			if (standard == TANK_STANDARD_US) { // tank level calculation in the case it is an American standard sensor
-				level = (R2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
-				if (level < 0) {
+				level = (r2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
+				if (level < 0)
 					level = 0;
-				}
-				level = 1-level;
+				level = 1 - level;
 			} else { // tank level calculation in the case it is a European standard sensor
-				level = (R2 / EUR_MAX_TANK_LEVEL_RESISTANCE);
+				level = r2 / EUR_MAX_TANK_LEVEL_RESISTANCE;
 			}
 
-			// is level bigger than 100% ?
-			if (level > 1) {
-				// saturate the level to 100%
+			// clamp at 100%
+			if (level > 1)
 				level = 1;
-			}
 
 			// Sensor status: O.K.
 			status = SENSOR_STATUS_OK;
@@ -438,15 +435,15 @@ static veBool sensors_tankType_data_process(AnalogSensor *sensor)
 }
 
 /**
- * @brief sensors_tankType_data_process - process the temperature sensor adc data (need to switch the oin function as when functions will be add)
+ * @brief process the temperature sensor adc data
  * @param sensor - pointer to the sensor struct
  * @return Boolean status veTrue-success, veFalse-fail
  */
-static veBool sensors_temperatureType_data_process(AnalogSensor *sensor)
+static veBool updateTemperature(AnalogSensor *sensor)
 {
 	float tempC, offset, scale;
 	SensorStatus status;
-	float adc_sample = sensor->interface.adc_sample;
+	float adcSample = sensor->interface.adcSample;
 	struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 	VeVariant v;
 
@@ -458,24 +455,24 @@ static veBool sensors_temperatureType_data_process(AnalogSensor *sensor)
 		return veFalse;
 	scale = v.value.Float;
 
-	if (adc_sample > TEMP_SENS_MIN_ADCIN && adc_sample < TEMP_SENS_MAX_ADCIN) {
+	if (adcSample > TEMP_SENS_MIN_ADCIN && adcSample < TEMP_SENS_MAX_ADCIN) {
 		// calculate the output of the LM335 temperature sensor from the adc pin sample
-		float v_sens = adc_sample * TEMP_SENS_V_RATIO;
+		float vSense = adcSample * TEMP_SENS_V_RATIO;
 		// convert from Kelvin to Celsius
-		tempC = 100 * v_sens - 273;
+		tempC = 100 * vSense - 273;
 		// Signal scale correction
 		tempC *= scale;
 		// Signal offset correction
 		tempC += offset;
 
 		status = SENSOR_STATUS_OK;
-	} else if (adc_sample > TEMP_SENS_MAX_ADCIN) {
+	} else if (adcSample > TEMP_SENS_MAX_ADCIN) {
 		// open circuit error
 		status = SENSOR_STATUS_NOT_CONNECTED;
-	} else if (adc_sample < TEMP_SENS_S_C_ADCIN ) {
+	} else if (adcSample < TEMP_SENS_S_C_ADCIN ) {
 		// short circuit error
 		status = SENSOR_STATUS_SHORT;
-	} else if (adc_sample > TEMP_SENS_INV_PLRTY_ADCIN_LB && adc_sample < TEMP_SENS_INV_PLRTY_ADCIN_HB) {
+	} else if (adcSample > TEMP_SENS_INV_PLRTY_ADCIN_LB && adcSample < TEMP_SENS_INV_PLRTY_ADCIN_HB) {
 		// lm335 probably connected in reverse polarity
 		status = SENSOR_STATUS_REVERSE_POLARITY;
 	} else {
@@ -484,42 +481,15 @@ static veBool sensors_temperatureType_data_process(AnalogSensor *sensor)
 	}
 
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
-
-	// if status = o.k. publish valid value otherwise publish invalid value
-	if (status == SENSOR_STATUS_OK) {
+	if (status == SENSOR_STATUS_OK)
 		veItemOwnerSet(temperature->temperatureItem, veVariantSn32(&v, tempC));
-	} else {
+	else
 		veItemInvalidate(temperature->temperatureItem);
-	}
 
 	return veTrue;
 }
 
-/**
- * @brief sensors_data_process - direct to the data processing algorithm per sensor type
- * @param sensor - the sensor struct
- * @return Boolean status veTrue-success, veFalse-fail
- */
-static veBool sensors_data_process(AnalogSensor *sensor)
-{
-	// check the type of sensor before starting
-	switch (sensor->sensor_type) {
-	case SENSOR_TYPE_TANK:
-		sensors_tankType_data_process(sensor);
-		break;
-
-	case SENSOR_TYPE_TEMP:
-		sensors_temperatureType_data_process(sensor);
-		break;
-
-	default:
-		break;
-	}
-
-	return veTrue;
-}
-
-static void sensors_dbusConnect(AnalogSensor *sensor)
+static void sensorDbusConnect(AnalogSensor *sensor)
 {
 	sensor->dbus = veDbusConnectString(veDbusGetDefaultConnectString());
 	if (!sensor->dbus) {
@@ -527,7 +497,6 @@ static void sensors_dbusConnect(AnalogSensor *sensor)
 		pltExit(1);
 	}
 	sensor->interface.dbus.connected = veTrue;
-	/* Device found */
 
 	veDbusItemInit(sensor->dbus, sensor->root);
 	veDbusChangeName(sensor->dbus, sensor->interface.dbus.service);
@@ -535,38 +504,38 @@ static void sensors_dbusConnect(AnalogSensor *sensor)
 	logI(sensor->interface.dbus.service, "connected to dbus");
 }
 
-static void sensors_dbusDisconnect(AnalogSensor *sensor)
+static void sensorDbusDisconnect(AnalogSensor *sensor)
 {
 	veDbusDisconnect(sensor->dbus);
 	sensor->interface.dbus.connected = veFalse;
 }
 
-void sensors_handle(void)
+void sensorTick(void)
 {
-	int analog_sensors_index;
+	int i;
 	VeVariant v;
 
 	// first read fast all the analog inputs and mark which read is valid
 	// We reading always the same number of analog inputs to try to keep the timing of the system constant.
-	for (analog_sensors_index = 0; analog_sensors_index < sensor_count; analog_sensors_index++) {
-		AnalogSensor *sensor = analog_sensor[analog_sensors_index];
+	for (i = 0; i < sensorCount; i++) {
+		AnalogSensor *sensor = sensors[i];
 		un32 val;
 
-		sensor->valid = adc_read(&val, sensor);
+		sensor->valid = adcRead(&val, sensor);
 		if (sensor->valid)
-			sensor->interface.adc_sample = val * sensor->interface.adc_scale;
+			sensor->interface.adcSample = val * sensor->interface.adcScale;
 	}
 
 	// Now handle the adc read to update the sensor
-	for (analog_sensors_index = 0; analog_sensors_index < sensor_count; analog_sensors_index++) {
-		AnalogSensor *sensor = analog_sensor[analog_sensors_index];
-		FilerIirLpf *filter = &sensor->interface.sig_cond.filterIirLpf;
+	for (i = 0; i < sensorCount; i++) {
+		AnalogSensor *sensor = sensors[i];
+		FilerIirLpf *filter = &sensor->interface.sigCond.filterIirLpf;
 
 		if (!sensor->valid)
 			continue;
 
 		// filter the input ADC sample and store it in adc var
-		sensor->interface.adc_sample = adc_filter(sensor->interface.adc_sample, filter);
+		sensor->interface.adcSample = adcFilter(sensor->interface.adcSample, filter);
 
 		// check if the sensor function - if it needed at all?
 		veItemLocalValue(sensor->function, &v);
@@ -576,46 +545,26 @@ void sensors_handle(void)
 		switch (v.value.UN32) {
 		case SENSOR_FUNCTION_DEFAULT:
 			// check if dbus is disconnected and connect it
-			if (!sensor->interface.dbus.connected) {
-				sensors_dbusConnect(sensor);
-			}
+			if (!sensor->interface.dbus.connected)
+				sensorDbusConnect(sensor);
 
-			// need to proces the data
-			sensors_data_process(sensor);
+			switch (sensor->sensorType) {
+			case SENSOR_TYPE_TANK:
+				updateTank(sensor);
+				break;
+
+			case SENSOR_TYPE_TEMP:
+				updateTemperature(sensor);
+				break;
+			}
 			break;
 
 		case SENSOR_FUNCTION_NONE:
 		default:
 			// check if dbus is connected and disconnect it
-			if (sensor->interface.dbus.connected) {
-				sensors_dbusDisconnect(sensor);
-			}
+			if (sensor->interface.dbus.connected)
+				sensorDbusDisconnect(sensor);
 			break;
 		}
 	}
-}
-
-/**
- * @brief add_sensor
- * @param devfd - file descriptor of ADC device sysfs directory
- * @param pin - ADC pin number
- * @param scale - ADC scale in volts / unit
- * @param type - type of sensor
- * @return 0 on success, -1 on error
- */
-int add_sensor(int devfd, int pin, float scale, int type)
-{
-	AnalogSensor *sensor;
-	VeVariant v;
-
-	sensor = sensor_init(devfd, pin, scale, type);
-	if (!sensor)
-		return -1;
-
-	/* App info */
-	sensor->processName = veItemCreateBasic(sensor->root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
-	sensor->processVersion = veItemCreateBasic(sensor->root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
-	sensor->connection = veItemCreateBasic(sensor->root, "Mgmt/Connection", veVariantStr(&v, sensor->iface_name));
-
-	return 0;
 }

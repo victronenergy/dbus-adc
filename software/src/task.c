@@ -59,7 +59,7 @@ static char *token(char *buf, char **next)
 	return buf;
 }
 
-static float get_float(const char *p, float min, float max,
+static float getFloat(const char *p, float min, float max,
 					   const char *file, int line)
 {
 	char *end;
@@ -74,7 +74,7 @@ static float get_float(const char *p, float min, float max,
 	return v;
 }
 
-static unsigned get_uint(const char *p, unsigned min, unsigned max,
+static unsigned getUint(const char *p, unsigned min, unsigned max,
 						 const char *file, int line)
 {
 	char *end;
@@ -89,7 +89,7 @@ static unsigned get_uint(const char *p, unsigned min, unsigned max,
 	return v;
 }
 
-static int open_dev(const char *dev, const char *file, int line)
+static int openDev(const char *dev, const char *file, int line)
 {
 	char buf[64];
 	int fd;
@@ -103,7 +103,7 @@ static int open_dev(const char *dev, const char *file, int line)
 	return fd;
 }
 
-static void load_config(const char *file)
+static void loadConfig(const char *file)
 {
 	FILE *f;
 	char buf[128];
@@ -144,17 +144,17 @@ static void load_config(const char *file)
 			error(file, line, "trailing junk\n");
 
 		if (!strcmp(cmd, "device")) {
-			devfd = open_dev(arg, file, line);
+			devfd = openDev(arg, file, line);
 			continue;
 		}
 
 		if (!strcmp(cmd, "vref")) {
-			vref = get_float(arg, VREF_MIN, VREF_MAX, file, line);
+			vref = getFloat(arg, VREF_MIN, VREF_MAX, file, line);
 			continue;
 		}
 
 		if (!strcmp(cmd, "scale")) {
-			scale = get_uint(arg, SCALE_MIN, SCALE_MAX, file, line);
+			scale = getUint(arg, SCALE_MIN, SCALE_MAX, file, line);
 			continue;
 		}
 
@@ -174,9 +174,9 @@ static void load_config(const char *file)
 		if (!scale)
 			error(file, line, "%s requires scale\n", cmd);
 
-		pin = get_uint(arg, 0, -1u, file, line);
+		pin = getUint(arg, 0, -1u, file, line);
 
-		if (add_sensor(devfd, pin, vref / scale, type))
+		if (!sensorCreate(devfd, pin, vref / scale, type))
 			error(file, line, "error adding sensor\n");
 	}
 }
@@ -184,7 +184,7 @@ static void load_config(const char *file)
 static void connectToDbus(void)
 {
 	const char *settingsService = "com.victronenergy.settings";
-	struct VeItem *input_root = veValueTree();
+	struct VeItem *inputRoot = veValueTree();
 	struct VeDbus *dbus;
 
 	if (!(dbus = veDbusGetDefaultBus())) {
@@ -194,7 +194,7 @@ static void connectToDbus(void)
 	veDbusSetListeningDbus(dbus);
 
 	/* Connect to settings service */
-	localSettings = veItemGetOrCreateUid(input_root, settingsService);
+	localSettings = veItemGetOrCreateUid(inputRoot, settingsService);
 	if (!veDbusAddRemoteService(settingsService, localSettings, veTrue)) {
 		logE("task", "veDbusAddRemoteService failed");
 		pltExit(1);
@@ -206,14 +206,10 @@ struct VeItem *getLocalSettings(void)
 	return localSettings;
 }
 
-/**
- * @brief taskInit
- * initiate the system and enable the interrupts to start ticking the app
- */
 void taskInit(void)
 {
 	connectToDbus();
-	load_config(CONFIG_FILE);
+	loadConfig(CONFIG_FILE);
 }
 
 void taskUpdate(void)
@@ -224,11 +220,11 @@ void taskUpdate(void)
 /* 50 ms time update. */
 void taskTick(void)
 {
-	static un16 values_task_timer = SENSOR_TICKS;
+	static un16 sensorTimer = SENSOR_TICKS;
 
-	if (--values_task_timer == 0) {
-		values_task_timer = SENSOR_TICKS;
-		sensors_handle();
+	if (--sensorTimer == 0) {
+		sensorTimer = SENSOR_TICKS;
+		sensorTick();
 	}
 }
 

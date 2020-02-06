@@ -49,23 +49,23 @@ typedef struct {
 
 // building a sensor signal conditioning structure
 typedef struct {
-	SignalCorrection sig_correct;
+	SignalCorrection sigCorrect;
 	FilerIirLpf filterIirLpf;
 } SignalCondition;
 
 // building a sensor interface structure
 typedef struct {
 	int devfd;
-	int adc_pin;
-	float adc_scale;
-	float adc_sample;
-	SignalCondition sig_cond;
+	int adcPin;
+	float adcScale;
+	float adcSample;
+	SignalCondition sigCond;
 	SensorDbusInterface dbus;
 } SensorInterface;
 
 // building a sensor structure
 typedef struct {
-	SensorType sensor_type;
+	SensorType sensorType;
 	int number; /* per type */
 	int instance;
 	veBool valid;
@@ -76,7 +76,7 @@ typedef struct {
 	struct VeItem *processVersion;
 	struct VeItem *connection;
 	struct VeItem *function;
-	char iface_name[32];
+	char ifaceName[32];
 	struct VeItem *statusItem;
 } AnalogSensor;
 
@@ -96,11 +96,12 @@ struct TemperatureSensor {
 	struct VeItem *offsetItem;
 };
 
-AnalogSensor *sensor_init(int devfd, int pin, float scale, SensorType type);
-void sensors_handle(void);
-int add_sensor(int devfd, int pin, float scale, int type);
-veBool adc_read(un32 *value, AnalogSensor *sensor);
-float adc_filter(float x, FilerIirLpf *f);
+AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type);
+void sensorTick(void);
+int sensorAdd(int devfd, int pin, float scale, int type);
+
+veBool adcRead(un32 *value, AnalogSensor *sensor);
+float adcFilter(float x, FilerIirLpf *f);
 
 struct VeItem *getLocalSettings(void);
 
