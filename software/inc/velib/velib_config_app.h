@@ -12,6 +12,7 @@
 
 #define CFG_WITH_TASK						1
 #define CFG_INIT_DEFAULT_DBUS				1
+#define CFG_WITH_DEFAULT_ARGUMENTS			1
 
 # if 1
 /* non blocking version */
