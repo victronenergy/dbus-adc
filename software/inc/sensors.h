@@ -120,26 +120,6 @@ typedef struct {
 	VeItem connected;
 } ProductInfo;
 
-// sensors items for dbus tank level sensor service
-typedef struct {
-	VeItem analogpinFunc;
-} tank_level_sensor_item_t;
-
-// sensors items for dbus temperature sensor service
-typedef struct {
-	VeItem analogpinFunc;
-} temperature_sensor_item_t;
-
-// sensors variables for tank level sensor items
-typedef struct {
-	VeVariant analogpinFunc;
-} tank_level_sensor_variant_t;
-
-// sensors variables for temperature sensor items
-typedef struct {
-	VeVariant analogpinFunc;
-} temperature_sensor_variant_t;
-
 // parameters to interface the sensor to dbus service
 typedef struct {
 	char service[64];
@@ -149,19 +129,7 @@ typedef struct {
 // building a sensor items structure to be published to dbus service
 typedef struct {
 	ProductInfo product;
-	union {
-		tank_level_sensor_item_t tank_level;
-		temperature_sensor_item_t temperature;
-	};
 } sensors_items_t;
-
-// sensor item variables per sensor type
-typedef struct {
-	union {
-		tank_level_sensor_variant_t tank_level;
-		temperature_sensor_variant_t temperature;
-	};
-} sensors_variants_t;
 
 // sensor signal correction parameters
 typedef struct {
@@ -200,13 +168,13 @@ typedef struct {
 	sensors_interface_t interface;
 	dbus_info_t dbus_info[NUM_OF_SENSOR_SETTINGS_PARAMS];
 	sensors_items_t items;
-	sensors_variants_t variant;
 	ItemInfo info[SENSORS_INFO_ARRAY_SIZE];
 	struct VeDbus *dbus;
 	VeItem root;
 	struct VeItem *processName;
 	struct VeItem *processVersion;
 	struct VeItem *connection;
+	struct VeItem *function;
 	char iface_name[32];
 	VeItem *statusItem;
 } analog_sensor_t;

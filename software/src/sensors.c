@@ -16,9 +16,6 @@
 #include <stdlib.h>
 #endif
 
-// Callbacks to be called when the parameters are changing
-static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant);
-
 //static variables
 /**
  * @brief analog_sensor - array of analog sensor structures
@@ -153,6 +150,14 @@ static struct VeItem *createSettingsProxy(analog_sensor_t *sensor, char const *p
 	return sensorItem;
 }
 
+static struct VeItem *createFunctionProxy(analog_sensor_t *sensor, const char *prefixFormat)
+{
+	char prefix[VE_MAX_UID_SIZE];
+
+	snprintf(prefix, sizeof(prefix), prefixFormat, sensor->number);
+	return createSettingsProxy(sensor, prefix, "Function", veVariantFmt, &veUnitNone);
+}
+
 static void sensor_item_info_init(analog_sensor_t *sensor)
 {
 	ProductInfo *prod = &sensor->items.product;
@@ -168,11 +173,7 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 
 	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NCONN), statusFormatter, NULL);
 
-#define IV(n) &item->n, &var->n
-
 	if (sensor->sensor_type == SENSOR_TYPE_TANK) {
-		tank_level_sensor_item_t *item = &sensor->items.tank_level;
-		tank_level_sensor_variant_t *var = &sensor->variant.tank_level;
 		struct TankSensor *tank = (struct TankSensor *) sensor;
 
 		tank->levelItem = veItemCreateQuantity(root, "Level", veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
@@ -183,11 +184,9 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 		tank->fluidTypeItem = createSettingsProxy(sensor, prefix, "FluidType", fluidTypeFormatter, NULL);
 		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard", standardItemFormatter, NULL);
 
-		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
+		sensor->function = createFunctionProxy(sensor, "/Settings/AnalogInput/Resistive/%d");
 
 	} else if (sensor->sensor_type == SENSOR_TYPE_TEMP) {
-		temperature_sensor_item_t *item = &sensor->items.temperature;
-		temperature_sensor_variant_t *var = &sensor->variant.temperature;
 		struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 
 		temperature->temperatureItem = veItemCreateQuantity(root, "Temperature", veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
@@ -197,10 +196,8 @@ static void sensor_item_info_init(analog_sensor_t *sensor)
 		temperature->offsetItem = createSettingsProxy(sensor, prefix, "Offset", veVariantFmt, &veUnitNone);
 		createSettingsProxy(sensor, prefix, "TemperatureType", veVariantFmt, &veUnitNone);
 
-		init_item_info(&info[7], IV(analogpinFunc), "analogpinFunc",	&units,				5, analogPinFuncChange);
+		sensor->function = createFunctionProxy(sensor, "/Settings/AnalogInput/Temperature/%d");
 	}
-
-#undef IV
 }
 
 static void sensor_set_defaults_tank(analog_sensor_t *sensor)
@@ -422,10 +419,6 @@ static veBool sensors_tankType_data_process(analog_sensor_t *sensor)
 		}
 	}
 
-	// measure is ok and R2 resistance was correctly calculated
-	veVariantUn32(&sensor->variant.tank_level.analogpinFunc,
-			(un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float);
-
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
 
 	// if status = o.k. publish valid value otherwise publish invalid value
@@ -495,9 +488,6 @@ static veBool sensors_temperatureType_data_process(analog_sensor_t *sensor)
 		veItemInvalidate(temperature->temperatureItem);
 	}
 
-	veVariantUn32(&sensor->variant.temperature.analogpinFunc,
-			(un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float);
-
 	return veTrue;
 }
 
@@ -550,6 +540,7 @@ static void updateValues(void)
 void sensors_handle(void)
 {
 	int analog_sensors_index;
+	VeVariant v;
 
 	// first read fast all the analog inputs and mark which read is valid
 	// We reading always the same number of analog inputs to try to keep the timing of the system constant.
@@ -574,9 +565,11 @@ void sensors_handle(void)
 		sensor->interface.adc_sample = adc_filter(sensor->interface.adc_sample, filter);
 
 		// check if the sensor function - if it needed at all?
-		un32 sensor_analogpinFunc = (un32)sensor->dbus_info[analogpinFunc].value->variant.value.Float;
+		veItemLocalValue(sensor->function, &v);
+		if (!veVariantIsValid(&v))
+			continue;
 
-		switch (sensor_analogpinFunc) {
+		switch (v.value.UN32) {
 		case default_function:
 			// check if dbus is disconnected and connect it
 			if (!sensor->interface.dbus.connected) {
@@ -621,28 +614,4 @@ void sensors_dbusInit(analog_sensor_t *sensor)
 		veItemOwnerSet(&sensor->items.product.id, veVariantUn16(&variant, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT));
 		veItemOwnerSet(&sensor->items.product.name, veVariantStr(&variant, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
 	}
-}
-
-/**
- * @brief xxxChange - is a callback that called when an item was changed
- * @param item - a pointer to the chanched item
- * @param ctx - a preloaded void pointer to some desired variable - in our case, a pointer the the sensor structure array element
- * @param variant - the changed variant in the item
- * @return Boolean status veTrue - success, veFalse - fail
- */
-
-// Callback when the sensor function is changing
-static veBool analogPinFuncChange(struct VeItem *item, void *ctx, VeVariant *variant)
-{
-	analog_sensor_t *p_analog_sensor = (analog_sensor_t *)ctx;
-
-	veItemOwnerSet(item, variant);
-	veItemOwnerSet(getConsumerRoot(), variant);
-
-	VeItem *settingsItem = veItemGetOrCreateUid(getConsumerRoot(), p_analog_sensor->dbus_info[analogpinFunc].path);
-	veItemSet(settingsItem, variant);
-
-	p_analog_sensor->variant.tank_level.analogpinFunc.value.Float = variant->value.Float;
-
-	return veTrue;
 }
