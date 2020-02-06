@@ -371,7 +371,7 @@ AnalogSensor *sensor_init(int devfd, int pin, float scale, SensorType type)
 static veBool sensors_tankType_data_process(AnalogSensor *sensor)
 {
 	// process the data of the analog input with respect to its function
-	float level, tankCapacity;
+	float level, capacity;
 	TankStandard standard;
 	SensorStatus status;
 	VeVariant v;
@@ -383,7 +383,7 @@ static veBool sensors_tankType_data_process(AnalogSensor *sensor)
 
 	if (!veVariantIsValid(veItemLocalValue(tank->capacityItem, &v)))
 		return veFalse;
-	tankCapacity = v.value.Float;
+	capacity = v.value.Float;
 
 	if (sensor->interface.adc_sample > 1.4) {
 		// Sensor status: error - not connected
@@ -428,7 +428,7 @@ static veBool sensors_tankType_data_process(AnalogSensor *sensor)
 	// if status = o.k. publish valid value otherwise publish invalid value
 	if (status == SENSOR_STATUS_OK) {
 		veItemOwnerSet(tank->levelItem, veVariantUn32(&v, 100 * level));
-		veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, level * tankCapacity));
+		veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, level * capacity));
 	} else {
 		veItemInvalidate(tank->levelItem);
 		veItemInvalidate(tank->remaingItem);
@@ -444,7 +444,7 @@ static veBool sensors_tankType_data_process(AnalogSensor *sensor)
  */
 static veBool sensors_temperatureType_data_process(AnalogSensor *sensor)
 {
-	float tempC, tempOffset, tempScale;
+	float tempC, offset, scale;
 	SensorStatus status;
 	float adc_sample = sensor->interface.adc_sample;
 	struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
@@ -452,11 +452,11 @@ static veBool sensors_temperatureType_data_process(AnalogSensor *sensor)
 
 	if (!veVariantIsValid(veItemLocalValue(temperature->offsetItem, &v)))
 		return veFalse;
-	tempOffset = v.value.Float;
+	offset = v.value.Float;
 
 	if (!veVariantIsValid(veItemLocalValue(temperature->scaleItem, &v)))
 		return veFalse;
-	tempScale = v.value.Float;
+	scale = v.value.Float;
 
 	if (adc_sample > TEMP_SENS_MIN_ADCIN && adc_sample < TEMP_SENS_MAX_ADCIN) {
 		// calculate the output of the LM335 temperature sensor from the adc pin sample
@@ -464,9 +464,9 @@ static veBool sensors_temperatureType_data_process(AnalogSensor *sensor)
 		// convert from Kelvin to Celsius
 		tempC = 100 * v_sens - 273;
 		// Signal scale correction
-		tempC *= tempScale;
+		tempC *= scale;
 		// Signal offset correction
-		tempC += tempOffset;
+		tempC += offset;
 
 		status = SENSOR_STATUS_OK;
 	} else if (adc_sample > TEMP_SENS_MAX_ADCIN) {
