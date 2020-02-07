@@ -90,6 +90,11 @@ static struct VeSettingProperties temperatureType = {
 	.max.value.SN32 = INT32_MAX - 3,
 };
 
+static struct VeSettingProperties emptyStrType = {
+	.type = VE_HEAP_STR,
+	.def.value.Ptr = "",
+};
+
 VeVariantEnumFmt const statusDef = VE_ENUM_DEF("Ok", "Disconnected",  "Short circuited",
 												   "Reverse polarity", "Unknown");
 VeVariantEnumFmt const fluidTypeDef = VE_ENUM_DEF("Fuel", "Fresh water", "Waste water",
@@ -137,11 +142,12 @@ static struct VeItem *createFunctionProxy(AnalogSensor *sensor, const char *pref
 	return createSettingsProxy(sensor, prefix, "Function", veVariantFmt, &veUnitNone, &functionProps);
 }
 
-static void createItems(AnalogSensor *sensor)
+static void createItems(AnalogSensor *sensor, const char *driver)
 {
 	VeVariant v;
 	struct VeItem *root = sensor->root;
 	char prefix[VE_MAX_UID_SIZE];
+	char *p;
 
 	/* App info */
 	sensor->processName = veItemCreateBasic(root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
@@ -151,6 +157,16 @@ static void createItems(AnalogSensor *sensor)
 	veItemCreateBasic(root, "Connected", veVariantUn32(&v, veTrue));
 	veItemCreateBasic(root, "DeviceInstance", veVariantUn32(&v, sensor->instance));
 	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NOT_CONNECTED), &statusDef, NULL);
+
+	/* must be a valid dbus path.. */
+	snprintf(prefix, sizeof(prefix), "Settings/Devices/adc_%s_%d", driver, sensor->interface.adcPin);
+	p = prefix;
+	while (*p) {
+		if (*p == ':')
+			*p = '_';
+		p++;
+	}
+	createSettingsProxy(sensor, prefix, "CustomName", veVariantFmt, &veUnitNone, &emptyStrType);
 
 	if (sensor->sensorType == SENSOR_TYPE_TANK) {
 		struct TankSensor *tank = (struct TankSensor *) sensor;
@@ -235,7 +251,8 @@ static void temperatureInit(AnalogSensor *sensor)
  * @param type - type of sensor
  * @return Pointer to sensor struct
  */
-AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type)
+AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
+						   char const *drv)
 {
 	AnalogSensor *sensor;
 	static un8 instance = 20;
@@ -267,7 +284,7 @@ AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type)
 	else if (sensor->sensorType == SENSOR_TYPE_TEMP)
 		temperatureInit(sensor);
 
-	createItems(sensor);
+	createItems(sensor, drv);
 
 	return sensor;
 }

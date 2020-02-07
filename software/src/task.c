@@ -107,6 +107,7 @@ static void loadConfig(const char *file)
 {
 	FILE *f;
 	char buf[128];
+	char drv[128];
 	int devfd = -1;
 	float vref = 0;
 	unsigned scale = 0;
@@ -145,6 +146,7 @@ static void loadConfig(const char *file)
 
 		if (!strcmp(cmd, "device")) {
 			devfd = openDev(arg, file, line);
+			snprintf(drv, sizeof(drv), "%s", arg);
 			continue;
 		}
 
@@ -176,7 +178,7 @@ static void loadConfig(const char *file)
 
 		pin = getUint(arg, 0, -1u, file, line);
 
-		if (!sensorCreate(devfd, pin, vref / scale, type))
+		if (!sensorCreate(devfd, pin, vref / scale, type, drv))
 			error(file, line, "error adding sensor\n");
 	}
 }

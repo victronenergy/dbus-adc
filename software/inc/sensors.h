@@ -96,7 +96,8 @@ struct TemperatureSensor {
 	struct VeItem *offsetItem;
 };
 
-AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type);
+AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
+						   const char *drv);
 void sensorTick(void);
 int sensorAdd(int devfd, int pin, float scale, int type);
 
