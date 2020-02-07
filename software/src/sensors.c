@@ -97,69 +97,20 @@ static struct SettingProperties temperatureType = {
 	.max.value.SN32 = INT32_MAX - 3,
 };
 
-/*
- * Formats enum values. The content of `var` will converted to an integer. The integer will be used
- * as index to pick a string from options. This string is copied to buf.
- * If `var` is invalid or its value exceeds `optionCount`, buf will be an empty string
- * @returns The size of the selected option (or 0 if no option could be selected).
- */
-static size_t enumFormatter(VeVariant *var, char *buf, size_t len, const char **options,
-					 un32 optionCount)
-{
-	if (var->type.tp != VE_UNKNOWN) {
-		un32 optionIndex = 0;
-		const char *option = NULL;
-
-		veVariantToN32(var);
-		optionIndex = var->value.UN32;
-
-		if (optionIndex < optionCount) {
-			option = options[optionIndex];
-			strncpy(buf, option, len);
-			return strlen(option);
-		}
-	}
-
-	/* Invalid or unknown value, set an empty string if possible */
-	if (len > 0)
-		*buf = 0;
-
-	return 0;
-}
-
-/** Used to format the /Status D-Bus entry */
-static size_t statusFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
-{
-	const char *options[] = { "Ok", "Disconnected", "Short circuited", "Reverse polarity",
-							  "Unknown" };
-	VE_UNUSED(ctx);
-	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
-}
-
-/** Used to format the /FluidType D-Bus entry */
-static size_t fluidTypeFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
-{
-	const char *options[] = { "Fuel", "Fresh water", "Waste water", "Live well", "Oil",
-							  "Black water (sewage)" };
-	VE_UNUSED(ctx);
-	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
-}
-
-/** Used to format the /Standard D-Bus entry */
-static size_t standardItemFormatter(VeVariant *var, void const *ctx, char *buf, size_t len)
-{
-	const char *options[] = { "European", "American" };
-	VE_UNUSED(ctx);
-	return enumFormatter(var, buf, len, options, sizeof(options)/sizeof(options[0]));
-}
+VeVariantEnumFmt const statusDef = VE_ENUM_DEF("Ok", "Disconnected",  "Short circuited",
+												   "Reverse polarity", "Unknown");
+VeVariantEnumFmt const fluidTypeDef = VE_ENUM_DEF("Fuel", "Fresh water", "Waste water",
+													  "Live well", "Oil", "Black water (sewage)");
+VeVariantEnumFmt const standardDef = VE_ENUM_DEF("European", "American");
 
 static struct VeItem *createEnumItem(AnalogSensor *sensor, const char *id,
-						   VeVariant *initial, VeItemValueFmt *fmt, VeItemSetterFun *cb)
+						   VeVariant *initial, VeVariantEnumFmt const *fmt, VeItemSetterFun *cb)
 {
 	struct VeItem *item = veItemCreateBasic(sensor->root, id, initial);
 	veItemSetTimeout(item, 5);
 	veItemSetSetter(item, cb, sensor);
-	veItemSetFmt(item, fmt, NULL);
+	if (fmt)
+		veItemSetFmt(item, veVariantEnumFmt, fmt);
 
 	return item;
 }
@@ -189,7 +140,7 @@ static void onSettingChanged(struct VeItem *item)
  * in localsettings changed, also update the sensor value.
  */
 static struct VeItem *createSettingsProxy(AnalogSensor *sensor, char const *prefix,
-										  char *id, VeItemValueFmt *fmt, void *fmtCtx,
+										  char *id, VeItemValueFmt *fmt, void const *fmtCtx,
 										  struct SettingProperties *properties)
 {
 	struct VeItem *localSettings = getLocalSettings();
@@ -242,7 +193,7 @@ static void createItems(AnalogSensor *sensor)
 
 	veItemCreateBasic(root, "Connected", veVariantUn32(&v, veTrue));
 	veItemCreateBasic(root, "DeviceInstance", veVariantUn32(&v, sensor->instance));
-	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NOT_CONNECTED), statusFormatter, NULL);
+	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NOT_CONNECTED), &statusDef, NULL);
 
 	if (sensor->sensorType == SENSOR_TYPE_TANK) {
 		struct TankSensor *tank = (struct TankSensor *) sensor;
@@ -255,8 +206,8 @@ static void createItems(AnalogSensor *sensor)
 
 		snprintf(prefix, sizeof(prefix), "Settings/Tank/%d", sensor->number);
 		tank->capacityItem = createSettingsProxy(sensor, prefix, "Capacity", veVariantFmt, &veUnitVolume, &tankCapacityProps);
-		tank->fluidTypeItem = createSettingsProxy(sensor, prefix, "FluidType", fluidTypeFormatter, NULL, &tankFluidType);
-		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard", standardItemFormatter, NULL, &tankStandardProps);
+		tank->fluidTypeItem = createSettingsProxy(sensor, prefix, "FluidType", veVariantEnumFmt, &fluidTypeDef, &tankFluidType);
+		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard", veVariantEnumFmt, &standardDef, &tankStandardProps);
 
 		sensor->function = createFunctionProxy(sensor, "/Settings/AnalogInput/Resistive/%d");
 
