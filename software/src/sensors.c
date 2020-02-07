@@ -131,6 +131,8 @@ static void onSettingChanged(struct VeItem *item)
 	VeVariant v;
 
 	veItemLocalValue(item, &v);
+	if (v.type.tp == VE_HEAP_STR)
+		veVariantHeapStr(&v, v.value.CPtr);
 	veItemOwnerSet(sensorItem, &v);
 }
 

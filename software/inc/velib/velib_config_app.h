@@ -29,6 +29,7 @@
 #define CFG_WITH_VARIANT					1
 #define CFG_WITH_VARIANT_PRINT				1
 #define CFG_WITH_FLOAT						1
+#define CFG_VARIANT_HEAP					1
 #define CFG_DBUS_NON_BLOCKING				1
 #define CFG_WITH_VECAN_PRODUCT_NAMES		1
 #define CFG_WITH_ITEM_UTILS					1
