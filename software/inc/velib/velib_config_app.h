@@ -23,6 +23,7 @@
 #define CFG_WITH_TASK						1
 #define CFG_WITH_VE_ITEM					1
 #define CFG_WITH_VE_DBUS_ITEM_CONSUMER		1
+#define CFG_DBUS_ITEM_NO_TYPE_CHANGE		1
 #define CFG_WITH_VE_VALUES					1
 #define CFG_WITH_VE_DBUS_ITEM				1
 #define CFG_WITH_VARIANT					1
