@@ -105,7 +105,6 @@ static struct VeItem *createEnumItem(AnalogSensor *sensor, const char *id,
 						   VeVariant *initial, VeVariantEnumFmt const *fmt, VeItemSetterFun *cb)
 {
 	struct VeItem *item = veItemCreateBasic(sensor->root, id, initial);
-	veItemSetTimeout(item, 5);
 	veItemSetSetter(item, cb, sensor);
 	if (fmt)
 		veItemSetFmt(item, veVariantEnumFmt, fmt);
