@@ -210,6 +210,7 @@ struct VeItem *getLocalSettings(void)
 
 void taskInit(void)
 {
+	pltExitOnOom();
 	connectToDbus();
 	loadConfig(CONFIG_FILE);
 }

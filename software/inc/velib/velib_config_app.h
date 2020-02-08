@@ -13,6 +13,7 @@
 #define CFG_WITH_TASK						1
 #define CFG_INIT_DEFAULT_DBUS				1
 #define CFG_WITH_DEFAULT_ARGUMENTS			1
+#define CFG_EXIT_ON_OOM						1
 
 /* non blocking */
 #define CFG_WITH_LIBEVENT					1
