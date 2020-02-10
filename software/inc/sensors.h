@@ -21,6 +21,7 @@ typedef enum {
 typedef enum {
 	TANK_STANDARD_EU,
 	TANK_STANDARD_US,
+	TANK_STANDARD_CUSTOM,
 	TANK_STANDARD_COUNT
 } TankStandard;
 
@@ -87,6 +88,8 @@ struct TankSensor {
 	struct VeItem *capacityItem;
 	struct VeItem *fluidTypeItem;
 	struct VeItem *standardItem; /* tanksensor standard, EU vs US e.g. */
+	struct VeItem *emptyRItem;
+	struct VeItem *fullRItem;
 };
 
 struct TemperatureSensor {

@@ -17,9 +17,12 @@
 // defines for the tank level sensor analog front end parameters
 #define TANK_SENS_VREF						5.0
 #define TANK_SENS_R1						680.0 // ohms
+#define TANK_MAX_RESISTANCE					264 // ohms
+
+#define EUR_MIN_TANK_LEVEL_RESISTANCE		0 // ohms
 #define EUR_MAX_TANK_LEVEL_RESISTANCE		180 // ohms
-#define USA_MAX_TANK_LEVEL_RESISTANCE		240 // ohms
-#define USA_MIN_TANK_LEVEL_RESISTANCE		30 // ohms
+#define USA_MIN_TANK_LEVEL_RESISTANCE		240 // ohms
+#define USA_MAX_TANK_LEVEL_RESISTANCE		30 // ohms
 
 // defines for the temperature sensor analog front end parameters
 #define TEMP_SENS_R1						10000.0 // ohms
@@ -46,6 +49,7 @@ static int sensorCount;
 
 static VeVariantUnitFmt veUnitVolume = {3, "m3"};
 static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
+static VeVariantUnitFmt unitRes0Dec = {0, "ohm"};
 
 /* Common */
 static struct VeSettingProperties functionProps = {
@@ -95,11 +99,16 @@ static struct VeSettingProperties emptyStrType = {
 	.def.value.Ptr = "",
 };
 
+static struct VeSettingProperties tankResistanceProps = {
+	.type = VE_SN32,
+	.max.value.SN32 = TANK_MAX_RESISTANCE,
+};
+
 VeVariantEnumFmt const statusDef = VE_ENUM_DEF("Ok", "Disconnected",  "Short circuited",
 												   "Reverse polarity", "Unknown");
 VeVariantEnumFmt const fluidTypeDef = VE_ENUM_DEF("Fuel", "Fresh water", "Waste water",
 													  "Live well", "Oil", "Black water (sewage)");
-VeVariantEnumFmt const standardDef = VE_ENUM_DEF("European", "American");
+VeVariantEnumFmt const standardDef = VE_ENUM_DEF("European", "American", "Custom");
 
 static struct VeItem *createEnumItem(AnalogSensor *sensor, const char *id,
 						   VeVariant *initial, VeVariantEnumFmt const *fmt, VeItemSetterFun *cb)
@@ -141,6 +150,43 @@ static struct VeItem *createFunctionProxy(AnalogSensor *sensor, const char *pref
 	return createSettingsProxy(sensor, prefix, "Function", veVariantFmt, &veUnitNone, &functionProps);
 }
 
+/*
+ * Keep the settings in sync. The gui shouldn't allow changing the
+ * resistance settings when not in custom mode, but external might
+ * try. So always makes sure they match.
+ */
+static void onTankResConfigChanged(struct VeItem *item)
+{
+	struct TankSensor *tank = (struct TankSensor *) veItemCtx(item)->ptr;
+	VeVariant standard, v;
+	sn32 tankEmptyR, tankFullR;
+	struct VeItem *settingsItem;
+
+	if (!veVariantIsValid(veItemLocalValue(tank->standardItem, &standard)))
+		return;
+
+	switch (standard.value.SN32) {
+	case TANK_STANDARD_EU:
+		tankEmptyR = EUR_MIN_TANK_LEVEL_RESISTANCE;
+		tankFullR = EUR_MAX_TANK_LEVEL_RESISTANCE;
+		break;
+	case TANK_STANDARD_US:
+		tankEmptyR = USA_MIN_TANK_LEVEL_RESISTANCE;
+		tankFullR = USA_MAX_TANK_LEVEL_RESISTANCE;
+		break;
+	default:
+		return;
+	}
+
+	settingsItem = (struct VeItem *) veItemCtxSet(tank->emptyRItem);
+	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) && v.value.SN32 != tankEmptyR)
+		veItemSet(settingsItem, veVariantSn32(&v, tankEmptyR));
+
+	settingsItem = veItemCtxSet(tank->fullRItem);
+	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) && v.value.SN32 != tankFullR)
+		veItemSet(settingsItem, veVariantSn32(&v, tankFullR));
+}
+
 static void createItems(AnalogSensor *sensor, const char *driver)
 {
 	VeVariant v;
@@ -179,7 +225,19 @@ static void createItems(AnalogSensor *sensor, const char *driver)
 		snprintf(prefix, sizeof(prefix), "Settings/Tank/%d", sensor->number);
 		tank->capacityItem = createSettingsProxy(sensor, prefix, "Capacity", veVariantFmt, &veUnitVolume, &tankCapacityProps);
 		tank->fluidTypeItem = createSettingsProxy(sensor, prefix, "FluidType", veVariantEnumFmt, &fluidTypeDef, &tankFluidType);
+
+		/* The callback will make sure these are kept in sync */
+		tank->emptyRItem = createSettingsProxy(sensor, prefix, "ResistanceWhenEmpty", veVariantFmt, &unitRes0Dec, &tankResistanceProps);
+		veItemCtx(tank->emptyRItem)->ptr = tank;
+		veItemSetChanged(tank->emptyRItem, onTankResConfigChanged);
+
+		tank->fullRItem = createSettingsProxy(sensor, prefix, "ResistanceWhenFull", veVariantFmt, &unitRes0Dec, &tankResistanceProps);
+		veItemCtx(tank->fullRItem)->ptr = tank;
+		veItemSetChanged(tank->fullRItem, onTankResConfigChanged);
+
 		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard", veVariantEnumFmt, &standardDef, &tankStandardProps);
+		veItemCtx(tank->standardItem)->ptr = tank;
+		veItemSetChanged(tank->standardItem, onTankResConfigChanged);
 
 		sensor->function = createFunctionProxy(sensor, "Settings/AnalogInput/Resistive/%d");
 
@@ -296,70 +354,68 @@ AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
 static veBool updateTank(AnalogSensor *sensor)
 {
 	float level, capacity;
-	TankStandard standard;
-	SensorStatus status;
+	SensorStatus status = SENSOR_STATUS_UNKNOWN;
 	VeVariant v;
 	struct TankSensor *tank = (struct TankSensor *) sensor;
+	float tankEmptyR, tankFullR, tankR, tankMinR;
+	float vMeas = sensor->interface.adcSample;
 
-	if (!veVariantIsValid(veItemLocalValue(tank->standardItem, &v)))
+	if (!veVariantIsValid(veItemLocalValue(tank->emptyRItem, &v)))
 		return veFalse;
-	standard = (TankStandard) v.value.UN32;
+	tankEmptyR = v.value.SN32;
+
+	if (!veVariantIsValid(veItemLocalValue(tank->fullRItem, &v)))
+		return veFalse;
+	tankFullR = v.value.SN32;
 
 	if (!veVariantIsValid(veItemLocalValue(tank->capacityItem, &v)))
 		return veFalse;
 	capacity = v.value.Float;
 
-	if (sensor->interface.adcSample > 1.4) {
-		// Sensor status: error - not connected
+	/* prevent division by zero, configuration issue */
+	if (tankFullR == tankEmptyR)
+		goto errorState;
+
+	tankR = vMeas / (TANK_SENS_VREF - vMeas) * TANK_SENS_R1;
+
+	/* If the resistance is higher then the max supported; assume not connected */
+	if (tankR > fmax(tankEmptyR, tankFullR) * 1.05) {
 		status = SENSOR_STATUS_NOT_CONNECTED;
-	// this condition applies only for the US standard
-	} else if (standard && (sensor->interface.adcSample < 0.15)) {
-		// Sensor status: error - short circuited
-		status = SENSOR_STATUS_SHORT;
-	} else {
-		// calculate the resistance of the tank level sensor from the adc pin sample
-		float vdiff = TANK_SENS_VREF - sensor->interface.adcSample;
-		float r2 = TANK_SENS_R1 * sensor->interface.adcSample / vdiff;
-
-		// check the integrity of the resistance
-		if (r2 > 0) { // calculate the tank level
-			if (standard == TANK_STANDARD_US) { // tank level calculation in the case it is an American standard sensor
-				level = (r2 - USA_MIN_TANK_LEVEL_RESISTANCE) / (USA_MAX_TANK_LEVEL_RESISTANCE - USA_MIN_TANK_LEVEL_RESISTANCE);
-				if (level < 0)
-					level = 0;
-				level = 1 - level;
-			} else { // tank level calculation in the case it is a European standard sensor
-				level = r2 / EUR_MAX_TANK_LEVEL_RESISTANCE;
-			}
-
-			// clamp at 100%
-			if (level > 1)
-				level = 1;
-
-			// Sensor status: O.K.
-			status = SENSOR_STATUS_OK;
-		} else {
-			// Sensor status: error - unknown value
-			status = SENSOR_STATUS_UNKNOWN;
-		}
+		goto errorState;
 	}
+
+	/* Detect short, but only if not allow by the spec and a bit significant */
+	tankMinR = fmin(tankEmptyR, tankFullR);
+	if (tankMinR > 20 && tankR < 0.9 * tankMinR) {
+		status = SENSOR_STATUS_SHORT;
+		goto errorState;
+	}
+
+	status = SENSOR_STATUS_OK;
+	level = (tankR - tankEmptyR) / (tankFullR - tankEmptyR);
+	if (level < 0)
+		level = 0;
+	if (level > 1)
+		level = 1;
+
+	VeVariant oldRemaining;
+	float newRemaing = level * capacity;
+	float minRemainingChange = capacity / 5000.0f;
+
+	veItemLocalValue(tank->remaingItem, &oldRemaining);
+	if (veVariantIsValid(&oldRemaining) && fabsf(oldRemaining.value.Float - newRemaing) < minRemainingChange)
+		return veTrue;
 
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
-	if (status == SENSOR_STATUS_OK) {
-		VeVariant oldRemaining;
-		float newRemaing = level * capacity;
-		float minRemainingChange = capacity / 5000.0f;
+	veItemOwnerSet(tank->levelItem, veVariantUn32(&v, 100 * level));
+	veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, level * capacity));
 
-		veItemLocalValue(tank->remaingItem, &oldRemaining);
-		if (veVariantIsValid(&oldRemaining) && fabsf(oldRemaining.value.Float - newRemaing) < minRemainingChange)
-			return veTrue;
+	return veTrue;
 
-		veItemOwnerSet(tank->levelItem, veVariantUn32(&v, 100 * level));
-		veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, newRemaing));
-	} else {
-		veItemInvalidate(tank->levelItem);
-		veItemInvalidate(tank->remaingItem);
-	}
+errorState:
+	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
+	veItemInvalidate(tank->levelItem);
+	veItemInvalidate(tank->remaingItem);
 
 	return veTrue;
 }
