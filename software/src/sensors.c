@@ -41,13 +41,6 @@
 #define TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE	0.2
 #define TEMPERATURE_SENSOR_CUTOFF_FREQ		(0.01 / SAMPLE_RATE)
 
-struct SettingProperties {
-	VeDataBasicType type;
-	VeVariant def;
-	VeVariant min;
-	VeVariant max;
-};
-
 static AnalogSensor *sensors[MAX_SENSORS];
 static int sensorCount;
 
@@ -55,44 +48,44 @@ static VeVariantUnitFmt veUnitVolume = {3, "m3"};
 static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
 
 /* Common */
-static struct SettingProperties functionProps = {
+static struct VeSettingProperties functionProps = {
 	.type = VE_SN32,
 	.def.value.SN32 = SENSOR_FUNCTION_DEFAULT,
 	.max.value.SN32 = SENSOR_FUNCTION_COUNT - 1,
 };
 
 /* Tank sensor */
-static struct SettingProperties tankCapacityProps = {
+static struct VeSettingProperties tankCapacityProps = {
 	.type = VE_FLOAT,
 	.def.value.Float = 0.2f /* m3 */,
 	.max.value.Float = 1000.0f,
 };
 
-static struct SettingProperties tankFluidType = {
+static struct VeSettingProperties tankFluidType = {
 	.type = VE_SN32,
 	.max.value.SN32 = INT32_MAX - 3,
 };
 
-static struct SettingProperties tankStandardProps = {
+static struct VeSettingProperties tankStandardProps = {
 	.type = VE_SN32,
 	.max.value.SN32 = TANK_STANDARD_COUNT - 1,
 };
 
 /* Temperature sensor */
-static struct SettingProperties scaleProps = {
+static struct VeSettingProperties scaleProps = {
 	.type = VE_FLOAT,
 	.def.value.Float = 1.0f,
 	.min.value.Float = 0.1f,
 	.max.value.Float = 10.0f,
 };
 
-static struct SettingProperties offsetProps = {
+static struct VeSettingProperties offsetProps = {
 	.type = VE_FLOAT,
 	.min.value.Float = -100.0f,
 	.max.value.Float = 100.0f,
 };
 
-static struct SettingProperties temperatureType = {
+static struct VeSettingProperties temperatureType = {
 	.type = VE_SN32,
 	.max.value.SN32 = INT32_MAX - 3,
 };
@@ -115,27 +108,6 @@ static struct VeItem *createEnumItem(AnalogSensor *sensor, const char *id,
 	return item;
 }
 
-/* sensor -> localsettings */
-static veBool forwardToLocalsettings(struct VeItem *item, void *ctx, VeVariant *variant)
-{
-	struct VeItem *settingsItem = (struct VeItem *) ctx;
-	VE_UNUSED(item);
-
-	return veItemSet(settingsItem, variant);
-}
-
-/* localsettings -> sensor */
-static void onSettingChanged(struct VeItem *item)
-{
-	struct VeItem *sensorItem = (struct VeItem *) veItemCtx(item)->ptr;
-	VeVariant v;
-
-	veItemLocalValue(item, &v);
-	if (v.type.tp == VE_HEAP_STR)
-		veVariantHeapStr(&v, v.value.CPtr);
-	veItemOwnerSet(sensorItem, &v);
-}
-
 /*
  * The settings of a sensor service are stored in localsettings, so when
  * the sensor value changes, send it to localsettings and if the setting
@@ -143,32 +115,15 @@ static void onSettingChanged(struct VeItem *item)
  */
 static struct VeItem *createSettingsProxy(AnalogSensor *sensor, char const *prefix,
 										  char *id, VeItemValueFmt *fmt, void const *fmtCtx,
-										  struct SettingProperties *properties)
+										  struct VeSettingProperties *properties)
 {
 	struct VeItem *localSettings = getLocalSettings();
-	struct VeItem *settingPrefixItem, *settingItem, *sensorItem;
-	VeVariant v;
+	struct VeItem *sensorItem;
 
-	properties->def.type.tp = properties->type;
-	properties->min.type.tp = properties->type;
-	properties->max.type.tp = properties->type;
-
-	settingPrefixItem = veItemGetOrCreateUid(localSettings, prefix);
-	settingItem = veItemGetOrCreateUid(settingPrefixItem, id);
-	sensorItem = veItemGetOrCreateUid(sensor->root, id);
-
-	veItemCtx(settingItem)->ptr = sensorItem;
-	veItemSetChanged(settingItem, onSettingChanged);
-
-	veItemSetSetter(sensorItem, forwardToLocalsettings, settingItem);
-	veItemSetFmt(sensorItem, fmt, fmtCtx);
-	veItemLocalSet(sensorItem, veVariantInvalidType(&v, properties->type));
-	veItemSetMax(sensorItem, &properties->max);
-	veItemSetMin(sensorItem, &properties->min);
-	veItemSetDefault(sensorItem, &properties->def);
-
-	if (!veDBusAddLocalSetting(settingItem, &properties->def, &properties->min, &properties->max, veFalse)) {
-		logE("task", "veDBusAddLocalSetting failed");
+	sensorItem = veItemCreateSettingsProxy(localSettings, prefix, sensor->root,
+										   id, fmt, fmtCtx, properties);
+	if (!sensorItem) {
+		logE("task", "veItemCreateSettingsProxy failed");
 		pltExit(1);
 	}
 	return sensorItem;
