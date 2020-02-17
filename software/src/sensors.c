@@ -293,7 +293,7 @@ AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
  * @param sensor - pointer to the sensor struct
  * @return Boolean status veTrue - success, veFalse - fail
  */
-static veBool updateTank(AnalogSensor *sensor)
+static veBool updateTank(AnalogSensor *sensor, veBool updateDbus)
 {
 	float level, capacity;
 	TankStandard standard;
@@ -344,12 +344,21 @@ static veBool updateTank(AnalogSensor *sensor)
 		}
 	}
 
-	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
+	if (!updateDbus)
+		return veTrue;
 
-	// if status = o.k. publish valid value otherwise publish invalid value
+	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
 	if (status == SENSOR_STATUS_OK) {
+		VeVariant oldRemaining;
+		float newRemaing = level * capacity;
+		float minRemainingChange = capacity / 5000.0f;
+
+		veItemLocalValue(tank->remaingItem, &oldRemaining);
+		if (veVariantIsValid(&oldRemaining) && fabsf(oldRemaining.value.Float - newRemaing) < minRemainingChange)
+			return veTrue;
+
 		veItemOwnerSet(tank->levelItem, veVariantUn32(&v, 100 * level));
-		veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, level * capacity));
+		veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, newRemaing));
 	} else {
 		veItemInvalidate(tank->levelItem);
 		veItemInvalidate(tank->remaingItem);
@@ -438,6 +447,13 @@ void sensorTick(void)
 {
 	int i;
 	VeVariant v;
+	static int secCounter;
+	veBool isSec = veFalse;
+
+	if (++secCounter == 10) {
+		isSec = veTrue;
+		secCounter = 0;
+	}
 
 	// first read fast all the analog inputs and mark which read is valid
 	// We reading always the same number of analog inputs to try to keep the timing of the system constant.
@@ -474,11 +490,12 @@ void sensorTick(void)
 
 			switch (sensor->sensorType) {
 			case SENSOR_TYPE_TANK:
-				updateTank(sensor);
+				updateTank(sensor, isSec);
 				break;
 
 			case SENSOR_TYPE_TEMP:
-				updateTemperature(sensor);
+				if (isSec)
+					updateTemperature(sensor);
 				break;
 			}
 			break;
