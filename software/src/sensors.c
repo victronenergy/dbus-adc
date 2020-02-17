@@ -196,7 +196,7 @@ static void createItems(AnalogSensor *sensor, const char *driver)
 		temperature->offsetItem = createSettingsProxy(sensor, prefix, "Offset", veVariantFmt, &veUnitNone, &offsetProps);
 		createSettingsProxy(sensor, prefix, "TemperatureType", veVariantFmt, &veUnitNone, &temperatureType);
 
-		sensor->function = createFunctionProxy(sensor, "/Settings/AnalogInput/Temperature/%d");
+		sensor->function = createFunctionProxy(sensor, "Settings/AnalogInput/Temperature/%d");
 	}
 }
 
