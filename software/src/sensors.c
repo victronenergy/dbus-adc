@@ -181,7 +181,7 @@ static void createItems(AnalogSensor *sensor, const char *driver)
 		tank->fluidTypeItem = createSettingsProxy(sensor, prefix, "FluidType", veVariantEnumFmt, &fluidTypeDef, &tankFluidType);
 		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard", veVariantEnumFmt, &standardDef, &tankStandardProps);
 
-		sensor->function = createFunctionProxy(sensor, "/Settings/AnalogInput/Resistive/%d");
+		sensor->function = createFunctionProxy(sensor, "Settings/AnalogInput/Resistive/%d");
 
 	} else if (sensor->sensorType == SENSOR_TYPE_TEMP) {
 		struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
