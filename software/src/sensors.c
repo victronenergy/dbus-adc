@@ -293,7 +293,7 @@ AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
  * @param sensor - pointer to the sensor struct
  * @return Boolean status veTrue - success, veFalse - fail
  */
-static veBool updateTank(AnalogSensor *sensor, veBool updateDbus)
+static veBool updateTank(AnalogSensor *sensor)
 {
 	float level, capacity;
 	TankStandard standard;
@@ -343,9 +343,6 @@ static veBool updateTank(AnalogSensor *sensor, veBool updateDbus)
 			status = SENSOR_STATUS_UNKNOWN;
 		}
 	}
-
-	if (!updateDbus)
-		return veTrue;
 
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
 	if (status == SENSOR_STATUS_OK) {
@@ -455,8 +452,7 @@ void sensorTick(void)
 		secCounter = 0;
 	}
 
-	// first read fast all the analog inputs and mark which read is valid
-	// We reading always the same number of analog inputs to try to keep the timing of the system constant.
+	/* Read the ADC values */
 	for (i = 0; i < sensorCount; i++) {
 		AnalogSensor *sensor = sensors[i];
 		un32 val;
@@ -466,7 +462,7 @@ void sensorTick(void)
 			sensor->interface.adcSample = val * sensor->interface.adcScale;
 	}
 
-	// Now handle the adc read to update the sensor
+	/* Handle ADC values */
 	for (i = 0; i < sensorCount; i++) {
 		AnalogSensor *sensor = sensors[i];
 		FilerIirLpf *filter = &sensor->interface.sigCond.filterIirLpf;
@@ -474,8 +470,12 @@ void sensorTick(void)
 		if (!sensor->valid)
 			continue;
 
-		// filter the input ADC sample and store it in adc var
+		/* filter the input ADC sample, high rate */
 		sensor->interface.adcSample = adcFilter(sensor->interface.adcSample, filter);
+
+		/* dbus update part can be at a lower rate */
+		if (!isSec)
+			continue;
 
 		// check if the sensor function - if it needed at all?
 		veItemLocalValue(sensor->function, &v);
@@ -490,12 +490,11 @@ void sensorTick(void)
 
 			switch (sensor->sensorType) {
 			case SENSOR_TYPE_TANK:
-				updateTank(sensor, isSec);
+				updateTank(sensor);
 				break;
 
 			case SENSOR_TYPE_TEMP:
-				if (isSec)
-					updateTemperature(sensor);
+				updateTemperature(sensor);
 				break;
 			}
 			break;
