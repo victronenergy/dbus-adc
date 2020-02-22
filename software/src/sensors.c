@@ -470,11 +470,10 @@ void sensorTick(void)
 		if (!isSec)
 			continue;
 
-		veItemLocalValue(sensor->function, &v);
-		if (!veVariantIsValid(&v))
+		if (!veVariantIsValid(veItemLocalValue(sensor->function, &v)))
 			continue;
 
-		switch (v.value.UN32) {
+		switch (v.value.SN32) {
 		case SENSOR_FUNCTION_DEFAULT:
 			if (!sensor->interface.dbus.connected) {
 				sensorDbusConnect(sensor);
