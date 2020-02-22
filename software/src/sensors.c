@@ -426,18 +426,11 @@ static void sensorDbusConnect(AnalogSensor *sensor)
 		logE(sensor->interface.dbus.service, "dbus connect failed");
 		pltExit(1);
 	}
-	sensor->interface.dbus.connected = veTrue;
 
 	veDbusItemInit(sensor->dbus, sensor->root);
 	veDbusChangeName(sensor->dbus, sensor->interface.dbus.service);
 
 	logI(sensor->interface.dbus.service, "connected to dbus");
-}
-
-static void sensorDbusDisconnect(AnalogSensor *sensor)
-{
-	veDbusDisconnect(sensor->dbus);
-	sensor->interface.dbus.connected = veFalse;
 }
 
 void sensorTick(void)
@@ -477,16 +470,16 @@ void sensorTick(void)
 		if (!isSec)
 			continue;
 
-		// check if the sensor function - if it needed at all?
 		veItemLocalValue(sensor->function, &v);
 		if (!veVariantIsValid(&v))
 			continue;
 
 		switch (v.value.UN32) {
 		case SENSOR_FUNCTION_DEFAULT:
-			// check if dbus is disconnected and connect it
-			if (!sensor->interface.dbus.connected)
+			if (!sensor->interface.dbus.connected) {
 				sensorDbusConnect(sensor);
+				sensor->interface.dbus.connected = veTrue;
+			}
 
 			switch (sensor->sensorType) {
 			case SENSOR_TYPE_TANK:
@@ -501,9 +494,10 @@ void sensorTick(void)
 
 		case SENSOR_FUNCTION_NONE:
 		default:
-			// check if dbus is connected and disconnect it
-			if (sensor->interface.dbus.connected)
-				sensorDbusDisconnect(sensor);
+			if (sensor->interface.dbus.connected) {
+				veDbusDisconnect(sensor->dbus);
+				sensor->interface.dbus.connected = veFalse;
+			}
 			break;
 		}
 	}
