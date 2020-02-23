@@ -351,7 +351,7 @@ AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
  * @param sensor - pointer to the sensor struct
  * @return Boolean status veTrue - success, veFalse - fail
  */
-static veBool updateTank(AnalogSensor *sensor)
+static void updateTank(AnalogSensor *sensor)
 {
 	float level, capacity;
 	SensorStatus status = SENSOR_STATUS_UNKNOWN;
@@ -361,15 +361,15 @@ static veBool updateTank(AnalogSensor *sensor)
 	float vMeas = sensor->interface.adcSample;
 
 	if (!veVariantIsValid(veItemLocalValue(tank->emptyRItem, &v)))
-		return veFalse;
+		goto errorState;
 	tankEmptyR = v.value.SN32;
 
 	if (!veVariantIsValid(veItemLocalValue(tank->fullRItem, &v)))
-		return veFalse;
+		goto errorState;
 	tankFullR = v.value.SN32;
 
 	if (!veVariantIsValid(veItemLocalValue(tank->capacityItem, &v)))
-		return veFalse;
+		goto errorState;
 	capacity = v.value.Float;
 
 	/* prevent division by zero, configuration issue */
@@ -404,20 +404,18 @@ static veBool updateTank(AnalogSensor *sensor)
 
 	veItemLocalValue(tank->remaingItem, &oldRemaining);
 	if (veVariantIsValid(&oldRemaining) && fabsf(oldRemaining.value.Float - newRemaing) < minRemainingChange)
-		return veTrue;
+		return;
 
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
 	veItemOwnerSet(tank->levelItem, veVariantUn32(&v, 100 * level));
 	veItemOwnerSet(tank->remaingItem, veVariantFloat(&v, level * capacity));
 
-	return veTrue;
+	return;
 
 errorState:
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
 	veItemInvalidate(tank->levelItem);
 	veItemInvalidate(tank->remaingItem);
-
-	return veTrue;
 }
 
 /**
@@ -425,20 +423,20 @@ errorState:
  * @param sensor - pointer to the sensor struct
  * @return Boolean status veTrue-success, veFalse-fail
  */
-static veBool updateTemperature(AnalogSensor *sensor)
+static void updateTemperature(AnalogSensor *sensor)
 {
 	float tempC, offset, scale;
-	SensorStatus status;
+	SensorStatus status = SENSOR_STATUS_UNKNOWN;
 	float adcSample = sensor->interface.adcSample;
 	struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 	VeVariant v;
 
 	if (!veVariantIsValid(veItemLocalValue(temperature->offsetItem, &v)))
-		return veFalse;
+		goto updateState;
 	offset = v.value.Float;
 
 	if (!veVariantIsValid(veItemLocalValue(temperature->scaleItem, &v)))
-		return veFalse;
+		goto updateState;
 	scale = v.value.Float;
 
 	if (adcSample > TEMP_SENS_MIN_ADCIN && adcSample < TEMP_SENS_MAX_ADCIN) {
@@ -466,13 +464,12 @@ static veBool updateTemperature(AnalogSensor *sensor)
 		status = SENSOR_STATUS_UNKNOWN;
 	}
 
+updateState:
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
 	if (status == SENSOR_STATUS_OK)
 		veItemOwnerSet(temperature->temperatureItem, veVariantSn32(&v, tempC));
 	else
 		veItemInvalidate(temperature->temperatureItem);
-
-	return veTrue;
 }
 
 static void sensorDbusConnect(AnalogSensor *sensor)
