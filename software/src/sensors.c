@@ -109,6 +109,7 @@ VeVariantEnumFmt const statusDef = VE_ENUM_DEF("Ok", "Disconnected",  "Short cir
 VeVariantEnumFmt const fluidTypeDef = VE_ENUM_DEF("Fuel", "Fresh water", "Waste water",
 													  "Live well", "Oil", "Black water (sewage)");
 VeVariantEnumFmt const standardDef = VE_ENUM_DEF("European", "American", "Custom");
+VeVariantEnumFmt const functionDef = VE_ENUM_DEF("None", "Default");
 
 static struct VeItem *createEnumItem(AnalogSensor *sensor, const char *id,
 						   VeVariant *initial, VeVariantEnumFmt const *fmt, VeItemSetterFun *cb)
@@ -147,7 +148,7 @@ static struct VeItem *createFunctionProxy(AnalogSensor *sensor, const char *pref
 	char prefix[VE_MAX_UID_SIZE];
 
 	snprintf(prefix, sizeof(prefix), prefixFormat, sensor->number);
-	return createSettingsProxy(sensor, prefix, "Function", veVariantFmt, &veUnitNone, &functionProps);
+	return createSettingsProxy(sensor, prefix, "Function", veVariantEnumFmt, &functionDef, &functionProps);
 }
 
 /*
