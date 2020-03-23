@@ -191,6 +191,67 @@ static void onTankResConfigChanged(struct VeItem *item)
 		veItemSet(settingsItem, veVariantSn32(&v, tankFullR));
 }
 
+static void onTankShapeChanged(struct VeItem *item)
+{
+	struct TankSensor *tank = (struct TankSensor *) veItemCtx(item)->ptr;
+	VeVariant shape;
+	const char *map;
+	int i;
+
+	if (!veVariantIsValid(veItemLocalValue(tank->shapeItem, &shape))) {
+		logE("tank", "invalid shape value");
+		goto reset;
+	}
+
+	map = shape.value.Ptr;
+
+	if (!map[0])
+		goto reset;
+
+	tank->shapeMap[0][0] = 0;
+	tank->shapeMap[0][1] = 0;
+	i = 1;
+
+	while (i < TANK_SHAPE_MAX_POINTS) {
+		unsigned int s, l;
+
+		if (sscanf(map, "%u:%u", &s, &l) < 2) {
+			logE("tank", "malformed shape spec");
+			goto reset;
+		}
+
+		if (s < 1 || s > 99 || l < 1 || l > 99) {
+			logE("tank", "shape level out of range 1-99");
+			goto reset;
+		}
+
+		if (s <= tank->shapeMap[i - 1][0] ||
+			l <= tank->shapeMap[i - 1][1]) {
+			logE("tank", "shape level non-increasing");
+			goto reset;
+		}
+
+		tank->shapeMap[i][0] = s / 100.0;
+		tank->shapeMap[i][1] = l / 100.0;
+		i++;
+
+		map = strchr(map, ',');
+		if (!map)
+			break;
+
+		map++;
+	}
+
+	tank->shapeMap[i][0] = 1;
+	tank->shapeMap[i][1] = 1;
+	tank->shapeMapLen = i + 1;
+
+	return;
+
+reset:
+	tank->shapeMapLen = 0;
+}
+
 static void createItems(AnalogSensor *sensor, const char *driver)
 {
 	VeVariant v;
@@ -242,6 +303,10 @@ static void createItems(AnalogSensor *sensor, const char *driver)
 		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard2", veVariantEnumFmt, &standardDef, &tankStandardProps, "Standard");
 		veItemCtx(tank->standardItem)->ptr = tank;
 		veItemSetChanged(tank->standardItem, onTankResConfigChanged);
+
+		tank->shapeItem = createSettingsProxy(sensor, prefix, "Shape", veVariantFmt, &veUnitNone, &emptyStrType, NULL);
+		veItemCtx(tank->shapeItem)->ptr = tank;
+		veItemSetChanged(tank->shapeItem, onTankShapeChanged);
 
 		sensor->function = createFunctionProxy(sensor, "Settings/AnalogInput/Resistive/%d");
 
@@ -363,6 +428,7 @@ static void updateTank(AnalogSensor *sensor)
 	struct TankSensor *tank = (struct TankSensor *) sensor;
 	float tankEmptyR, tankFullR, tankR, tankMinR;
 	float vMeas = sensor->interface.adcSample;
+	int i;
 
 	if (!veVariantIsValid(veItemLocalValue(tank->emptyRItem, &v)))
 		goto errorState;
@@ -401,6 +467,17 @@ static void updateTank(AnalogSensor *sensor)
 		level = 0;
 	if (level > 1)
 		level = 1;
+
+	for (i = 1; i < tank->shapeMapLen; i++) {
+		if (tank->shapeMap[i][0] >= level) {
+			float s0 = tank->shapeMap[i - 1][0];
+			float s1 = tank->shapeMap[i    ][0];
+			float l0 = tank->shapeMap[i - 1][1];
+			float l1 = tank->shapeMap[i    ][1];
+			level = l0 + (level - s0) / (s1 - s0) * (l1 - l0);
+			break;
+		}
+	}
 
 	VeVariant oldRemaining;
 	float newRemaing = level * capacity;

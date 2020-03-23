@@ -81,8 +81,12 @@ typedef struct {
 	struct VeItem *statusItem;
 } AnalogSensor;
 
+#define TANK_SHAPE_MAX_POINTS 10
+
 struct TankSensor {
 	AnalogSensor sensor;
+	int shapeMapLen;
+	float shapeMap[TANK_SHAPE_MAX_POINTS + 2][2];
 	struct VeItem *levelItem;
 	struct VeItem *remaingItem;
 	struct VeItem *capacityItem;
@@ -90,6 +94,7 @@ struct TankSensor {
 	struct VeItem *standardItem; /* tanksensor standard, EU vs US e.g. */
 	struct VeItem *emptyRItem;
 	struct VeItem *fullRItem;
+	struct VeItem *shapeItem;
 };
 
 struct TemperatureSensor {
