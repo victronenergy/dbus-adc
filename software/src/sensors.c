@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include <velib/platform/plt.h>
 #include <velib/types/ve_dbus_item.h>
@@ -387,7 +388,7 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 
 	snprintf(devid, sizeof(devid), "%s_%d", s->dev, s->pin);
 	for (p = devid; *p; p++)
-		if (*p == ':')
+		if (!isalnum(*p))
 			*p = '_';
 
 	sensors[sensorCount++] = sensor;
