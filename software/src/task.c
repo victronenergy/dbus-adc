@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/sysmacros.h>
 
 #include <velib/platform/plt.h>
 #include <velib/types/ve_dbus_item.h>
@@ -91,10 +93,22 @@ static unsigned getUint(const char *p, unsigned min, unsigned max,
 
 static int openDev(const char *dev, const char *file, int line)
 {
+	struct stat st;
 	char buf[64];
+	int err;
 	int fd;
 
-	snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s", dev);
+	snprintf(buf, sizeof(buf), "/dev/%s", dev);
+
+	err = stat(buf, &st);
+	if (err < 0)
+		error(file, line, "device not found: '%s'\n", dev);
+
+	if (!S_ISCHR(st.st_mode))
+		error(file, line, "not a character device: '%s'\n", buf);
+
+	snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/iio:device%d",
+			 minor(st.st_rdev));
 
 	fd = open(buf, O_RDONLY);
 	if (fd < 0)
