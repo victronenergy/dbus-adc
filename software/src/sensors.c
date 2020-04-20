@@ -285,7 +285,6 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 		tank->remaingItem = veItemCreateQuantity(root, "Remaining", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolume);
 		sensor->rawValueItem = veItemCreateQuantity(root, "Resistance", veVariantInvalidType(&v, VE_FLOAT), &unitRes0Dec);
 
-		snprintf(prefix, sizeof(prefix), "Settings/Tank/%d", sensor->number);
 		tank->capacityItem = createSettingsProxy(root, prefix, "Capacity", veVariantFmt, &veUnitVolume, &tankCapacityProps, NULL);
 		tank->fluidTypeItem = createSettingsProxy(root, prefix, "FluidType2", veVariantEnumFmt, &fluidTypeDef, &tankFluidType, "FluidType");
 
@@ -317,7 +316,6 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 		temperature->temperatureItem = veItemCreateQuantity(root, "Temperature", veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
 		sensor->rawValueItem = veItemCreateQuantity(root, "Voltage", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolts);
 
-		snprintf(prefix, sizeof(prefix), "Settings/Temperature/%d", sensor->number);
 		temperature->scaleItem = createSettingsProxy(root, prefix, "Scale", veVariantFmt, &veUnitNone, &scaleProps, NULL);
 		temperature->offsetItem = createSettingsProxy(root, prefix, "Offset", veVariantFmt, &veUnitNone, &offsetProps, NULL);
 		createSettingsProxy(root, prefix, "TemperatureType2", veVariantFmt, &veUnitNone, &temperatureType, "TemperatureType");
