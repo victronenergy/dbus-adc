@@ -11,6 +11,8 @@
 
 #include "sensors.h"
 
+#define INSTANCE_BASE						20
+
 #define MAX_SENSORS							8
 #define SAMPLE_RATE							10
 
@@ -253,12 +255,13 @@ reset:
 	tank->shapeMapLen = 0;
 }
 
-static void createItems(AnalogSensor *sensor, const char *dev)
+static void createItems(AnalogSensor *sensor, const char *devid)
 {
 	VeVariant v;
 	struct VeItem *root = sensor->root;
 	char prefix[VE_MAX_UID_SIZE];
-	char *p;
+
+	snprintf(prefix, sizeof(prefix), "Settings/Devices/%s", devid);
 
 	/* App info */
 	veItemCreateBasic(root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
@@ -269,14 +272,6 @@ static void createItems(AnalogSensor *sensor, const char *dev)
 	veItemCreateBasic(root, "DeviceInstance", veVariantUn32(&v, sensor->instance));
 	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NOT_CONNECTED), &statusDef, NULL);
 
-	/* must be a valid dbus path.. */
-	snprintf(prefix, sizeof(prefix), "Settings/Devices/adc_%s_%d", dev, sensor->interface.adcPin);
-	p = prefix;
-	while (*p) {
-		if (*p == ':')
-			*p = '_';
-		p++;
-	}
 	createSettingsProxy(root, prefix, "CustomName", veVariantFmt, &veUnitNone, &emptyStrType, NULL);
 
 	if (sensor->sensorType == SENSOR_TYPE_TANK) {
@@ -374,7 +369,8 @@ static void temperatureInit(AnalogSensor *sensor)
 AnalogSensor *sensorCreate(SensorInfo *s)
 {
 	AnalogSensor *sensor;
-	static un8 instance = 20;
+	char devid[64];
+	char *p;
 
 	if (sensorCount == MAX_SENSORS)
 		return NULL;
@@ -389,13 +385,18 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	if (!sensor)
 		return NULL;
 
+	snprintf(devid, sizeof(devid), "%s_%d", s->dev, s->pin);
+	for (p = devid; *p; p++)
+		if (*p == ':')
+			*p = '_';
+
 	sensors[sensorCount++] = sensor;
 
 	sensor->interface.devfd = s->devfd;
 	sensor->interface.adcPin = s->pin;
 	sensor->interface.adcScale = s->scale;
 	sensor->sensorType = s->type;
-	sensor->instance = instance++;
+	sensor->instance = veDbusGetVrmDeviceInstance(devid, "analog", INSTANCE_BASE);
 	sensor->root = veItemAlloc(NULL, "");
 
 	if (s->label[0])
@@ -408,7 +409,7 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	else if (sensor->sensorType == SENSOR_TYPE_TEMP)
 		temperatureInit(sensor);
 
-	createItems(sensor, dev);
+	createItems(sensor, devid);
 
 	return sensor;
 }
