@@ -68,6 +68,7 @@ following directives are used:
 | **scale _S_**  | Maximum value of ADC reading, e.g. 4095 for a 12-bit device
 | **tank _N_**   | Tank level sensor at ADC input _N_
 | **temp _N_**   | Temperature sensor at ADC input _N_
+| **label _L_**  | Label for next sensor (optional)
 
 The **device**, **vref**, and **scale** directives are mandatory and
 apply to subsequent sensor declarations.

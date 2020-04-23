@@ -344,9 +344,6 @@ static void tankInit(AnalogSensor *sensor)
 	snprintf(dbus->service, sizeof(dbus->service),
 			 "com.victronenergy.tank.builtin_adc%d", sensor->interface.adcPin);
 
-	snprintf(sensor->ifaceName, sizeof(sensor->ifaceName),
-			 "Tank Level sensor input %d", tankNum);
-
 	sensor->number = tankNum;
 	tankNum++;
 }
@@ -364,9 +361,6 @@ static void temperatureInit(AnalogSensor *sensor)
 
 	snprintf(dbus->service, sizeof(dbus->service),
 			 "com.victronenergy.temperature.builtin_adc%d", sensor->interface.adcPin);
-
-	snprintf(sensor->ifaceName, sizeof(sensor->ifaceName),
-			 "Temperature sensor input %d", tempNum);
 
 	sensor->number = tempNum;
 	tempNum++;
@@ -403,6 +397,11 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	sensor->sensorType = s->type;
 	sensor->instance = instance++;
 	sensor->root = veItemAlloc(NULL, "");
+
+	if (s->label[0])
+		snprintf(sensor->ifaceName, sizeof(sensor->ifaceName), "%s", s->label);
+	else
+		snprintf(sensor->ifaceName, sizeof(sensor->ifaceName), "Analog input %s:%d", s->dev, s->pin);
 
 	if (sensor->sensorType == SENSOR_TYPE_TANK)
 		tankInit(sensor);

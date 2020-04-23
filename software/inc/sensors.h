@@ -109,6 +109,7 @@ typedef struct {
 	float scale;
 	SensorType type;
 	char dev[32];
+	char label[32];
 } SensorInfo;
 
 AnalogSensor *sensorCreate(SensorInfo *s);

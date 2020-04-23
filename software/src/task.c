@@ -185,6 +185,11 @@ static void loadConfig(const char *file)
 			continue;
 		}
 
+		if (!strcmp(cmd, "label")) {
+			snprintf(s.label, sizeof(s.label), "%s", arg);
+			continue;
+		}
+
 		if (!strcmp(cmd, "tank"))
 			s.type = SENSOR_TYPE_TANK;
 		else if (!strcmp(cmd, "temp"))
@@ -206,6 +211,8 @@ static void loadConfig(const char *file)
 
 		if (!sensorCreate(&s))
 			error(file, line, "error adding sensor\n");
+
+		s.label[0] = 0;
 	}
 }
 
