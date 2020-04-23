@@ -253,7 +253,7 @@ reset:
 	tank->shapeMapLen = 0;
 }
 
-static void createItems(AnalogSensor *sensor, const char *driver)
+static void createItems(AnalogSensor *sensor, const char *dev)
 {
 	VeVariant v;
 	struct VeItem *root = sensor->root;
@@ -270,7 +270,7 @@ static void createItems(AnalogSensor *sensor, const char *driver)
 	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NOT_CONNECTED), &statusDef, NULL);
 
 	/* must be a valid dbus path.. */
-	snprintf(prefix, sizeof(prefix), "Settings/Devices/adc_%s_%d", driver, sensor->interface.adcPin);
+	snprintf(prefix, sizeof(prefix), "Settings/Devices/adc_%s_%d", dev, sensor->interface.adcPin);
 	p = prefix;
 	while (*p) {
 		if (*p == ':')
@@ -381,7 +381,7 @@ static void temperatureInit(AnalogSensor *sensor)
  * @return Pointer to sensor struct
  */
 AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
-						   char const *drv)
+						   char const *dev)
 {
 	AnalogSensor *sensor;
 	static un8 instance = 20;
@@ -413,7 +413,7 @@ AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
 	else if (sensor->sensorType == SENSOR_TYPE_TEMP)
 		temperatureInit(sensor);
 
-	createItems(sensor, drv);
+	createItems(sensor, dev);
 
 	return sensor;
 }

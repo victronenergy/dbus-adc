@@ -104,7 +104,7 @@ struct TemperatureSensor {
 };
 
 AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
-						   const char *drv);
+						   const char *dev);
 void sensorTick(void);
 
 veBool adcRead(un32 *value, AnalogSensor *sensor);
