@@ -38,7 +38,7 @@ static void error(const char *file, int line, const char *fmt, ...)
 	exit(1);
 }
 
-static char *token(char *buf, char **next)
+static char *token(char *buf, char **next, int q)
 {
 	char *end;
 
@@ -48,10 +48,24 @@ static char *token(char *buf, char **next)
 	if (!*buf)
 		return NULL;
 
+	if (q) {
+		if (*buf == '"')
+			buf++;
+		else
+			q = 0;
+	}
+
 	end = buf + 1;
 
-	while (*end && !isspace(*end))
-		end++;
+	if (q) {
+		while (*end && *end != '"')
+			end++;
+		if (!*end)
+			return NULL;
+	} else {
+		while (*end && !isspace(*end))
+			end++;
+	}
 
 	if (*end)
 		*end++ = 0;
@@ -143,15 +157,15 @@ static void loadConfig(const char *file)
 		if (cmd)
 			*cmd = 0;
 
-		cmd = token(p, &p);
+		cmd = token(p, &p, 0);
 		if (!cmd)
 			continue;
 
-		arg = token(p, &p);
+		arg = token(p, &p, 1);
 		if (!arg)
 			error(file, line, "missing value\n");
 
-		rest = token(p, &p);
+		rest = token(p, &p, 0);
 		if (rest)
 			error(file, line, "trailing junk\n");
 
