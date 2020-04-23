@@ -128,7 +128,7 @@ static struct VeItem *createEnumItem(AnalogSensor *sensor, const char *id,
  * the sensor value changes, send it to localsettings and if the setting
  * in localsettings changed, also update the sensor value.
  */
-static struct VeItem *createSettingsProxy(AnalogSensor *sensor, char const *prefix,
+static struct VeItem *createSettingsProxy(struct VeItem *root, char const *prefix,
 										  char *settingsId, VeItemValueFmt *fmt, void const *fmtCtx,
 										  struct VeSettingProperties *properties, char *serviceId)
 {
@@ -138,7 +138,7 @@ static struct VeItem *createSettingsProxy(AnalogSensor *sensor, char const *pref
 	if (serviceId == NULL)
 		serviceId = settingsId;
 
-	sensorItem = veItemCreateSettingsProxyId(localSettings, prefix, sensor->root,
+	sensorItem = veItemCreateSettingsProxyId(localSettings, prefix, root,
 										   settingsId, fmt, fmtCtx, properties, serviceId);
 	if (!sensorItem) {
 		logE("task", "veItemCreateSettingsProxy failed");
@@ -152,7 +152,7 @@ static struct VeItem *createFunctionProxy(AnalogSensor *sensor, const char *pref
 	char prefix[VE_MAX_UID_SIZE];
 
 	snprintf(prefix, sizeof(prefix), prefixFormat, sensor->number);
-	return createSettingsProxy(sensor, prefix, "Function2", veVariantEnumFmt, &functionDef, &functionProps, "Function");
+	return createSettingsProxy(sensor->root, prefix, "Function2", veVariantEnumFmt, &functionDef, &functionProps, "Function");
 }
 
 /*
@@ -277,7 +277,7 @@ static void createItems(AnalogSensor *sensor, const char *dev)
 			*p = '_';
 		p++;
 	}
-	createSettingsProxy(sensor, prefix, "CustomName", veVariantFmt, &veUnitNone, &emptyStrType, NULL);
+	createSettingsProxy(root, prefix, "CustomName", veVariantFmt, &veUnitNone, &emptyStrType, NULL);
 
 	if (sensor->sensorType == SENSOR_TYPE_TANK) {
 		struct TankSensor *tank = (struct TankSensor *) sensor;
@@ -290,23 +290,23 @@ static void createItems(AnalogSensor *sensor, const char *dev)
 		sensor->rawValueItem = veItemCreateQuantity(root, "Resistance", veVariantInvalidType(&v, VE_FLOAT), &unitRes0Dec);
 
 		snprintf(prefix, sizeof(prefix), "Settings/Tank/%d", sensor->number);
-		tank->capacityItem = createSettingsProxy(sensor, prefix, "Capacity", veVariantFmt, &veUnitVolume, &tankCapacityProps, NULL);
-		tank->fluidTypeItem = createSettingsProxy(sensor, prefix, "FluidType2", veVariantEnumFmt, &fluidTypeDef, &tankFluidType, "FluidType");
+		tank->capacityItem = createSettingsProxy(root, prefix, "Capacity", veVariantFmt, &veUnitVolume, &tankCapacityProps, NULL);
+		tank->fluidTypeItem = createSettingsProxy(root, prefix, "FluidType2", veVariantEnumFmt, &fluidTypeDef, &tankFluidType, "FluidType");
 
 		/* The callback will make sure these are kept in sync */
-		tank->emptyRItem = createSettingsProxy(sensor, prefix, "ResistanceWhenEmpty", veVariantFmt, &unitRes0Dec, &tankResistanceProps,  NULL);
+		tank->emptyRItem = createSettingsProxy(root, prefix, "ResistanceWhenEmpty", veVariantFmt, &unitRes0Dec, &tankResistanceProps,  NULL);
 		veItemCtx(tank->emptyRItem)->ptr = tank;
 		veItemSetChanged(tank->emptyRItem, onTankResConfigChanged);
 
-		tank->fullRItem = createSettingsProxy(sensor, prefix, "ResistanceWhenFull", veVariantFmt, &unitRes0Dec, &tankResistanceProps, NULL);
+		tank->fullRItem = createSettingsProxy(root, prefix, "ResistanceWhenFull", veVariantFmt, &unitRes0Dec, &tankResistanceProps, NULL);
 		veItemCtx(tank->fullRItem)->ptr = tank;
 		veItemSetChanged(tank->fullRItem, onTankResConfigChanged);
 
-		tank->standardItem = createSettingsProxy(sensor, prefix, "Standard2", veVariantEnumFmt, &standardDef, &tankStandardProps, "Standard");
+		tank->standardItem = createSettingsProxy(root, prefix, "Standard2", veVariantEnumFmt, &standardDef, &tankStandardProps, "Standard");
 		veItemCtx(tank->standardItem)->ptr = tank;
 		veItemSetChanged(tank->standardItem, onTankResConfigChanged);
 
-		tank->shapeItem = createSettingsProxy(sensor, prefix, "Shape", veVariantFmt, &veUnitNone, &emptyStrType, NULL);
+		tank->shapeItem = createSettingsProxy(root, prefix, "Shape", veVariantFmt, &veUnitNone, &emptyStrType, NULL);
 		veItemCtx(tank->shapeItem)->ptr = tank;
 		veItemSetChanged(tank->shapeItem, onTankShapeChanged);
 
@@ -322,9 +322,9 @@ static void createItems(AnalogSensor *sensor, const char *dev)
 		sensor->rawValueItem = veItemCreateQuantity(root, "Voltage", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolts);
 
 		snprintf(prefix, sizeof(prefix), "Settings/Temperature/%d", sensor->number);
-		temperature->scaleItem = createSettingsProxy(sensor, prefix, "Scale", veVariantFmt, &veUnitNone, &scaleProps, NULL);
-		temperature->offsetItem = createSettingsProxy(sensor, prefix, "Offset", veVariantFmt, &veUnitNone, &offsetProps, NULL);
-		createSettingsProxy(sensor, prefix, "TemperatureType2", veVariantFmt, &veUnitNone, &temperatureType, "TemperatureType");
+		temperature->scaleItem = createSettingsProxy(root, prefix, "Scale", veVariantFmt, &veUnitNone, &scaleProps, NULL);
+		temperature->offsetItem = createSettingsProxy(root, prefix, "Offset", veVariantFmt, &veUnitNone, &offsetProps, NULL);
+		createSettingsProxy(root, prefix, "TemperatureType2", veVariantFmt, &veUnitNone, &temperatureType, "TemperatureType");
 
 		sensor->function = createFunctionProxy(sensor, "Settings/AnalogInput/Temperature/%d");
 	}
