@@ -326,7 +326,7 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 	}
 }
 
-static void tankInit(AnalogSensor *sensor)
+static void tankInit(AnalogSensor *sensor, const char *devid)
 {
 	SensorDbusInterface *dbus = &sensor->interface.dbus;
 	FilerIirLpf *lpf = &sensor->interface.sigCond.filterIirLpf;
@@ -338,13 +338,13 @@ static void tankInit(AnalogSensor *sensor)
 	lpf->last = HUGE_VALF;
 
 	snprintf(dbus->service, sizeof(dbus->service),
-			 "com.victronenergy.tank.builtin_adc%d", sensor->interface.adcPin);
+			 "com.victronenergy.tank.%s", devid);
 
 	sensor->number = tankNum;
 	tankNum++;
 }
 
-static void temperatureInit(AnalogSensor *sensor)
+static void temperatureInit(AnalogSensor *sensor, const char *devid)
 {
 	SensorDbusInterface *dbus = &sensor->interface.dbus;
 	FilerIirLpf *lpf = &sensor->interface.sigCond.filterIirLpf;
@@ -356,7 +356,7 @@ static void temperatureInit(AnalogSensor *sensor)
 	lpf->last = HUGE_VALF;
 
 	snprintf(dbus->service, sizeof(dbus->service),
-			 "com.victronenergy.temperature.builtin_adc%d", sensor->interface.adcPin);
+			 "com.victronenergy.temperature.%s", devid);
 
 	sensor->number = tempNum;
 	tempNum++;
@@ -406,9 +406,9 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 		snprintf(sensor->ifaceName, sizeof(sensor->ifaceName), "Analog input %s:%d", s->dev, s->pin);
 
 	if (sensor->sensorType == SENSOR_TYPE_TANK)
-		tankInit(sensor);
+		tankInit(sensor, devid);
 	else if (sensor->sensorType == SENSOR_TYPE_TEMP)
-		temperatureInit(sensor);
+		temperatureInit(sensor, devid);
 
 	createItems(sensor, devid);
 
