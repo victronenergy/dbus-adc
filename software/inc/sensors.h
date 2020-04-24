@@ -68,7 +68,6 @@ typedef struct {
 // building a sensor structure
 typedef struct {
 	SensorType sensorType;
-	int number; /* per type */
 	int instance;
 	veBool valid;
 	SensorInterface interface;

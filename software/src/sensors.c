@@ -356,17 +356,12 @@ static void tankInit(AnalogSensor *sensor, const char *devid)
 	SensorDbusInterface *dbus = &sensor->interface.dbus;
 	FilerIirLpf *lpf = &sensor->interface.sigCond.filterIirLpf;
 
-	static int tankNum = 1;
-
 	lpf->FF = TANK_SENSOR_IIR_LPF_FF_VALUE;
 	lpf->fc = TANK_SENSOR_CUTOFF_FREQ;
 	lpf->last = HUGE_VALF;
 
 	snprintf(dbus->service, sizeof(dbus->service),
 			 "com.victronenergy.tank.%s", devid);
-
-	sensor->number = tankNum;
-	tankNum++;
 }
 
 static void temperatureInit(AnalogSensor *sensor, const char *devid)
@@ -374,17 +369,12 @@ static void temperatureInit(AnalogSensor *sensor, const char *devid)
 	SensorDbusInterface *dbus = &sensor->interface.dbus;
 	FilerIirLpf *lpf = &sensor->interface.sigCond.filterIirLpf;
 
-	static int tempNum = 1;
-
 	lpf->FF = TEMPERATURE_SENSOR_IIR_LPF_FF_VALUE;
 	lpf->fc = TEMPERATURE_SENSOR_CUTOFF_FREQ;
 	lpf->last = HUGE_VALF;
 
 	snprintf(dbus->service, sizeof(dbus->service),
 			 "com.victronenergy.temperature.%s", devid);
-
-	sensor->number = tempNum;
-	tempNum++;
 }
 
 /**
