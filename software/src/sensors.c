@@ -153,12 +153,19 @@ static struct VeItem *createSettingsProxy(struct VeItem *root,
 	return sensorItem;
 }
 
-static struct VeItem *createFunctionProxy(AnalogSensor *sensor, const char *prefixFormat)
+static void createControlItems(AnalogSensor *sensor, const char *devid,
+							   const char *prefix)
 {
-	char prefix[VE_MAX_UID_SIZE];
+	struct VeItem *root = getDbusRoot();
+	char name[VE_MAX_UID_SIZE];
+	VeVariant v;
 
-	snprintf(prefix, sizeof(prefix), prefixFormat, sensor->number);
-	return createSettingsProxy(sensor->root, prefix, "Function2", veVariantEnumFmt, &functionDef, &functionProps, "Function");
+	snprintf(name, sizeof(name), "Devices/%s/Function", devid);
+	sensor->function = createSettingsProxy(root, prefix, "Function",
+			veVariantEnumFmt, &functionDef, &functionProps, name);
+
+	snprintf(name, sizeof(name), "Devices/%s/Label", devid);
+	veItemCreateBasic(root, name, veVariantStr(&v, sensor->ifaceName));
 }
 
 /*
@@ -269,6 +276,8 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 
 	snprintf(prefix, sizeof(prefix), "Settings/Devices/%s", devid);
 
+	createControlItems(sensor, devid, prefix);
+
 	/* App info */
 	veItemCreateBasic(root, "Mgmt/ProcessName",
 					  veVariantStr(&v, pltProgramName()));
@@ -324,9 +333,6 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 				veVariantFmt, &veUnitNone, &emptyStrType, NULL);
 		veItemCtx(tank->shapeItem)->ptr = tank;
 		veItemSetChanged(tank->shapeItem, onTankShapeChanged);
-
-		sensor->function = createFunctionProxy(sensor, "Settings/AnalogInput/Resistive/%d");
-
 	} else if (sensor->sensorType == SENSOR_TYPE_TEMP) {
 		struct TemperatureSensor *temp = (struct TemperatureSensor *) sensor;
 
@@ -342,8 +348,6 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 				veVariantFmt, &veUnitNone, &offsetProps, NULL);
 		createSettingsProxy(root, prefix, "TemperatureType2",
 				veVariantFmt, &veUnitNone, &temperatureType, "TemperatureType");
-
-		sensor->function = createFunctionProxy(sensor, "Settings/AnalogInput/Temperature/%d");
 	}
 }
 

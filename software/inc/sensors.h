@@ -119,5 +119,6 @@ veBool adcRead(un32 *value, AnalogSensor *sensor);
 float adcFilter(float x, FilerIirLpf *f);
 
 struct VeItem *getLocalSettings(void);
+struct VeItem *getDbusRoot(void);
 
 #endif

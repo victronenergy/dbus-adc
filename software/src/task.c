@@ -25,6 +25,7 @@
 #define SCALE_MAX	65535
 
 static struct VeItem *localSettings;
+static struct VeItem *root;
 
 static void error(const char *file, int line, const char *fmt, ...)
 {
@@ -234,11 +235,26 @@ static void connectToDbus(void)
 		logE("task", "veDbusAddRemoteService failed");
 		pltExit(1);
 	}
+
+	dbus = veDbusConnectString(veDbusGetDefaultConnectString());
+	if (!dbus) {
+		printf("dbus connection failed\n");
+		pltExit(5);
+	}
+
+	root = veItemAlloc(NULL, "");
+	veDbusItemInit(dbus, root);
+	veDbusChangeName(dbus, "com.victronenergy.adc");
 }
 
 struct VeItem *getLocalSettings(void)
 {
 	return localSettings;
+}
+
+struct VeItem *getDbusRoot(void)
+{
+	return root;
 }
 
 void taskInit(void)
