@@ -74,9 +74,6 @@ typedef struct {
 	SensorInterface interface;
 	struct VeDbus *dbus;
 	struct VeItem *root;
-	struct VeItem *processName;
-	struct VeItem *processVersion;
-	struct VeItem *connection;
 	struct VeItem *function;
 	char ifaceName[32];
 	struct VeItem *statusItem;

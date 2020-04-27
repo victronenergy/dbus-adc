@@ -261,9 +261,9 @@ static void createItems(AnalogSensor *sensor, const char *driver)
 	char *p;
 
 	/* App info */
-	sensor->processName = veItemCreateBasic(root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
-	sensor->processVersion = veItemCreateBasic(root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
-	sensor->connection = veItemCreateBasic(root, "Mgmt/Connection", veVariantStr(&v, sensor->ifaceName));
+	veItemCreateBasic(root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
+	veItemCreateBasic(root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
+	veItemCreateBasic(root, "Mgmt/Connection", veVariantStr(&v, sensor->ifaceName));
 
 	veItemCreateBasic(root, "Connected", veVariantUn32(&v, veTrue));
 	veItemCreateBasic(root, "DeviceInstance", veVariantUn32(&v, sensor->instance));
