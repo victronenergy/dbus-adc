@@ -1,11 +1,14 @@
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
+#include <sys/types.h>
 
 #include <velib/platform/plt.h>
 #include <velib/types/ve_dbus_item.h>
@@ -17,6 +20,7 @@
 #define SENSOR_TICKS	2 /* 100ms */
 
 #define CONFIG_FILE	"/etc/venus/dbus-adc.conf"
+#define CONFIG_DIR	"/run/dbus-adc.d"
 
 #define VREF_MIN	1.0
 #define VREF_MAX	10.0
@@ -217,6 +221,31 @@ static void loadConfig(const char *file)
 	}
 }
 
+static void loadConfigFiles(void)
+{
+	char buf[PATH_MAX];
+	struct dirent *de;
+	DIR *d;
+
+	loadConfig(CONFIG_FILE);
+
+	d = opendir(CONFIG_DIR);
+	if (!d)
+		return;
+
+	while ((de = readdir(d)) != NULL) {
+		char *dot = strrchr(de->d_name, '.');
+
+		if (!dot || strcmp(dot, ".conf"))
+			continue;
+
+		snprintf(buf, sizeof(buf), "%s/%s", CONFIG_DIR, de->d_name);
+		loadConfig(buf);
+	}
+
+	closedir(d);
+}
+
 static void connectToDbus(void)
 {
 	const char *settingsService = "com.victronenergy.settings";
@@ -261,7 +290,7 @@ void taskInit(void)
 {
 	pltExitOnOom();
 	connectToDbus();
-	loadConfig(CONFIG_FILE);
+	loadConfigFiles();
 }
 
 void taskUpdate(void)
