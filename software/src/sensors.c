@@ -14,7 +14,7 @@
 
 #define INSTANCE_BASE						20
 
-#define MAX_SENSORS							8
+#define MAX_SENSORS							32
 #define SAMPLE_RATE							10
 
 // defines for the tank level sensor analog front end parameters
