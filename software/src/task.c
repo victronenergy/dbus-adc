@@ -105,15 +105,12 @@ static int openDev(const char *dev, const char *file, int line)
 
 static void loadConfig(const char *file)
 {
+	SensorInfo s = { .devfd = -1 };
 	FILE *f;
 	char buf[128];
-	char dev[128];
-	int devfd = -1;
 	float vref = 0;
 	unsigned scale = 0;
 	int line = 0;
-	int type;
-	int pin;
 
 	f = fopen(file, "r");
 	if (!f)
@@ -145,8 +142,8 @@ static void loadConfig(const char *file)
 			error(file, line, "trailing junk\n");
 
 		if (!strcmp(cmd, "device")) {
-			devfd = openDev(arg, file, line);
-			snprintf(dev, sizeof(dev), "%s", arg);
+			s.devfd = openDev(arg, file, line);
+			snprintf(s.dev, sizeof(s.dev), "%s", arg);
 			continue;
 		}
 
@@ -161,13 +158,13 @@ static void loadConfig(const char *file)
 		}
 
 		if (!strcmp(cmd, "tank"))
-			type = SENSOR_TYPE_TANK;
+			s.type = SENSOR_TYPE_TANK;
 		else if (!strcmp(cmd, "temp"))
-			type = SENSOR_TYPE_TEMP;
+			s.type = SENSOR_TYPE_TEMP;
 		else
 			error(file, line, "unknown directive\n");
 
-		if (devfd < 0)
+		if (s.devfd < 0)
 			error(file, line, "%s requires device\n", cmd);
 
 		if (!vref)
@@ -176,9 +173,10 @@ static void loadConfig(const char *file)
 		if (!scale)
 			error(file, line, "%s requires scale\n", cmd);
 
-		pin = getUint(arg, 0, -1u, file, line);
+		s.pin = getUint(arg, 0, -1u, file, line);
+		s.scale = vref / scale;
 
-		if (!sensorCreate(devfd, pin, vref / scale, type, dev))
+		if (!sensorCreate(&s))
 			error(file, line, "error adding sensor\n");
 	}
 }

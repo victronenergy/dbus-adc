@@ -374,14 +374,10 @@ static void temperatureInit(AnalogSensor *sensor)
 
 /**
  * @brief hook the sensor items to their dbus services
- * @param devfd - file descriptor of ADC device sysfs directory
- * @param pin - ADC pin number
- * @param scale - ADC scale in volts / unit
- * @param type - type of sensor
+ * @param s - struct with sensor parameters
  * @return Pointer to sensor struct
  */
-AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
-						   char const *dev)
+AnalogSensor *sensorCreate(SensorInfo *s)
 {
 	AnalogSensor *sensor;
 	static un8 instance = 20;
@@ -389,9 +385,9 @@ AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
 	if (sensorCount == MAX_SENSORS)
 		return NULL;
 
-	if (type == SENSOR_TYPE_TANK)
+	if (s->type == SENSOR_TYPE_TANK)
 		sensor = calloc(1, sizeof(struct TankSensor));
-	else if (type == SENSOR_TYPE_TEMP)
+	else if (s->type == SENSOR_TYPE_TEMP)
 		sensor = calloc(1, sizeof(struct TemperatureSensor));
 	else
 		return NULL;
@@ -401,10 +397,10 @@ AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
 
 	sensors[sensorCount++] = sensor;
 
-	sensor->interface.devfd = devfd;
-	sensor->interface.adcPin = pin;
-	sensor->interface.adcScale = scale;
-	sensor->sensorType = type;
+	sensor->interface.devfd = s->devfd;
+	sensor->interface.adcPin = s->pin;
+	sensor->interface.adcScale = s->scale;
+	sensor->sensorType = s->type;
 	sensor->instance = instance++;
 	sensor->root = veItemAlloc(NULL, "");
 

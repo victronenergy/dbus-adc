@@ -103,8 +103,15 @@ struct TemperatureSensor {
 	struct VeItem *offsetItem;
 };
 
-AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
-						   const char *dev);
+typedef struct {
+	int devfd;
+	int pin;
+	float scale;
+	SensorType type;
+	char dev[32];
+} SensorInfo;
+
+AnalogSensor *sensorCreate(SensorInfo *s);
 void sensorTick(void);
 
 veBool adcRead(un32 *value, AnalogSensor *sensor);
