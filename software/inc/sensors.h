@@ -109,7 +109,6 @@ struct TemperatureSensor {
 AnalogSensor *sensorCreate(int devfd, int pin, float scale, SensorType type,
 						   const char *drv);
 void sensorTick(void);
-int sensorAdd(int devfd, int pin, float scale, int type);
 
 veBool adcRead(un32 *value, AnalogSensor *sensor);
 float adcFilter(float x, FilerIirLpf *f);
