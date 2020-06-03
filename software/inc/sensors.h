@@ -79,6 +79,7 @@ typedef struct {
 	struct VeItem *function;
 	char ifaceName[32];
 	struct VeItem *statusItem;
+	struct VeItem *rawValueItem;
 } AnalogSensor;
 
 #define TANK_SHAPE_MAX_POINTS 10

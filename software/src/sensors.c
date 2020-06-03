@@ -50,6 +50,7 @@ static int sensorCount;
 static VeVariantUnitFmt veUnitVolume = {3, "m3"};
 static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
 static VeVariantUnitFmt unitRes0Dec = {0, "ohm"};
+static VeVariantUnitFmt veUnitVolts = {2, "V"};
 
 /* Common */
 static struct VeSettingProperties functionProps = {
@@ -286,6 +287,7 @@ static void createItems(AnalogSensor *sensor, const char *driver)
 
 		tank->levelItem = veItemCreateQuantity(root, "Level", veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
 		tank->remaingItem = veItemCreateQuantity(root, "Remaining", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolume);
+		sensor->rawValueItem = veItemCreateQuantity(root, "Resistance", veVariantInvalidType(&v, VE_FLOAT), &unitRes0Dec);
 
 		snprintf(prefix, sizeof(prefix), "Settings/Tank/%d", sensor->number);
 		tank->capacityItem = createSettingsProxy(sensor, prefix, "Capacity", veVariantFmt, &veUnitVolume, &tankCapacityProps, NULL);
@@ -317,6 +319,7 @@ static void createItems(AnalogSensor *sensor, const char *driver)
 		veItemCreateBasic(root, "ProductName", veVariantStr(&v, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
 
 		temperature->temperatureItem = veItemCreateQuantity(root, "Temperature", veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
+		sensor->rawValueItem = veItemCreateQuantity(root, "Voltage", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolts);
 
 		snprintf(prefix, sizeof(prefix), "Settings/Temperature/%d", sensor->number);
 		temperature->scaleItem = createSettingsProxy(sensor, prefix, "Scale", veVariantFmt, &veUnitNone, &scaleProps, NULL);
@@ -430,6 +433,10 @@ static void updateTank(AnalogSensor *sensor)
 	float vMeas = sensor->interface.adcSample;
 	int i;
 
+	tankR = vMeas / (TANK_SENS_VREF - vMeas) * TANK_SENS_R1;
+
+	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, tankR));
+
 	if (!veVariantIsValid(veItemLocalValue(tank->emptyRItem, &v)))
 		goto errorState;
 	tankEmptyR = v.value.SN32;
@@ -445,8 +452,6 @@ static void updateTank(AnalogSensor *sensor)
 	/* prevent division by zero, configuration issue */
 	if (tankFullR == tankEmptyR)
 		goto errorState;
-
-	tankR = vMeas / (TANK_SENS_VREF - vMeas) * TANK_SENS_R1;
 
 	/* If the resistance is higher then the max supported; assume not connected */
 	if (tankR > fmax(tankEmptyR, tankFullR) * 1.05) {
@@ -512,6 +517,9 @@ static void updateTemperature(AnalogSensor *sensor)
 	struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 	VeVariant v;
 
+	// calculate the output of the LM335 temperature sensor from the adc pin sample
+	float vSense = adcSample * TEMP_SENS_V_RATIO;
+
 	if (!veVariantIsValid(veItemLocalValue(temperature->offsetItem, &v)))
 		goto updateState;
 	offset = v.value.Float;
@@ -521,8 +529,6 @@ static void updateTemperature(AnalogSensor *sensor)
 	scale = v.value.Float;
 
 	if (adcSample > TEMP_SENS_MIN_ADCIN && adcSample < TEMP_SENS_MAX_ADCIN) {
-		// calculate the output of the LM335 temperature sensor from the adc pin sample
-		float vSense = adcSample * TEMP_SENS_V_RATIO;
 		// convert from Kelvin to Celsius
 		tempC = 100 * vSense - 273;
 		// Signal scale correction
@@ -551,6 +557,7 @@ updateState:
 		veItemOwnerSet(temperature->temperatureItem, veVariantSn32(&v, tempC));
 	else
 		veItemInvalidate(temperature->temperatureItem);
+	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, vSense));
 }
 
 static void sensorDbusConnect(AnalogSensor *sensor)
