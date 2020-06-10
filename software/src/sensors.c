@@ -55,7 +55,7 @@ static VeVariantUnitFmt veUnitVolts = {2, "V"};
 /* Common */
 static struct VeSettingProperties functionProps = {
 	.type = VE_SN32,
-	.def.value.SN32 = SENSOR_FUNCTION_DEFAULT,
+	.def.value.SN32 = SENSOR_FUNCTION_NONE,
 	.max.value.SN32 = SENSOR_FUNCTION_COUNT - 1,
 };
 
