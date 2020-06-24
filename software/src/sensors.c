@@ -429,13 +429,15 @@ static void updateTank(AnalogSensor *sensor)
 	SensorStatus status = SENSOR_STATUS_UNKNOWN;
 	VeVariant v;
 	struct TankSensor *tank = (struct TankSensor *) sensor;
-	float tankEmptyR, tankFullR, tankR, tankMinR;
+	float tankEmptyR, tankFullR, tankR, tankRRaw, tankMinR;
 	float vMeas = sensor->interface.adcSample;
+	float vMeasRaw = sensor->interface.adcSampleRaw;
 	int i;
 
 	tankR = vMeas / (TANK_SENS_VREF - vMeas) * TANK_SENS_R1;
+	tankRRaw = vMeasRaw / (TANK_SENS_VREF - vMeasRaw) * TANK_SENS_R1;
 
-	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, tankR));
+	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, tankRRaw));
 
 	if (!veVariantIsValid(veItemLocalValue(tank->emptyRItem, &v)))
 		goto errorState;
@@ -514,11 +516,13 @@ static void updateTemperature(AnalogSensor *sensor)
 	float tempC, offset, scale;
 	SensorStatus status = SENSOR_STATUS_UNKNOWN;
 	float adcSample = sensor->interface.adcSample;
+	float adcSampleRaw = sensor->interface.adcSampleRaw;
 	struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 	VeVariant v;
 
 	// calculate the output of the LM335 temperature sensor from the adc pin sample
 	float vSense = adcSample * TEMP_SENS_V_RATIO;
+	float vSenseRaw = adcSampleRaw * TEMP_SENS_V_RATIO;
 
 	if (!veVariantIsValid(veItemLocalValue(temperature->offsetItem, &v)))
 		goto updateState;
@@ -557,7 +561,7 @@ updateState:
 		veItemOwnerSet(temperature->temperatureItem, veVariantSn32(&v, tempC));
 	else
 		veItemInvalidate(temperature->temperatureItem);
-	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, vSense));
+	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, vSenseRaw));
 }
 
 static void sensorDbusConnect(AnalogSensor *sensor)
@@ -593,7 +597,7 @@ void sensorTick(void)
 
 		sensor->valid = adcRead(&val, sensor);
 		if (sensor->valid)
-			sensor->interface.adcSample = val * sensor->interface.adcScale;
+			sensor->interface.adcSampleRaw = val * sensor->interface.adcScale;
 	}
 
 	/* Handle ADC values */
@@ -605,7 +609,7 @@ void sensorTick(void)
 			continue;
 
 		/* filter the input ADC sample, high rate */
-		sensor->interface.adcSample = adcFilter(sensor->interface.adcSample, filter);
+		sensor->interface.adcSample = adcFilter(sensor->interface.adcSampleRaw, filter);
 
 		/* dbus update part can be at a lower rate */
 		if (!isSec)

@@ -60,6 +60,7 @@ typedef struct {
 	int adcPin;
 	float adcScale;
 	float adcSample;
+	float adcSampleRaw;
 	SignalCondition sigCond;
 	SensorDbusInterface dbus;
 } SensorInterface;
