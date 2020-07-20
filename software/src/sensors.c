@@ -108,15 +108,18 @@ static struct VeSettingProperties tankResistanceProps = {
 	.max.value.SN32 = TANK_MAX_RESISTANCE,
 };
 
-VeVariantEnumFmt const statusDef = VE_ENUM_DEF("Ok", "Disconnected",  "Short circuited",
-												   "Reverse polarity", "Unknown");
-VeVariantEnumFmt const fluidTypeDef = VE_ENUM_DEF("Fuel", "Fresh water", "Waste water",
-													  "Live well", "Oil", "Black water (sewage)");
-VeVariantEnumFmt const standardDef = VE_ENUM_DEF("European", "American", "Custom");
+VeVariantEnumFmt const statusDef =
+		VE_ENUM_DEF("Ok", "Disconnected",  "Short circuited",
+					"Reverse polarity", "Unknown");
+VeVariantEnumFmt const fluidTypeDef =
+		VE_ENUM_DEF("Fuel", "Fresh water", "Waste water", "Live well",
+					"Oil", "Black water (sewage)");
+VeVariantEnumFmt const standardDef =
+		VE_ENUM_DEF("European", "American", "Custom");
 VeVariantEnumFmt const functionDef = VE_ENUM_DEF("None", "Default");
 
 static struct VeItem *createEnumItem(AnalogSensor *sensor, const char *id,
-						   VeVariant *initial, VeVariantEnumFmt const *fmt, VeItemSetterFun *cb)
+		VeVariant *initial, const VeVariantEnumFmt *fmt, VeItemSetterFun *cb)
 {
 	struct VeItem *item = veItemCreateBasic(sensor->root, id, initial);
 	veItemSetSetter(item, cb, sensor);
@@ -131,9 +134,9 @@ static struct VeItem *createEnumItem(AnalogSensor *sensor, const char *id,
  * the sensor value changes, send it to localsettings and if the setting
  * in localsettings changed, also update the sensor value.
  */
-static struct VeItem *createSettingsProxy(struct VeItem *root, char const *prefix,
-										  char *settingsId, VeItemValueFmt *fmt, void const *fmtCtx,
-										  struct VeSettingProperties *properties, char *serviceId)
+static struct VeItem *createSettingsProxy(struct VeItem *root,
+		const char *prefix, char *settingsId, VeItemValueFmt *fmt,
+		const void *fmtCtx, struct VeSettingProperties *props, char *serviceId)
 {
 	struct VeItem *localSettings = getLocalSettings();
 	struct VeItem *sensorItem;
@@ -142,7 +145,7 @@ static struct VeItem *createSettingsProxy(struct VeItem *root, char const *prefi
 		serviceId = settingsId;
 
 	sensorItem = veItemCreateSettingsProxyId(localSettings, prefix, root,
-										   settingsId, fmt, fmtCtx, properties, serviceId);
+			settingsId, fmt, fmtCtx, props, serviceId);
 	if (!sensorItem) {
 		logE("task", "veItemCreateSettingsProxy failed");
 		pltExit(1);
@@ -187,11 +190,13 @@ static void onTankResConfigChanged(struct VeItem *item)
 	}
 
 	settingsItem = (struct VeItem *) veItemCtxSet(tank->emptyRItem);
-	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) && v.value.SN32 != tankEmptyR)
+	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
+		v.value.SN32 != tankEmptyR)
 		veItemSet(settingsItem, veVariantSn32(&v, tankEmptyR));
 
 	settingsItem = veItemCtxSet(tank->fullRItem);
-	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) && v.value.SN32 != tankFullR)
+	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
+		v.value.SN32 != tankFullR)
 		veItemSet(settingsItem, veVariantSn32(&v, tankFullR));
 }
 
@@ -265,15 +270,21 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 	snprintf(prefix, sizeof(prefix), "Settings/Devices/%s", devid);
 
 	/* App info */
-	veItemCreateBasic(root, "Mgmt/ProcessName", veVariantStr(&v, pltProgramName()));
-	veItemCreateBasic(root, "Mgmt/ProcessVersion", veVariantStr(&v, pltProgramVersion()));
-	veItemCreateBasic(root, "Mgmt/Connection", veVariantStr(&v, sensor->ifaceName));
+	veItemCreateBasic(root, "Mgmt/ProcessName",
+					  veVariantStr(&v, pltProgramName()));
+	veItemCreateBasic(root, "Mgmt/ProcessVersion",
+					  veVariantStr(&v, pltProgramVersion()));
+	veItemCreateBasic(root, "Mgmt/Connection",
+					  veVariantStr(&v, sensor->ifaceName));
 
 	veItemCreateBasic(root, "Connected", veVariantUn32(&v, veTrue));
-	veItemCreateBasic(root, "DeviceInstance", veVariantUn32(&v, sensor->instance));
-	sensor->statusItem = createEnumItem(sensor, "Status", veVariantUn32(&v, SENSOR_STATUS_NOT_CONNECTED), &statusDef, NULL);
+	veItemCreateBasic(root, "DeviceInstance",
+					  veVariantUn32(&v, sensor->instance));
+	sensor->statusItem = createEnumItem(sensor, "Status",
+			veVariantUn32(&v, SENSOR_STATUS_NOT_CONNECTED), &statusDef, NULL);
 
-	createSettingsProxy(root, prefix, "CustomName", veVariantFmt, &veUnitNone, &emptyStrType, NULL);
+	createSettingsProxy(root, prefix, "CustomName", veVariantFmt, &veUnitNone,
+						&emptyStrType, NULL);
 
 	if (sensor->sensorType == SENSOR_TYPE_TANK) {
 		struct TankSensor *tank = (struct TankSensor *) sensor;
@@ -281,44 +292,56 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 		veItemCreateProductId(root, VE_PROD_ID_TANK_SENSOR_INPUT);
 		veItemCreateBasic(root, "ProductName", veVariantStr(&v, veProductGetName(VE_PROD_ID_TANK_SENSOR_INPUT)));
 
-		tank->levelItem = veItemCreateQuantity(root, "Level", veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
-		tank->remaingItem = veItemCreateQuantity(root, "Remaining", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolume);
-		sensor->rawValueItem = veItemCreateQuantity(root, "Resistance", veVariantInvalidType(&v, VE_FLOAT), &unitRes0Dec);
+		tank->levelItem = veItemCreateQuantity(root, "Level",
+				veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
+		tank->remaingItem = veItemCreateQuantity(root, "Remaining",
+				veVariantInvalidType(&v, VE_FLOAT), &veUnitVolume);
+		sensor->rawValueItem = veItemCreateQuantity(root, "Resistance",
+				veVariantInvalidType(&v, VE_FLOAT), &unitRes0Dec);
 
-		tank->capacityItem = createSettingsProxy(root, prefix, "Capacity", veVariantFmt, &veUnitVolume, &tankCapacityProps, NULL);
-		tank->fluidTypeItem = createSettingsProxy(root, prefix, "FluidType2", veVariantEnumFmt, &fluidTypeDef, &tankFluidType, "FluidType");
+		tank->capacityItem = createSettingsProxy(root, prefix, "Capacity",
+				veVariantFmt, &veUnitVolume, &tankCapacityProps, NULL);
+		tank->fluidTypeItem = createSettingsProxy(root, prefix, "FluidType2",
+				veVariantEnumFmt, &fluidTypeDef, &tankFluidType, "FluidType");
 
 		/* The callback will make sure these are kept in sync */
-		tank->emptyRItem = createSettingsProxy(root, prefix, "ResistanceWhenEmpty", veVariantFmt, &unitRes0Dec, &tankResistanceProps,  NULL);
+		tank->emptyRItem = createSettingsProxy(root, prefix, "ResistanceWhenEmpty",
+				veVariantFmt, &unitRes0Dec, &tankResistanceProps,  NULL);
 		veItemCtx(tank->emptyRItem)->ptr = tank;
 		veItemSetChanged(tank->emptyRItem, onTankResConfigChanged);
 
-		tank->fullRItem = createSettingsProxy(root, prefix, "ResistanceWhenFull", veVariantFmt, &unitRes0Dec, &tankResistanceProps, NULL);
+		tank->fullRItem = createSettingsProxy(root, prefix, "ResistanceWhenFull",
+				veVariantFmt, &unitRes0Dec, &tankResistanceProps, NULL);
 		veItemCtx(tank->fullRItem)->ptr = tank;
 		veItemSetChanged(tank->fullRItem, onTankResConfigChanged);
 
-		tank->standardItem = createSettingsProxy(root, prefix, "Standard2", veVariantEnumFmt, &standardDef, &tankStandardProps, "Standard");
+		tank->standardItem = createSettingsProxy(root, prefix, "Standard2",
+				veVariantEnumFmt, &standardDef, &tankStandardProps, "Standard");
 		veItemCtx(tank->standardItem)->ptr = tank;
 		veItemSetChanged(tank->standardItem, onTankResConfigChanged);
 
-		tank->shapeItem = createSettingsProxy(root, prefix, "Shape", veVariantFmt, &veUnitNone, &emptyStrType, NULL);
+		tank->shapeItem = createSettingsProxy(root, prefix, "Shape",
+				veVariantFmt, &veUnitNone, &emptyStrType, NULL);
 		veItemCtx(tank->shapeItem)->ptr = tank;
 		veItemSetChanged(tank->shapeItem, onTankShapeChanged);
 
 		sensor->function = createFunctionProxy(sensor, "Settings/AnalogInput/Resistive/%d");
 
 	} else if (sensor->sensorType == SENSOR_TYPE_TEMP) {
-		struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
+		struct TemperatureSensor *temp = (struct TemperatureSensor *) sensor;
 
 		veItemCreateProductId(root, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT);
 		veItemCreateBasic(root, "ProductName", veVariantStr(&v, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
 
-		temperature->temperatureItem = veItemCreateQuantity(root, "Temperature", veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
-		sensor->rawValueItem = veItemCreateQuantity(root, "Voltage", veVariantInvalidType(&v, VE_FLOAT), &veUnitVolts);
+		temp->temperatureItem = veItemCreateQuantity(root, "Temperature",
+				veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
 
-		temperature->scaleItem = createSettingsProxy(root, prefix, "Scale", veVariantFmt, &veUnitNone, &scaleProps, NULL);
-		temperature->offsetItem = createSettingsProxy(root, prefix, "Offset", veVariantFmt, &veUnitNone, &offsetProps, NULL);
-		createSettingsProxy(root, prefix, "TemperatureType2", veVariantFmt, &veUnitNone, &temperatureType, "TemperatureType");
+		temp->scaleItem = createSettingsProxy(root, prefix, "Scale",
+				veVariantFmt, &veUnitNone, &scaleProps, NULL);
+		temp->offsetItem = createSettingsProxy(root, prefix, "Offset",
+				veVariantFmt, &veUnitNone, &offsetProps, NULL);
+		createSettingsProxy(root, prefix, "TemperatureType2",
+				veVariantFmt, &veUnitNone, &temperatureType, "TemperatureType");
 
 		sensor->function = createFunctionProxy(sensor, "Settings/AnalogInput/Temperature/%d");
 	}
@@ -395,7 +418,8 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	sensor->interface.adcPin = s->pin;
 	sensor->interface.adcScale = s->scale;
 	sensor->sensorType = s->type;
-	sensor->instance = veDbusGetVrmDeviceInstance(devid, "analog", INSTANCE_BASE);
+	sensor->instance =
+		veDbusGetVrmDeviceInstance(devid, "analog", INSTANCE_BASE);
 	sensor->root = veItemAlloc(NULL, "");
 
 	if (s->label[0])
@@ -486,7 +510,8 @@ static void updateTank(AnalogSensor *sensor)
 	float minRemainingChange = capacity / 5000.0f;
 
 	veItemLocalValue(tank->remaingItem, &oldRemaining);
-	if (veVariantIsValid(&oldRemaining) && fabsf(oldRemaining.value.Float - newRemaing) < minRemainingChange)
+	if (veVariantIsValid(&oldRemaining) &&
+		fabsf(oldRemaining.value.Float - newRemaing) < minRemainingChange)
 		return;
 
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
@@ -542,7 +567,8 @@ static void updateTemperature(AnalogSensor *sensor)
 	} else if (adcSample < TEMP_SENS_S_C_ADCIN ) {
 		// short circuit error
 		status = SENSOR_STATUS_SHORT;
-	} else if (adcSample > TEMP_SENS_INV_PLRTY_ADCIN_LB && adcSample < TEMP_SENS_INV_PLRTY_ADCIN_HB) {
+	} else if (adcSample > TEMP_SENS_INV_PLRTY_ADCIN_LB &&
+			   adcSample < TEMP_SENS_INV_PLRTY_ADCIN_HB) {
 		// lm335 probably connected in reverse polarity
 		status = SENSOR_STATUS_REVERSE_POLARITY;
 	} else {
@@ -604,7 +630,8 @@ void sensorTick(void)
 			continue;
 
 		/* filter the input ADC sample, high rate */
-		sensor->interface.adcSample = adcFilter(sensor->interface.adcSampleRaw, filter);
+		sensor->interface.adcSample =
+			adcFilter(sensor->interface.adcSampleRaw, filter);
 
 		/* dbus update part can be at a lower rate */
 		if (!isSec)
