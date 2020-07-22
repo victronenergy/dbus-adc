@@ -26,6 +26,13 @@ typedef enum {
 } TankStandard;
 
 typedef enum {
+	TANK_SENSE_RESISTANCE,
+	TANK_SENSE_VOLTAGE,
+	TANK_SENSE_CURRENT,
+	TANK_SENSE_COUNT,
+} TankSenseType;
+
+typedef enum {
 	SENSOR_TYPE_TANK,
 	SENSOR_TYPE_TEMP,
 } SensorType;
@@ -58,6 +65,7 @@ typedef struct {
 typedef struct {
 	int devfd;
 	int adcPin;
+	int gpio;
 	float adcScale;
 	float adcSample;
 	float adcSampleRaw;
@@ -78,12 +86,14 @@ typedef struct {
 	char serial[32];
 	struct VeItem *statusItem;
 	struct VeItem *rawValueItem;
+	struct VeItem *rawUnitItem;
 } AnalogSensor;
 
 #define TANK_SHAPE_MAX_POINTS 10
 
 struct TankSensor {
 	AnalogSensor sensor;
+	TankSenseType senseType;
 	int shapeMapLen;
 	float shapeMap[TANK_SHAPE_MAX_POINTS + 2][2];
 	struct VeItem *levelItem;
@@ -94,6 +104,7 @@ struct TankSensor {
 	struct VeItem *emptyRItem;
 	struct VeItem *fullRItem;
 	struct VeItem *shapeItem;
+	struct VeItem *senseTypeItem;
 };
 
 struct TemperatureSensor {
@@ -106,6 +117,7 @@ struct TemperatureSensor {
 typedef struct {
 	int devfd;
 	int pin;
+	int gpio;
 	float scale;
 	SensorType type;
 	char dev[32];

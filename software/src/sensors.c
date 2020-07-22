@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include <velib/platform/plt.h>
 #include <velib/types/ve_dbus_item.h>
@@ -21,6 +23,9 @@
 #define TANK_SENS_VREF						5.0
 #define TANK_SENS_R1						680.0 // ohms
 #define TANK_MAX_RESISTANCE					264 // ohms
+#define TANK_VOLT_R1						30  // kohms
+#define TANK_VOLT_R2						120 // okohms
+#define TANK_CURRENT_R						39  // ohms
 
 #define EUR_MIN_TANK_LEVEL_RESISTANCE		0 // ohms
 #define EUR_MAX_TANK_LEVEL_RESISTANCE		180 // ohms
@@ -53,7 +58,6 @@ static int sensorCount;
 static VeVariantUnitFmt veUnitVolume = {3, "m3"};
 static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
 static VeVariantUnitFmt unitRes0Dec = {0, "ohm"};
-static VeVariantUnitFmt veUnitVolts = {2, "V"};
 
 /* Tank sensor */
 static struct VeSettingProperties tankCapacityProps = {
@@ -99,6 +103,13 @@ static struct VeSettingProperties emptyStrType = {
 static struct VeSettingProperties tankResistanceProps = {
 	.type = VE_SN32,
 	.max.value.SN32 = TANK_MAX_RESISTANCE,
+};
+
+static struct VeSettingProperties tankSenseProps = {
+	.type = VE_SN32,
+	.def.value.SN32 = TANK_SENSE_VOLTAGE,
+	.min.value.SN32 = TANK_SENSE_VOLTAGE,
+	.max.value.SN32 = TANK_SENSE_COUNT - 1,
 };
 
 VeVariantEnumFmt const statusDef =
@@ -166,6 +177,22 @@ static void createControlItems(AnalogSensor *sensor, const char *devid,
 	veItemCreateBasic(root, name, veVariantStr(&v, sensor->ifaceName));
 }
 
+static void setTankLevels(struct TankSensor *tank, sn32 empty, sn32 full)
+{
+	struct VeItem *settingsItem;
+	VeVariant v;
+
+	settingsItem = veItemCtxSet(tank->emptyRItem);
+	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
+		v.value.SN32 != empty)
+		veItemSet(settingsItem, veVariantSn32(&v, empty));
+
+	settingsItem = veItemCtxSet(tank->fullRItem);
+	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
+		v.value.SN32 != full)
+		veItemSet(settingsItem, veVariantSn32(&v, full));
+}
+
 /*
  * Keep the settings in sync. The gui shouldn't allow changing the
  * resistance settings when not in custom mode, but external might
@@ -174,9 +201,8 @@ static void createControlItems(AnalogSensor *sensor, const char *devid,
 static void onTankResConfigChanged(struct VeItem *item)
 {
 	struct TankSensor *tank = (struct TankSensor *) veItemCtx(item)->ptr;
-	VeVariant standard, v;
+	VeVariant standard;
 	sn32 tankEmptyR, tankFullR;
-	struct VeItem *settingsItem;
 
 	if (!veVariantIsValid(veItemLocalValue(tank->standardItem, &standard)))
 		return;
@@ -194,15 +220,7 @@ static void onTankResConfigChanged(struct VeItem *item)
 		return;
 	}
 
-	settingsItem = (struct VeItem *) veItemCtxSet(tank->emptyRItem);
-	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
-		v.value.SN32 != tankEmptyR)
-		veItemSet(settingsItem, veVariantSn32(&v, tankEmptyR));
-
-	settingsItem = veItemCtxSet(tank->fullRItem);
-	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
-		v.value.SN32 != tankFullR)
-		veItemSet(settingsItem, veVariantSn32(&v, tankFullR));
+	setTankLevels(tank, tankEmptyR, tankFullR);
 }
 
 static void onTankShapeChanged(struct VeItem *item)
@@ -266,6 +284,61 @@ reset:
 	tank->shapeMapLen = 0;
 }
 
+static int setGpio(int gpio, int val)
+{
+	char file[64];
+	int fd;
+
+	snprintf(file, sizeof(file), "/sys/class/gpio/gpio%d/value", gpio);
+
+	fd = open(file, O_WRONLY);
+	if (fd < 0) {
+		perror(file);
+		return -1;
+	}
+
+	write(fd, val ? "1" : "0", 1);
+	close(fd);
+
+	return 0;
+}
+
+static void onTankSenseChanged(struct VeItem *item)
+{
+	struct TankSensor *tank = veItemCtx(item)->ptr;
+	VeVariant sense, v;
+	const char *unit;
+	int gpioVal;
+	int minVal;
+	int maxVal;
+
+	if (!veVariantIsValid(veItemLocalValue(tank->senseTypeItem, &sense)))
+		return;
+
+	switch (sense.value.SN32) {
+	case TANK_SENSE_VOLTAGE:
+		gpioVal = 0;
+		unit = "V";
+		minVal = 0;
+		maxVal = 10;
+		break;
+	case TANK_SENSE_CURRENT:
+		gpioVal = 1;
+		unit = "mA";
+		minVal = 4;
+		maxVal = 20;
+		break;
+	default:
+		return;
+	}
+
+	setGpio(tank->sensor.interface.gpio, gpioVal);
+	tank->senseType = sense.value.SN32;
+	veItemSet(tank->sensor.rawUnitItem, veVariantStr(&v, unit));
+	veItemSet(tank->standardItem, veVariantSn32(&v, TANK_STANDARD_CUSTOM));
+	setTankLevels(tank, minVal, maxVal);
+}
+
 static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 {
 	VeVariant v;
@@ -298,6 +371,11 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 	createSettingsProxy(root, prefix, "CustomName", veVariantFmt, &veUnitNone,
 						&emptyStrType, NULL);
 
+	sensor->rawValueItem = veItemCreateBasic(root, "RawValue",
+			veVariantInvalidType(&v, VE_FLOAT));
+	sensor->rawUnitItem = veItemCreateBasic(root, "RawUnit",
+			veVariantInvalidType(&v, VE_HEAP_STR));
+
 	if (sensor->sensorType == SENSOR_TYPE_TANK) {
 		struct TankSensor *tank = (struct TankSensor *) sensor;
 
@@ -305,8 +383,6 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 				veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
 		tank->remaingItem = veItemCreateQuantity(root, "Remaining",
 				veVariantInvalidType(&v, VE_FLOAT), &veUnitVolume);
-		sensor->rawValueItem = veItemCreateQuantity(root, "Resistance",
-				veVariantInvalidType(&v, VE_FLOAT), &unitRes0Dec);
 
 		tank->capacityItem = createSettingsProxy(root, prefix, "Capacity",
 				veVariantFmt, &veUnitVolume, &tankCapacityProps, NULL);
@@ -314,12 +390,12 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 				veVariantEnumFmt, &fluidTypeDef, &tankFluidType, "FluidType");
 
 		/* The callback will make sure these are kept in sync */
-		tank->emptyRItem = createSettingsProxy(root, prefix, "ResistanceWhenEmpty",
+		tank->emptyRItem = createSettingsProxy(root, prefix, "RawValueEmpty",
 				veVariantFmt, &unitRes0Dec, &tankResistanceProps,  NULL);
 		veItemCtx(tank->emptyRItem)->ptr = tank;
 		veItemSetChanged(tank->emptyRItem, onTankResConfigChanged);
 
-		tank->fullRItem = createSettingsProxy(root, prefix, "ResistanceWhenFull",
+		tank->fullRItem = createSettingsProxy(root, prefix, "RawValueFull",
 				veVariantFmt, &unitRes0Dec, &tankResistanceProps, NULL);
 		veItemCtx(tank->fullRItem)->ptr = tank;
 		veItemSetChanged(tank->fullRItem, onTankResConfigChanged);
@@ -333,6 +409,15 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 				veVariantFmt, &veUnitNone, &emptyStrType, NULL);
 		veItemCtx(tank->shapeItem)->ptr = tank;
 		veItemSetChanged(tank->shapeItem, onTankShapeChanged);
+
+		if (sensor->interface.gpio > 0) {
+			tank->senseTypeItem = createSettingsProxy(root, prefix, "SenseType",
+					veVariantFmt, &veUnitNone, &tankSenseProps, NULL);
+			veItemCtx(tank->senseTypeItem)->ptr = tank;
+			veItemSetChanged(tank->senseTypeItem, onTankSenseChanged);
+		} else {
+			veItemSet(sensor->rawUnitItem, veVariantStr(&v, "Ω"));
+		}
 	} else if (sensor->sensorType == SENSOR_TYPE_TEMP) {
 		struct TemperatureSensor *temp = (struct TemperatureSensor *) sensor;
 
@@ -345,6 +430,8 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 				veVariantFmt, &veUnitNone, &offsetProps, NULL);
 		createSettingsProxy(root, prefix, "TemperatureType2",
 				veVariantFmt, &veUnitNone, &temperatureType, "TemperatureType");
+
+		veItemSet(sensor->rawUnitItem, veVariantStr(&v, "V"));
 	}
 }
 
@@ -408,6 +495,7 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	sensor->interface.devfd = s->devfd;
 	sensor->interface.adcPin = s->pin;
 	sensor->interface.adcScale = s->scale;
+	sensor->interface.gpio = s->gpio;
 	sensor->sensorType = s->type;
 	sensor->instance =
 		veDbusGetVrmDeviceInstance(devid, "analog", INSTANCE_BASE);
@@ -429,6 +517,20 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	return sensor;
 }
 
+static float calcTankInput(struct TankSensor *tank, float adcVal)
+{
+	if (tank->senseType == TANK_SENSE_RESISTANCE)
+		return adcVal / (TANK_SENS_VREF - adcVal) * TANK_SENS_R1;
+
+	if (tank->senseType == TANK_SENSE_VOLTAGE)
+		return (TANK_VOLT_R1 + TANK_VOLT_R2) * adcVal / TANK_VOLT_R1;
+
+	if (tank->senseType == TANK_SENSE_CURRENT)
+		return 1000 * adcVal / TANK_CURRENT_R;
+
+	return NAN;
+}
+
 /**
  * @brief process the tank level sensor adc data
  * @param sensor - pointer to the sensor struct
@@ -445,8 +547,8 @@ static void updateTank(AnalogSensor *sensor)
 	float vMeasRaw = sensor->interface.adcSampleRaw;
 	int i;
 
-	tankR = vMeas / (TANK_SENS_VREF - vMeas) * TANK_SENS_R1;
-	tankRRaw = vMeasRaw / (TANK_SENS_VREF - vMeasRaw) * TANK_SENS_R1;
+	tankR = calcTankInput(tank, vMeas);
+	tankRRaw = calcTankInput(tank, vMeasRaw);
 
 	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, tankRRaw));
 

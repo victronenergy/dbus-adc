@@ -210,6 +210,11 @@ static void loadConfig(const char *file)
 			continue;
 		}
 
+		if (!strcmp(cmd, "gpio")) {
+			s.gpio = getUint(arg, 0, -1, file, line);
+			continue;
+		}
+
 		if (!strcmp(cmd, "tank"))
 			s.type = SENSOR_TYPE_TANK;
 		else if (!strcmp(cmd, "temp"))
