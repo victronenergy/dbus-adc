@@ -55,13 +55,6 @@ static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
 static VeVariantUnitFmt unitRes0Dec = {0, "ohm"};
 static VeVariantUnitFmt veUnitVolts = {2, "V"};
 
-/* Common */
-static struct VeSettingProperties functionProps = {
-	.type = VE_SN32,
-	.def.value.SN32 = SENSOR_FUNCTION_NONE,
-	.max.value.SN32 = SENSOR_FUNCTION_COUNT - 1,
-};
-
 /* Tank sensor */
 static struct VeSettingProperties tankCapacityProps = {
 	.type = VE_FLOAT,
@@ -154,8 +147,13 @@ static struct VeItem *createSettingsProxy(struct VeItem *root,
 }
 
 static void createControlItems(AnalogSensor *sensor, const char *devid,
-							   const char *prefix)
+							   const char *prefix, SensorInfo *s)
 {
+	struct VeSettingProperties functionProps = {
+		.type = VE_SN32,
+		.def.value.SN32 = s->func_def,
+		.max.value.SN32 = SENSOR_FUNCTION_COUNT - 1,
+	};
 	struct VeItem *root = getDbusRoot();
 	char name[VE_MAX_UID_SIZE];
 	VeVariant v;
@@ -268,7 +266,7 @@ reset:
 	tank->shapeMapLen = 0;
 }
 
-static void createItems(AnalogSensor *sensor, const char *devid)
+static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 {
 	VeVariant v;
 	struct VeItem *root = sensor->root;
@@ -276,7 +274,7 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 
 	snprintf(prefix, sizeof(prefix), "Settings/Devices/%s", devid);
 
-	createControlItems(sensor, devid, prefix);
+	createControlItems(sensor, devid, prefix, s);
 
 	/* App info */
 	veItemCreateBasic(root, "Mgmt/ProcessName",
@@ -286,6 +284,11 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 	veItemCreateBasic(root, "Mgmt/Connection",
 					  veVariantStr(&v, sensor->ifaceName));
 
+	veItemCreateProductId(root, s->product_id);
+	veItemCreateBasic(root, "ProductName",
+			veVariantStr(&v, veProductGetName(s->product_id)));
+	if (sensor->serial[0])
+		veItemCreateBasic(root, "Serial", veVariantStr(&v, sensor->serial));
 	veItemCreateBasic(root, "Connected", veVariantUn32(&v, veTrue));
 	veItemCreateBasic(root, "DeviceInstance",
 					  veVariantUn32(&v, sensor->instance));
@@ -297,9 +300,6 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 
 	if (sensor->sensorType == SENSOR_TYPE_TANK) {
 		struct TankSensor *tank = (struct TankSensor *) sensor;
-
-		veItemCreateProductId(root, VE_PROD_ID_TANK_SENSOR_INPUT);
-		veItemCreateBasic(root, "ProductName", veVariantStr(&v, veProductGetName(VE_PROD_ID_TANK_SENSOR_INPUT)));
 
 		tank->levelItem = veItemCreateQuantity(root, "Level",
 				veVariantInvalidType(&v, VE_UN32), &veUnitPercentage);
@@ -335,9 +335,6 @@ static void createItems(AnalogSensor *sensor, const char *devid)
 		veItemSetChanged(tank->shapeItem, onTankShapeChanged);
 	} else if (sensor->sensorType == SENSOR_TYPE_TEMP) {
 		struct TemperatureSensor *temp = (struct TemperatureSensor *) sensor;
-
-		veItemCreateProductId(root, VE_PROD_ID_TEMPERATURE_SENSOR_INPUT);
-		veItemCreateBasic(root, "ProductName", veVariantStr(&v, veProductGetName(VE_PROD_ID_TEMPERATURE_SENSOR_INPUT)));
 
 		temp->temperatureItem = veItemCreateQuantity(root, "Temperature",
 				veVariantInvalidType(&v, VE_SN32), &veUnitCelsius0Dec);
@@ -415,6 +412,7 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	sensor->instance =
 		veDbusGetVrmDeviceInstance(devid, "analog", INSTANCE_BASE);
 	sensor->root = veItemAlloc(NULL, "");
+	snprintf(sensor->serial, sizeof(sensor->serial), "%s", s->serial);
 
 	if (s->label[0])
 		snprintf(sensor->ifaceName, sizeof(sensor->ifaceName), "%s", s->label);
@@ -426,7 +424,7 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	else if (sensor->sensorType == SENSOR_TYPE_TEMP)
 		temperatureInit(sensor, devid);
 
-	createItems(sensor, devid);
+	createItems(sensor, devid, s);
 
 	return sensor;
 }

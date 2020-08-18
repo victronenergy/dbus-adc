@@ -75,6 +75,7 @@ typedef struct {
 	struct VeItem *root;
 	struct VeItem *function;
 	char ifaceName[32];
+	char serial[32];
 	struct VeItem *statusItem;
 	struct VeItem *rawValueItem;
 } AnalogSensor;
@@ -109,6 +110,9 @@ typedef struct {
 	SensorType type;
 	char dev[32];
 	char label[32];
+	char serial[32];
+	int product_id;
+	int func_def;
 } SensorInfo;
 
 AnalogSensor *sensorCreate(SensorInfo *s);

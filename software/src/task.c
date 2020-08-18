@@ -174,6 +174,21 @@ static void loadConfig(const char *file)
 		if (rest)
 			error(file, line, "trailing junk\n");
 
+		if (!strcmp(cmd, "product")) {
+			s.product_id = getUint(arg, 0, UINT16_MAX, file, line);
+			continue;
+		}
+
+		if (!strcmp(cmd, "serial")) {
+			snprintf(s.serial, sizeof(s.serial), "%s", arg);
+			continue;
+		}
+
+		if (!strcmp(cmd, "default")) {
+			s.func_def = getUint(arg, 0, 1, file, line);
+			continue;
+		}
+
 		if (!strcmp(cmd, "device")) {
 			s.devfd = openDev(arg, file, line);
 			snprintf(s.dev, sizeof(s.dev), "%s", arg);
