@@ -100,9 +100,9 @@ static struct VeSettingProperties emptyStrType = {
 	.def.value.Ptr = "",
 };
 
-static struct VeSettingProperties tankResistanceProps = {
-	.type = VE_SN32,
-	.max.value.SN32 = TANK_MAX_RESISTANCE,
+static struct VeSettingProperties tankRangeProps = {
+	.type = VE_FLOAT,
+	.max.value.Float = TANK_MAX_RESISTANCE,
 };
 
 static struct VeSettingProperties tankSenseProps = {
@@ -184,12 +184,12 @@ static void setTankLevels(struct TankSensor *tank, sn32 empty, sn32 full)
 
 	settingsItem = veItemCtxSet(tank->emptyRItem);
 	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
-		v.value.SN32 != empty)
+		v.value.Float != empty)
 		veItemSet(settingsItem, veVariantSn32(&v, empty));
 
 	settingsItem = veItemCtxSet(tank->fullRItem);
 	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
-		v.value.SN32 != full)
+		v.value.Float != full)
 		veItemSet(settingsItem, veVariantSn32(&v, full));
 }
 
@@ -391,12 +391,12 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 
 		/* The callback will make sure these are kept in sync */
 		tank->emptyRItem = createSettingsProxy(root, prefix, "RawValueEmpty",
-				veVariantFmt, &unitRes0Dec, &tankResistanceProps,  NULL);
+				veVariantFmt, &unitRes0Dec, &tankRangeProps,  NULL);
 		veItemCtx(tank->emptyRItem)->ptr = tank;
 		veItemSetChanged(tank->emptyRItem, onTankResConfigChanged);
 
 		tank->fullRItem = createSettingsProxy(root, prefix, "RawValueFull",
-				veVariantFmt, &unitRes0Dec, &tankResistanceProps, NULL);
+				veVariantFmt, &unitRes0Dec, &tankRangeProps, NULL);
 		veItemCtx(tank->fullRItem)->ptr = tank;
 		veItemSetChanged(tank->fullRItem, onTankResConfigChanged);
 
@@ -554,11 +554,11 @@ static void updateTank(AnalogSensor *sensor)
 
 	if (!veVariantIsValid(veItemLocalValue(tank->emptyRItem, &v)))
 		goto errorState;
-	tankEmptyR = v.value.SN32;
+	tankEmptyR = v.value.Float;
 
 	if (!veVariantIsValid(veItemLocalValue(tank->fullRItem, &v)))
 		goto errorState;
-	tankFullR = v.value.SN32;
+	tankFullR = v.value.Float;
 
 	if (!veVariantIsValid(veItemLocalValue(tank->capacityItem, &v)))
 		goto errorState;
