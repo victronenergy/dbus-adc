@@ -549,15 +549,14 @@ static void updateTank(AnalogSensor *sensor)
 	SensorStatus status = SENSOR_STATUS_UNKNOWN;
 	VeVariant v;
 	struct TankSensor *tank = (struct TankSensor *) sensor;
-	float tankEmptyR, tankFullR, tankR, tankRRaw, tankMinR;
+	Filter *filter = &sensor->interface.sigCond.filter;
+	float tankEmptyR, tankFullR, tankR, tankMinR;
 	float vMeas = sensor->interface.adcSample;
-	float vMeasRaw = sensor->interface.adcSampleRaw;
 	int i;
 
 	tankR = calcTankInput(tank, vMeas);
-	tankRRaw = calcTankInput(tank, vMeasRaw);
 
-	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, tankRRaw));
+	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, tankR));
 
 	if (!veVariantIsValid(veItemLocalValue(tank->emptyRItem, &v)))
 		goto errorState;
@@ -587,6 +586,9 @@ static void updateTank(AnalogSensor *sensor)
 		status = SENSOR_STATUS_SHORT;
 		goto errorState;
 	}
+
+	vMeas = adcFilter(vMeas, filter);
+	tankR = calcTankInput(tank, vMeas);
 
 	status = SENSOR_STATUS_OK;
 	level = (tankR - tankEmptyR) / (tankFullR - tankEmptyR);
@@ -622,6 +624,7 @@ static void updateTank(AnalogSensor *sensor)
 	return;
 
 errorState:
+	adcFilterReset(filter);
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
 	veItemInvalidate(tank->levelItem);
 	veItemInvalidate(tank->remaingItem);
@@ -637,13 +640,12 @@ static void updateTemperature(AnalogSensor *sensor)
 	float tempC, offset, scale;
 	SensorStatus status = SENSOR_STATUS_UNKNOWN;
 	float adcSample = sensor->interface.adcSample;
-	float adcSampleRaw = sensor->interface.adcSampleRaw;
 	struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
+	Filter *filter = &sensor->interface.sigCond.filter;
 	VeVariant v;
 
 	// calculate the output of the LM335 temperature sensor from the adc pin sample
-	float vSense = adcSample * TEMP_SENS_V_RATIO;
-	float vSenseRaw = adcSampleRaw * TEMP_SENS_V_RATIO;
+	float vSenseRaw = adcSample * TEMP_SENS_V_RATIO;
 
 	if (!veVariantIsValid(veItemLocalValue(temperature->offsetItem, &v)))
 		goto updateState;
@@ -654,6 +656,8 @@ static void updateTemperature(AnalogSensor *sensor)
 	scale = v.value.Float;
 
 	if (adcSample > TEMP_SENS_MIN_ADCIN && adcSample < TEMP_SENS_MAX_ADCIN) {
+		float vSense = adcFilter(adcSample, filter) * TEMP_SENS_V_RATIO;
+
 		// convert from Kelvin to Celsius
 		tempC = 100 * vSense - 273;
 		// Signal scale correction
@@ -679,10 +683,12 @@ static void updateTemperature(AnalogSensor *sensor)
 
 updateState:
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
-	if (status == SENSOR_STATUS_OK)
+	if (status == SENSOR_STATUS_OK) {
 		veItemOwnerSet(temperature->temperatureItem, veVariantSn32(&v, tempC));
-	else
+	} else {
 		veItemInvalidate(temperature->temperatureItem);
+		adcFilterReset(filter);
+	}
 	veItemOwnerSet(sensor->rawValueItem, veVariantFloat(&v, vSenseRaw));
 }
 
@@ -712,20 +718,15 @@ void sensorTick(void)
 
 		sensor->valid = adcRead(&val, sensor);
 		if (sensor->valid)
-			sensor->interface.adcSampleRaw = val * sensor->interface.adcScale;
+			sensor->interface.adcSample = val * sensor->interface.adcScale;
 	}
 
 	/* Handle ADC values */
 	for (i = 0; i < sensorCount; i++) {
 		AnalogSensor *sensor = sensors[i];
-		Filter *filter = &sensor->interface.sigCond.filter;
 
 		if (!sensor->valid)
 			continue;
-
-		/* filter the input ADC sample */
-		sensor->interface.adcSample =
-			adcFilter(sensor->interface.adcSampleRaw, filter);
 
 		if (!veVariantIsValid(veItemLocalValue(sensor->function, &v)))
 			continue;

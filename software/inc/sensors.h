@@ -72,7 +72,6 @@ typedef struct {
 	int gpio;
 	float adcScale;
 	float adcSample;
-	float adcSampleRaw;
 	SignalCondition sigCond;
 	SensorDbusInterface dbus;
 } SensorInterface;
