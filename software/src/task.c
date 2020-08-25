@@ -17,7 +17,7 @@
 
 #include "sensors.h"
 
-#define SENSOR_TICKS	2 /* 100ms */
+#define SENSOR_TICKS	20		/* 1 s */
 
 #define CONFIG_FILE	"/etc/venus/dbus-adc.conf"
 #define CONFIG_DIR	"/run/dbus-adc.d"

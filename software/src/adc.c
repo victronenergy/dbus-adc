@@ -42,15 +42,41 @@ veBool adcRead(un32 *value, AnalogSensor *sensor)
 }
 
 /**
- * @brief a single pole IIR low pass filter
+ * @brief moving average filter
  * @param x - the current sample
  * @param f - filter parameters
  * @return the next filtered value (filter output)
  */
-float adcFilter(float x, FilerIirLpf *f)
+float adcFilter(float x, Filter *f)
 {
-	if (f->FF && fabs(f->last - x) > f->FF)
-		f->last = x;
+	if (f->sum < 0) {
+		for (int i = 0; i < FILTER_LEN; i++)
+			f->values[i] = x;
 
-	return f->last += (x - f->last) * 2 * M_PI * f->fc;
+		f->sum = f->len * x;
+	}
+
+	f->sum -= f->values[f->tail++];
+	f->sum += f->values[f->head++] = x;
+	f->head &= FILTER_MASK;
+	f->tail &= FILTER_MASK;
+
+	return f->sum / f->len;
+}
+
+void adcFilterSetLen(Filter *f, unsigned len)
+{
+	f->len = len;
+	f->tail = (f->head - len) & FILTER_MASK;
+
+	if (f->sum >= 0) {
+		f->sum = 0;
+		for (int i = f->tail; i != f->head; i = (i + 1) & FILTER_MASK)
+			f->sum += f->values[i];
+	}
+}
+
+void adcFilterReset(Filter *f)
+{
+	f->sum = -1;
 }
