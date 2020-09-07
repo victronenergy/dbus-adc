@@ -538,6 +538,29 @@ static float calcTankInput(struct TankSensor *tank, float adcVal)
 	return NAN;
 }
 
+static SensorStatus checkTankInput(float val, float empty, float full,
+								   TankSenseType type)
+{
+	float min = fmin(empty, full);
+	float max = fmax(empty, full);
+
+	if (type == TANK_SENSE_RESISTANCE) {
+		if (min > 20 && val < 0.9 * min)
+			return SENSOR_STATUS_SHORT;
+
+		if (val > 1.05 * max)
+			return SENSOR_STATUS_NOT_CONNECTED;
+	}
+
+	if (min > 0 && val < 0.9 * min)
+		return SENSOR_STATUS_RANGE;
+
+	if (val > 1.05 * max)
+		return SENSOR_STATUS_RANGE;
+
+	return SENSOR_STATUS_OK;
+}
+
 /**
  * @brief process the tank level sensor adc data
  * @param sensor - pointer to the sensor struct
@@ -550,7 +573,7 @@ static void updateTank(AnalogSensor *sensor)
 	VeVariant v;
 	struct TankSensor *tank = (struct TankSensor *) sensor;
 	Filter *filter = &sensor->interface.sigCond.filter;
-	float tankEmptyR, tankFullR, tankR, tankMinR;
+	float tankEmptyR, tankFullR, tankR;
 	float vMeas = sensor->interface.adcSample;
 	int i;
 
@@ -574,18 +597,9 @@ static void updateTank(AnalogSensor *sensor)
 	if (tankFullR == tankEmptyR)
 		goto errorState;
 
-	/* If the resistance is higher then the max supported; assume not connected */
-	if (tankR > fmax(tankEmptyR, tankFullR) * 1.05) {
-		status = SENSOR_STATUS_NOT_CONNECTED;
+	status = checkTankInput(tankR, tankEmptyR, tankFullR, tank->senseType);
+	if (status != SENSOR_STATUS_OK)
 		goto errorState;
-	}
-
-	/* Detect short, but only if not allow by the spec and a bit significant */
-	tankMinR = fmin(tankEmptyR, tankFullR);
-	if (tankMinR > 20 && tankR < 0.9 * tankMinR) {
-		status = SENSOR_STATUS_SHORT;
-		goto errorState;
-	}
 
 	vMeas = adcFilter(vMeas, filter);
 	tankR = calcTankInput(tank, vMeas);
