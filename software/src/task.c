@@ -331,5 +331,5 @@ void taskTick(void)
 
 char const *pltProgramVersion(void)
 {
-	return "1.27";
+	return "1.28";
 }
