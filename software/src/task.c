@@ -120,8 +120,11 @@ static int openDev(const char *dev, const char *file, int line)
 	snprintf(buf, sizeof(buf), "/dev/%s", dev);
 
 	err = stat(buf, &st);
-	if (err < 0)
-		error(file, line, "device not found: '%s'\n", dev);
+	if (err < 0) {
+		if (errno != ENOENT)
+			fprintf(stderr, "%s: %s\n", dev, strerror(errno));
+		return err;
+	}
 
 	if (!S_ISCHR(st.st_mode))
 		error(file, line, "not a character device: '%s'\n", buf);
@@ -222,7 +225,7 @@ static void loadConfig(const char *file)
 		else
 			error(file, line, "unknown directive\n");
 
-		if (s.devfd < 0)
+		if (!s.dev[0])
 			error(file, line, "%s requires device\n", cmd);
 
 		if (!vref)
@@ -230,6 +233,9 @@ static void loadConfig(const char *file)
 
 		if (!scale)
 			error(file, line, "%s requires scale\n", cmd);
+
+		if (s.devfd < 0)
+			continue;
 
 		s.pin = getUint(arg, 0, -1u, file, line);
 		s.scale = vref / scale;
