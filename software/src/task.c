@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <velib/platform/plt.h>
 #include <velib/types/ve_dbus_item.h>
@@ -277,6 +278,7 @@ static void connectToDbus(void)
 	const char *settingsService = "com.victronenergy.settings";
 	struct VeItem *inputRoot = veValueTree();
 	struct VeDbus *dbus;
+	int settingsTries = 10;
 
 	if (!(dbus = veDbusGetDefaultBus())) {
 		printf("dbus connection failed\n");
@@ -286,8 +288,15 @@ static void connectToDbus(void)
 
 	/* Connect to settings service */
 	localSettings = veItemGetOrCreateUid(inputRoot, settingsService);
-	if (!veDbusAddRemoteService(settingsService, localSettings, veTrue)) {
-		logE("task", "veDbusAddRemoteService failed");
+
+	while (settingsTries--) {
+		if (veDbusAddRemoteService(settingsService, localSettings, veTrue))
+			break;
+		sleep(2);
+	}
+
+	if (settingsTries < 0) {
+		logE("task", "error connecting to settings service");
 		pltExit(1);
 	}
 
