@@ -121,6 +121,14 @@ VeVariantEnumFmt const standardDef =
 		VE_ENUM_DEF("European", "American", "Custom");
 VeVariantEnumFmt const functionDef = VE_ENUM_DEF("None", "Default");
 
+static int inRange(float x, float v0, float v1)
+{
+	float min = fmin(v0, v1);
+	float max = fmax(v0, v1);
+
+	return min <= x && x <= max;
+}
+
 static struct VeItem *createEnumItem(AnalogSensor *sensor, const char *id,
 		VeVariant *initial, const VeVariantEnumFmt *fmt, VeItemSetterFun *cb)
 {
@@ -176,20 +184,28 @@ static void createControlItems(AnalogSensor *sensor, const char *devid,
 	veItemCreateBasic(root, name, veVariantStr(&v, sensor->ifaceName));
 }
 
-static void setTankLevels(struct TankSensor *tank, sn32 empty, sn32 full)
+static void setTankLevels(struct TankSensor *tank, sn32 empty, sn32 full,
+						  int force)
 {
-	struct VeItem *settingsItem;
+	struct VeItem *emptyItem;
+	struct veItem *fullItem;
+	int emptyValid = 0;
+	int fullValid = 0;
 	VeVariant v;
 
-	settingsItem = veItemCtxSet(tank->emptyRItem);
-	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
-		v.value.Float != empty)
-		veItemSet(settingsItem, veVariantSn32(&v, empty));
+	emptyItem = veItemCtxSet(tank->emptyRItem);
+	fullItem = veItemCtxSet(tank->fullRItem);
 
-	settingsItem = veItemCtxSet(tank->fullRItem);
-	if (veVariantIsValid(veItemLocalValue(settingsItem, &v)) &&
-		v.value.Float != full)
-		veItemSet(settingsItem, veVariantSn32(&v, full));
+	if (veVariantIsValid(veItemLocalValue(emptyItem, &v)))
+		emptyValid = inRange(v.value.Float, empty, full);
+
+	if (veVariantIsValid(veItemLocalValue(fullItem, &v)))
+		fullValid = inRange(v.value.Float, empty, full);
+
+	if (force || !(emptyValid && fullValid)) {
+		veItemSet(emptyItem, veVariantSn32(&v, empty));
+		veItemSet(fullItem, veVariantSn32(&v, full));
+	}
 }
 
 /*
@@ -219,7 +235,7 @@ static void onTankResConfigChanged(struct VeItem *item)
 		return;
 	}
 
-	setTankLevels(tank, tankEmptyR, tankFullR);
+	setTankLevels(tank, tankEmptyR, tankFullR, 1);
 }
 
 static void onTankShapeChanged(struct VeItem *item)
@@ -310,6 +326,7 @@ static void onTankSenseChanged(struct VeItem *item)
 	int gpioVal;
 	int minVal;
 	int maxVal;
+	int force;
 
 	if (!veVariantIsValid(veItemLocalValue(tank->senseTypeItem, &sense)))
 		return;
@@ -332,10 +349,12 @@ static void onTankSenseChanged(struct VeItem *item)
 	}
 
 	setGpio(tank->sensor.interface.gpio, gpioVal);
-	tank->senseType = sense.value.SN32;
 	veItemSet(tank->sensor.rawUnitItem, veVariantStr(&v, unit));
 	veItemSet(tank->standardItem, veVariantSn32(&v, TANK_STANDARD_CUSTOM));
-	setTankLevels(tank, minVal, maxVal);
+
+	force = tank->senseType && tank->senseType != sense.value.SN32;
+	tank->senseType = sense.value.SN32;
+	setTankLevels(tank, minVal, maxVal, force);
 }
 
 static void onFilterLenChanged(struct VeItem *item)
