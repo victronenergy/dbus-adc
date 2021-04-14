@@ -188,7 +188,7 @@ static void setTankLevels(struct TankSensor *tank, sn32 empty, sn32 full,
 						  int force)
 {
 	struct VeItem *emptyItem;
-	struct veItem *fullItem;
+	struct VeItem *fullItem;
 	int emptyValid = 0;
 	int fullValid = 0;
 	VeVariant v;
