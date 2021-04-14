@@ -1,6 +1,7 @@
 #ifndef SENSORS_H
 #define SENSORS_H
 
+#include <time.h>
 #include <velib/base/base.h>
 #include <velib/types/ve_item.h>
 
@@ -96,6 +97,15 @@ typedef struct {
 
 #define TANK_SHAPE_MAX_POINTS 10
 
+struct TankAlarm {
+	struct VeItem *alarmItem;
+	struct VeItem *enableItem;
+	struct VeItem *activeLevelItem;
+	struct VeItem *restoreLevelItem;
+	struct VeItem *onDelayItem;
+	time_t tripTime;
+};
+
 struct TankSensor {
 	AnalogSensor sensor;
 	TankSenseType senseType;
@@ -110,6 +120,8 @@ struct TankSensor {
 	struct VeItem *fullRItem;
 	struct VeItem *shapeItem;
 	struct VeItem *senseTypeItem;
+	struct TankAlarm alarmLow;
+	struct TankAlarm alarmHigh;
 };
 
 struct TemperatureSensor {

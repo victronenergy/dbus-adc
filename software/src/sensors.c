@@ -111,6 +111,55 @@ static struct VeSettingProperties tankSenseProps = {
 	.max.value.SN32 = TANK_SENSE_COUNT - 1,
 };
 
+static struct VeSettingProperties enableProps = {
+	.type = VE_SN32,
+	.def.value.SN32 = 0,
+	.min.value.SN32 = 0,
+	.max.value.SN32 = 1,
+};
+
+static struct VeSettingProperties alarmLowActiveProps = {
+	.type = VE_SN32,
+	.def.value.SN32 = 10,
+	.min.value.SN32 = 0,
+	.max.value.SN32 = 100,
+};
+
+static struct VeSettingProperties alarmLowRestoreProps = {
+	.type = VE_SN32,
+	.def.value.SN32 = 15,
+	.min.value.SN32 = 0,
+	.max.value.SN32 = 100,
+};
+
+static struct VeSettingProperties alarmLowDelayProps = {
+	.type = VE_SN32,
+	.def.value.SN32 = 30,
+	.min.value.SN32 = 0,
+	.max.value.SN32 = 60,
+};
+
+static struct VeSettingProperties alarmHighActiveProps = {
+	.type = VE_SN32,
+	.def.value.SN32 = 90,
+	.min.value.SN32 = 0,
+	.max.value.SN32 = 100,
+};
+
+static struct VeSettingProperties alarmHighRestoreProps = {
+	.type = VE_SN32,
+	.def.value.SN32 = 80,
+	.min.value.SN32 = 0,
+	.max.value.SN32 = 100,
+};
+
+static struct VeSettingProperties alarmHighDelayProps = {
+	.type = VE_SN32,
+	.def.value.SN32 = 5,
+	.min.value.SN32 = 0,
+	.max.value.SN32 = 60,
+};
+
 VeVariantEnumFmt const statusDef =
 		VE_ENUM_DEF("Ok", "Disconnected",  "Short circuited",
 					"Reverse polarity", "Unknown");
@@ -120,6 +169,7 @@ VeVariantEnumFmt const fluidTypeDef =
 VeVariantEnumFmt const standardDef =
 		VE_ENUM_DEF("European", "American", "Custom");
 VeVariantEnumFmt const functionDef = VE_ENUM_DEF("None", "Default");
+VeVariantEnumFmt const enableDef = VE_ENUM_DEF("Disabled", "Enabled");
 
 static int inRange(float x, float v0, float v1)
 {
@@ -452,6 +502,36 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 		} else {
 			veItemSet(sensor->rawUnitItem, veVariantStr(&v, "Ω"));
 		}
+
+		tank->alarmLow.alarmItem = veItemCreateBasic(root, "Alarms/Low/State",
+				veVariantInvalidType(&v, VE_UN32));
+		tank->alarmLow.enableItem = createSettingsProxy(root, prefix,
+				"Alarms/Low/Enable", veVariantEnumFmt, &enableDef,
+				&enableProps, NULL);
+		tank->alarmLow.activeLevelItem = createSettingsProxy(root, prefix,
+				"Alarms/Low/Active", veVariantFmt, &veUnitNone,
+				&alarmLowActiveProps, NULL);
+		tank->alarmLow.restoreLevelItem = createSettingsProxy(root, prefix,
+				"Alarms/Low/Restore", veVariantFmt, &veUnitNone,
+				&alarmLowRestoreProps, NULL);
+		tank->alarmLow.onDelayItem = createSettingsProxy(root, prefix,
+				"Alarms/Low/Delay", veVariantFmt, &unitSeconds,
+				&alarmLowDelayProps, NULL);
+
+		tank->alarmHigh.alarmItem = veItemCreateBasic(root, "Alarms/High/State",
+				veVariantInvalidType(&v, VE_UN32));
+		tank->alarmHigh.enableItem = createSettingsProxy(root, prefix,
+				"Alarms/High/Enable", veVariantEnumFmt, &enableDef,
+				&enableProps, NULL);
+		tank->alarmHigh.activeLevelItem = createSettingsProxy(root, prefix,
+				"Alarms/High/Active", veVariantFmt, &veUnitNone,
+				&alarmHighActiveProps, NULL);
+		tank->alarmHigh.restoreLevelItem = createSettingsProxy(root, prefix,
+				"Alarms/High/Restore", veVariantFmt, &veUnitNone,
+				&alarmHighRestoreProps, NULL);
+		tank->alarmHigh.onDelayItem = createSettingsProxy(root, prefix,
+				"Alarms/High/Delay", veVariantFmt, &unitSeconds,
+				&alarmHighDelayProps, NULL);
 	} else if (sensor->sensorType == SENSOR_TYPE_TEMP) {
 		struct TemperatureSensor *temp = (struct TemperatureSensor *) sensor;
 
@@ -580,6 +660,66 @@ static SensorStatus checkTankInput(float val, float empty, float full,
 	return SENSOR_STATUS_OK;
 }
 
+static void checkTankAlarm(struct TankSensor *tank, struct TankAlarm *alarm,
+						   float level, int is_high)
+{
+	VeVariant v;
+	int active;
+	int restore;
+	int is_active;
+	int new_active;
+	int delay;
+	int limit;
+
+	if (!veVariantIsValid(veItemLocalValue(alarm->enableItem, &v)) ||
+		!v.value.SN32)
+		goto invalid;
+
+	if (!veVariantIsValid(veItemLocalValue(alarm->activeLevelItem, &v)))
+		goto invalid;
+	active = v.value.SN32;
+
+	if (!veVariantIsValid(veItemLocalValue(alarm->restoreLevelItem, &v)))
+		goto invalid;
+	restore = v.value.SN32;
+
+	if (!veVariantIsValid(veItemLocalValue(alarm->onDelayItem, &v)))
+		goto invalid;
+	delay = v.value.SN32;
+
+	if (veVariantIsValid(veItemLocalValue(alarm->alarmItem, &v)))
+		is_active = v.value.UN32;
+	else
+		is_active = 0;
+
+	limit = is_active ? restore : active;
+
+	if (is_high)
+		new_active = 100 * level >= limit;
+	else
+		new_active = 100 * level <= limit;
+
+	if (!new_active)
+		alarm->tripTime = 0;
+
+	if (!is_active && new_active) {
+		time_t now = time(NULL);
+
+		if (!alarm->tripTime)
+			alarm->tripTime = now;
+
+		if (now - alarm->tripTime < delay)
+			new_active = 0;
+	}
+
+	veItemOwnerSet(alarm->alarmItem, veVariantUn32(&v, new_active ? 2 : 0));
+
+	return;
+
+invalid:
+	veItemInvalidate(alarm->alarmItem);
+}
+
 /**
  * @brief process the tank level sensor adc data
  * @param sensor - pointer to the sensor struct
@@ -640,6 +780,9 @@ static void updateTank(AnalogSensor *sensor)
 			break;
 		}
 	}
+
+	checkTankAlarm(tank, &tank->alarmLow, level, 0);
+	checkTankAlarm(tank, &tank->alarmHigh, level, 1);
 
 	VeVariant oldRemaining;
 	float newRemaing = level * capacity;
