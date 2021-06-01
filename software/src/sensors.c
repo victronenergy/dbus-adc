@@ -654,7 +654,7 @@ static SensorStatus checkTankInput(float val, float empty, float full,
 	if (min > 0 && val < 0.9 * min)
 		return SENSOR_STATUS_RANGE;
 
-	if (val > 1.05 * max)
+	if (val > 1.2 * max)
 		return SENSOR_STATUS_RANGE;
 
 	return SENSOR_STATUS_OK;
