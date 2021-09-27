@@ -21,7 +21,7 @@
 // defines for the tank level sensor analog front end parameters
 #define TANK_SENS_VREF						5.0
 #define TANK_SENS_R1						680.0 // ohms
-#define TANK_MAX_RESISTANCE					264 // ohms
+#define TANK_MAX_RESISTANCE					300 // ohms
 #define TANK_VOLT_R1						30  // kohms
 #define TANK_VOLT_R2						120 // okohms
 #define TANK_CURRENT_R						39  // ohms
