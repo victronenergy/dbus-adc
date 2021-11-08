@@ -923,6 +923,8 @@ void sensorTick(void)
 				updateTemperature(sensor);
 				break;
 			}
+
+			veItemSendPendingChanges(sensor->root);
 			break;
 
 		case SENSOR_FUNCTION_NONE:
