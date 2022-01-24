@@ -21,6 +21,7 @@ typedef enum {
 } SensorStatus;
 
 typedef enum {
+	TANK_STANDARD_INVALID = -1,
 	TANK_STANDARD_EU,
 	TANK_STANDARD_US,
 	TANK_STANDARD_CUSTOM,
@@ -28,6 +29,7 @@ typedef enum {
 } TankStandard;
 
 typedef enum {
+	TANK_SENSE_INVALID = -1,
 	TANK_SENSE_RESISTANCE,
 	TANK_SENSE_VOLTAGE,
 	TANK_SENSE_CURRENT,
@@ -109,6 +111,11 @@ struct TankAlarm {
 struct TankSensor {
 	AnalogSensor sensor;
 	TankSenseType senseType;
+	TankStandard standard;
+	float minVal;
+	float maxVal;
+	float emptyVal;
+	float fullVal;
 	int shapeMapLen;
 	float shapeMap[TANK_SHAPE_MAX_POINTS + 2][2];
 	struct VeItem *levelItem;
