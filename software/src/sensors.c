@@ -238,9 +238,6 @@ static void updateTankLevels(struct TankSensor *tank)
 {
 	struct VeItem *emptyItem;
 	struct VeItem *fullItem;
-	float emptyVal;
-	float fullVal;
-	int valid;
 	VeVariant v;
 
 	if (tank->senseType == TANK_SENSE_INVALID)
@@ -255,20 +252,19 @@ static void updateTankLevels(struct TankSensor *tank)
 	emptyItem = veItemCtxSet(tank->emptyRItem);
 	fullItem = veItemCtxSet(tank->fullRItem);
 
-	valid = tank->emptyVal > 0 || tank->fullVal > 0;
-	valid &= inRange(tank->emptyVal, tank->minVal, tank->maxVal);
-	valid &= inRange(tank->fullVal, tank->minVal, tank->maxVal);
-
-	if (!valid || tank->standard != TANK_STANDARD_CUSTOM) {
-		emptyVal = tank->minVal;
-		fullVal = tank->maxVal;
-	} else {
-		emptyVal = tank->emptyVal;
-		fullVal = tank->fullVal;
+	if (tank->standard != TANK_STANDARD_CUSTOM) {
+		tank->emptyVal = tank->minVal;
+		tank->fullVal = tank->maxVal;
 	}
 
-	veItemSet(emptyItem, veVariantFloat(&v, emptyVal));
-	veItemSet(fullItem, veVariantFloat(&v, fullVal));
+	if (!inRange(tank->emptyVal, tank->minVal, tank->maxVal))
+		tank->emptyVal = tank->minVal;
+
+	if (!inRange(tank->fullVal, tank->minVal, tank->maxVal))
+		tank->fullVal = tank->maxVal;
+
+	veItemSet(emptyItem, veVariantFloat(&v, tank->emptyVal));
+	veItemSet(fullItem, veVariantFloat(&v, tank->fullVal));
 }
 
 /*
@@ -406,6 +402,20 @@ static int setGpio(int gpio, int val)
 	return 0;
 }
 
+static void setTankDefaults(struct TankSensor *tank, TankSenseType type)
+{
+	switch (type) {
+	case TANK_SENSE_VOLTAGE:
+		tank->emptyVal = 0;
+		tank->fullVal = 10;
+		break;
+	case TANK_SENSE_CURRENT:
+		tank->emptyVal = 4;
+		tank->fullVal = 20;
+		break;
+	}
+}
+
 static void onTankSenseChanged(struct VeItem *item)
 {
 	struct TankSensor *tank = veItemCtx(item)->ptr;
@@ -426,8 +436,8 @@ static void onTankSenseChanged(struct VeItem *item)
 	case TANK_SENSE_CURRENT:
 		gpioVal = 1;
 		unit = "mA";
-		tank->minVal = 4;
-		tank->maxVal = 20;
+		tank->minVal = 0;
+		tank->maxVal = 50;
 		break;
 	default:
 		return;
@@ -436,10 +446,9 @@ static void onTankSenseChanged(struct VeItem *item)
 	setGpio(tank->sensor.interface.gpio, gpioVal);
 	veItemSet(tank->sensor.rawUnitItem, veVariantStr(&v, unit));
 
-	if (tank->senseType != TANK_SENSE_INVALID) {
-		tank->emptyVal = tank->minVal;
-		tank->fullVal = tank->maxVal;
-	}
+	/* changing sensor type, set default levels for new type */
+	if (tank->senseType != TANK_SENSE_INVALID)
+		setTankDefaults(tank, sense.value.SN32);
 
 	tank->senseType = sense.value.SN32;
 	updateTankLevels(tank);
