@@ -273,7 +273,7 @@ static void loadConfigFiles(void)
 	closedir(d);
 }
 
-static void connectToDbus(void)
+static void connectToSettings(void)
 {
 	const char *settingsService = "com.victronenergy.settings";
 	struct VeItem *inputRoot = veValueTree();
@@ -299,6 +299,11 @@ static void connectToDbus(void)
 		logE("task", "error connecting to settings service");
 		pltExit(1);
 	}
+}
+
+static void connectToDbus(void)
+{
+	struct VeDbus *dbus;
 
 	dbus = veDbusConnectString(veDbusGetDefaultConnectString());
 	if (!dbus) {
@@ -306,7 +311,6 @@ static void connectToDbus(void)
 		pltExit(5);
 	}
 
-	root = veItemAlloc(NULL, "");
 	veDbusItemInit(dbus, root);
 	veDbusChangeName(dbus, "com.victronenergy.adc");
 }
@@ -324,8 +328,10 @@ struct VeItem *getDbusRoot(void)
 void taskInit(void)
 {
 	pltExitOnOom();
-	connectToDbus();
+	connectToSettings();
+	root = veItemAlloc(NULL, "");
 	loadConfigFiles();
+	connectToDbus();
 }
 
 void taskUpdate(void)
