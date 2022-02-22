@@ -29,8 +29,56 @@
 #define SCALE_MIN	1023
 #define SCALE_MAX	65535
 
+#define DT_COMPAT	"/sys/firmware/devicetree/base/compatible"
+#define MAX_COMPAT	8
+
+static char dt_compatible[1024];
+static const char *compatible[MAX_COMPAT];
+
 static struct VeItem *localSettings;
 static struct VeItem *root;
+
+static int loadCompatible(void)
+{
+	const char *p, *e;
+	size_t n;
+	FILE *f;
+	int i;
+
+	f = fopen(DT_COMPAT, "r");
+	if (!f)
+		return -1;
+
+	n = fread(dt_compatible, 1, sizeof(dt_compatible), f);
+	fclose(f);
+
+	p = dt_compatible;
+	e = p + n;
+	i = 0;
+
+	while (p < e && i < MAX_COMPAT) {
+		const char *next = memchr(p, 0, e - p);
+
+		if (!next)
+			break;
+
+		compatible[i++] = p;
+		p = next + 1;
+	}
+
+	return 0;
+}
+
+static int checkCompatible(const char *c)
+{
+	int i;
+
+	for (i = 0; i < MAX_COMPAT && compatible[i]; i++)
+		if (!strcmp(c, compatible[i]))
+			return 1;
+
+	return 0;
+}
 
 static void error(const char *file, int line, const char *fmt, ...)
 {
@@ -143,6 +191,7 @@ static int openDev(const char *dev, const char *file, int line)
 static void loadConfig(const char *file)
 {
 	SensorInfo s = { .devfd = -1 };
+	int isCompatible = 1;
 	FILE *f;
 	char buf[128];
 	float vref = 0;
@@ -177,6 +226,14 @@ static void loadConfig(const char *file)
 		rest = token(p, &p, 0);
 		if (rest)
 			error(file, line, "trailing junk\n");
+
+		if (!strcmp(cmd, "board")) {
+			isCompatible = checkCompatible(arg);
+			continue;
+		}
+
+		if (!isCompatible)
+			continue;
 
 		if (!strcmp(cmd, "product")) {
 			s.product_id = getUint(arg, 0, UINT16_MAX, file, line);
@@ -256,6 +313,7 @@ static void loadConfigFiles(void)
 	struct dirent *de;
 	DIR *d;
 
+	loadCompatible();
 	loadConfig(CONFIG_FILE);
 
 	d = opendir(CONFIG_DIR);
