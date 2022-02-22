@@ -246,6 +246,8 @@ static void loadConfig(const char *file)
 
 		s.label[0] = 0;
 	}
+
+	fclose(f);
 }
 
 static void loadConfigFiles(void)
