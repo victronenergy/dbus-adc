@@ -165,7 +165,8 @@ VeVariantEnumFmt const statusDef =
 					"Reverse polarity", "Unknown");
 VeVariantEnumFmt const fluidTypeDef =
 		VE_ENUM_DEF("Fuel", "Fresh water", "Waste water", "Live well",
-					"Oil", "Black water (sewage)", "Fuel (gasoline)");
+					"Oil", "Black water (sewage)", "Gasoline", "Diesel",
+					"LPG", "LNG", " Hydraulic oil", "Raw water");
 VeVariantEnumFmt const standardDef =
 		VE_ENUM_DEF("European", "American", "Custom");
 VeVariantEnumFmt const functionDef = VE_ENUM_DEF("None", "Default");
