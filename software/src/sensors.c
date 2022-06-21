@@ -548,8 +548,6 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 			veItemSetChanged(tank->senseTypeItem, onTankSenseChanged);
 
 			tank->standard = TANK_STANDARD_CUSTOM;
-			veItemCreateBasic(root, "Standard",
-					veVariantUn32(&v, tank->standard));
 		} else {
 			tank->senseType = TANK_SENSE_RESISTANCE;
 			veItemSet(sensor->rawUnitItem, veVariantStr(&v, "Ω"));
