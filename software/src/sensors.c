@@ -36,7 +36,7 @@
 #define TEMP_SENS_R2						4700.0  // ohms
 #define TEMP_SENS_V_RATIO					((TEMP_SENS_R1 + TEMP_SENS_R2) / TEMP_SENS_R2)
 #define TEMP_SENS_MAX_ADCIN					1.3 // ~400K
-#define TEMP_SENS_MIN_ADCIN					0.8 // ~(-22) degrees C
+#define TEMP_SENS_MIN_ADCIN					0.745 // -40 degrees C
 #define TEMP_SENS_S_C_ADCIN					0.02
 #define TEMP_SENS_INV_PLRTY_ADCIN			0.208 // 0.7 volts at divider input
 #define TEMP_SENS_INV_PLRTY_ADCIN_BAND		0.15
