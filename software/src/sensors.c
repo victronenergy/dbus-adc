@@ -633,16 +633,20 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	AnalogSensor *sensor;
 	char devid[64];
 	char *p;
+	char *type;
 
 	if (sensorCount == MAX_SENSORS)
 		return NULL;
 
-	if (s->type == SENSOR_TYPE_TANK)
+	if (s->type == SENSOR_TYPE_TANK) {
 		sensor = calloc(1, sizeof(struct TankSensor));
-	else if (s->type == SENSOR_TYPE_TEMP)
+		type = "tank";
+	} else if (s->type == SENSOR_TYPE_TEMP) {
 		sensor = calloc(1, sizeof(struct TemperatureSensor));
-	else
+		type = "temperature";
+	} else {
 		return NULL;
+	}
 
 	if (!sensor)
 		return NULL;
@@ -660,7 +664,7 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	sensor->interface.gpio = s->gpio;
 	sensor->sensorType = s->type;
 	sensor->instance =
-		veDbusGetVrmDeviceInstance(devid, "analog", INSTANCE_BASE);
+		veDbusGetVrmDeviceInstance(devid, type, INSTANCE_BASE);
 	sensor->root = veItemAlloc(NULL, "");
 	snprintf(sensor->serial, sizeof(sensor->serial), "%s", s->serial);
 
