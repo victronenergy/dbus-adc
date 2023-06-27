@@ -89,7 +89,7 @@ typedef struct {
 	struct VeDbus *dbus;
 	struct VeItem *root;
 	struct VeItem *function;
-	char ifaceName[32];
+	char ifaceName[64];
 	char serial[32];
 	struct VeItem *statusItem;
 	struct VeItem *rawValueItem;
