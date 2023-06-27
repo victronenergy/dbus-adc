@@ -414,6 +414,8 @@ static void setTankDefaults(struct TankSensor *tank, TankSenseType type)
 		tank->emptyVal = 4;
 		tank->fullVal = 20;
 		break;
+	default:
+		break;
 	}
 }
 
