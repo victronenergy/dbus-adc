@@ -607,22 +607,6 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 	}
 }
 
-static void tankInit(AnalogSensor *sensor, const char *devid)
-{
-	SensorDbusInterface *dbus = &sensor->interface.dbus;
-
-	snprintf(dbus->service, sizeof(dbus->service),
-			 "com.victronenergy.tank.%s", devid);
-}
-
-static void temperatureInit(AnalogSensor *sensor, const char *devid)
-{
-	SensorDbusInterface *dbus = &sensor->interface.dbus;
-
-	snprintf(dbus->service, sizeof(dbus->service),
-			 "com.victronenergy.temperature.%s", devid);
-}
-
 /**
  * @brief hook the sensor items to their dbus services
  * @param s - struct with sensor parameters
@@ -675,10 +659,8 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 
 	adcFilterReset(&sensor->interface.sigCond.filter);
 
-	if (sensor->sensorType == SENSOR_TYPE_TANK)
-		tankInit(sensor, devid);
-	else if (sensor->sensorType == SENSOR_TYPE_TEMP)
-		temperatureInit(sensor, devid);
+	snprintf(sensor->interface.dbus.service, sizeof(sensor->interface.dbus.service),
+			 "com.victronenergy.%s.%s", type, devid);
 
 	createItems(sensor, devid, s);
 
