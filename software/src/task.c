@@ -16,6 +16,8 @@
 #include <velib/types/ve_values.h>
 #include <velib/utils/ve_logger.h>
 
+#include <veutil/platform/plt.h>
+
 #include "sensors.h"
 
 #define SENSOR_TICKS	20		/* 1 s */
