@@ -15,6 +15,7 @@
 #include <velib/types/ve_dbus_item.h>
 #include <velib/types/ve_values.h>
 #include <velib/utils/ve_logger.h>
+#include <velib/check/crc.h>
 
 #include <veutil/platform/plt.h>
 
@@ -34,11 +35,111 @@
 #define DT_COMPAT	"/sys/firmware/devicetree/base/compatible"
 #define MAX_COMPAT	8
 
+union calibration_data {
+	struct {
+		uint8_t			magic[4];
+		uint8_t			npins;
+		struct {
+			int16_t		offset;
+			int16_t		scale;
+		} pins[];
+	} __attribute__((packed));
+	uint8_t buf[32];
+} caldata;
+
+#define CALSIZE(n)	(4 + 1 + 4 * (n) + 4)
+
 static char dt_compatible[1024];
 static const char *compatible[MAX_COMPAT];
 
 static struct VeItem *localSettings;
 static struct VeItem *root;
+
+static uint32_t crc32(const uint8_t *p, int len)
+{
+	uint32_t c;
+
+	CRC32_INIT(c);
+
+	while (len--)
+		CRC32_ADD(c, *p++);
+
+	return CRC32_RESULT(c);
+}
+
+static void loadCalibration(char *file)
+{
+	char *p;
+	int offs = 0;
+	char buf[64];
+	uint32_t crc;
+	FILE *f;
+	int err;
+	int n;
+	int s;
+
+	p = strchr(file, ':');
+	if (p) {
+		*p++ = 0;
+		offs = strtoul(p, NULL, 0);
+	}
+
+	if (!strchr(file, '/')) {
+		snprintf(buf, sizeof(buf), "/sys/bus/nvmem/devices/%s/nvmem", file);
+		file = buf;
+	}
+
+	f = fopen(file, "r");
+	if (!f)
+		goto err_out;
+
+	err = fseek(f, offs, SEEK_SET);
+	if (err)
+		goto err_out;
+
+	n = fread(caldata.buf, 1, sizeof(caldata.buf), f);
+	if (n < CALSIZE(0))
+		goto err_out;
+
+	if (memcmp(caldata.magic, "ADC\1", 4)) {
+		fprintf(stderr, "No calibration data signature\n");
+		goto err_out;
+	}
+
+	s = CALSIZE(caldata.npins);
+	if (n < s)
+		goto err_out;
+
+	crc = ~crc32(caldata.buf, s);
+	if (crc) {
+		fprintf(stderr, "Calibration data CRC error\n");
+		goto err_out;
+	}
+
+	fprintf(stderr, "Calibration data loaded\n");
+
+out:
+	if (f)
+		fclose(f);
+
+	return;
+
+err_out:
+	fprintf(stderr, "Calibration data not available\n");
+	memset(&caldata, 0, sizeof(caldata));
+	goto out;
+}
+
+static void getCalibration(SensorCalibration *c, unsigned i)
+{
+	if (i < caldata.npins) {
+		c->offset = caldata.pins[i].offset / 4096.0;
+		c->scale = caldata.pins[i].scale / 4096.0;
+	} else {
+		c->offset = 0;
+		c->scale = 1;
+	}
+}
 
 static int loadCompatible(void)
 {
@@ -268,6 +369,11 @@ static void loadConfig(const char *file)
 			continue;
 		}
 
+		if (!strcmp(cmd, "caldata")) {
+			loadCalibration(arg);
+			continue;
+		}
+
 		if (!strcmp(cmd, "label")) {
 			snprintf(s.label, sizeof(s.label), "%s", arg);
 			continue;
@@ -275,6 +381,12 @@ static void loadConfig(const char *file)
 
 		if (!strcmp(cmd, "gpio")) {
 			s.gpio = getUint(arg, 0, -1, file, line);
+			continue;
+		}
+
+		if (!strcmp(cmd, "calidx")) {
+			unsigned idx = getUint(arg, 0, -1, file, line);
+			getCalibration(&s.calibration, idx);
 			continue;
 		}
 
@@ -304,6 +416,8 @@ static void loadConfig(const char *file)
 			error(file, line, "error adding sensor\n");
 
 		s.label[0] = 0;
+		s.calibration.offset = 0;
+		s.calibration.scale = 1;
 	}
 
 	fclose(f);
