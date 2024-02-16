@@ -34,6 +34,7 @@
 #define CFG_DBUS_NON_BLOCKING				1
 #define CFG_WITH_VECAN_PRODUCT_NAMES		1
 #define CFG_WITH_ITEM_UTILS					1
+#define CFG_WITH_CRC32						1
 
 #define CFG_ASSERT_ENABLED					1
 #define CFG_WITH_VE_STAMP					1

@@ -69,6 +69,11 @@ typedef struct {
 	Filter filter;
 } SignalCondition;
 
+typedef struct {
+	float offset;
+	float scale;
+} SensorCalibration;
+
 // building a sensor interface structure
 typedef struct {
 	int devfd;
@@ -77,6 +82,7 @@ typedef struct {
 	float adcScale;
 	float adcSample;
 	SignalCondition sigCond;
+	SensorCalibration calibration;
 	SensorDbusInterface dbus;
 } SensorInterface;
 
@@ -150,6 +156,7 @@ typedef struct {
 	char serial[32];
 	int product_id;
 	int func_def;
+	SensorCalibration calibration;
 } SensorInfo;
 
 AnalogSensor *sensorCreate(SensorInfo *s);

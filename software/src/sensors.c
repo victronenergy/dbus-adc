@@ -638,6 +638,7 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	sensor->interface.adcPin = s->pin;
 	sensor->interface.adcScale = s->scale;
 	sensor->interface.gpio = s->gpio;
+	sensor->interface.calibration = s->calibration;
 	sensor->sensorType = s->type;
 	sensor->instance =
 		veDbusGetVrmDeviceInstance(devid, type, INSTANCE_BASE);
@@ -857,10 +858,12 @@ static void updateTemperature(AnalogSensor *sensor)
 	float adcSample = sensor->interface.adcSample;
 	struct TemperatureSensor *temperature = (struct TemperatureSensor *) sensor;
 	Filter *filter = &sensor->interface.sigCond.filter;
+	SensorCalibration *cal = &sensor->interface.calibration;
 	VeVariant v;
 
 	// calculate the output of the LM335 temperature sensor from the adc pin sample
 	float vSenseRaw = adcSample * TEMP_SENS_V_RATIO;
+	vSenseRaw = (vSenseRaw + cal->offset) * cal->scale;
 
 	if (!veVariantIsValid(veItemLocalValue(temperature->offsetItem, &v)))
 		goto updateState;
@@ -871,7 +874,7 @@ static void updateTemperature(AnalogSensor *sensor)
 	scale = v.value.Float;
 
 	if (adcSample > TEMP_SENS_MIN_ADCIN && adcSample < TEMP_SENS_MAX_ADCIN) {
-		float vSense = adcFilter(adcSample, filter) * TEMP_SENS_V_RATIO;
+		float vSense = adcFilter(vSenseRaw, filter);
 
 		// convert from Kelvin to Celsius
 		tempC = 100 * vSense - 273;
