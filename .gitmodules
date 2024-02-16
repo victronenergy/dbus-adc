@@ -2,3 +2,6 @@
 	path = software/ext/velib
 	url = git@github.com:victronenergy/velib.git
 	branch = master
+[submodule "software/ext/veutil"]
+	path = software/ext/veutil
+	url = git@github.com:victronenergy/veutil.git
