@@ -81,7 +81,7 @@ typedef struct {
 } SensorInterface;
 
 // building a sensor structure
-typedef struct {
+typedef struct AnalogSensor {
 	SensorType sensorType;
 	int instance;
 	veBool valid;
@@ -95,6 +95,7 @@ typedef struct {
 	struct VeItem *rawValueItem;
 	struct VeItem *rawUnitItem;
 	struct VeItem *filterLenItem;
+	struct AnalogSensor *next;
 } AnalogSensor;
 
 #define TANK_SHAPE_MAX_POINTS 10

@@ -16,8 +16,6 @@
 
 #define INSTANCE_BASE						20
 
-#define MAX_SENSORS							32
-
 // defines for the tank level sensor analog front end parameters
 #define TANK_SENS_VREF						5.0
 #define TANK_SENS_R1						680.0 // ohms
@@ -43,8 +41,7 @@
 #define TEMP_SENS_INV_PLRTY_ADCIN_LB		(TEMP_SENS_INV_PLRTY_ADCIN - TEMP_SENS_INV_PLRTY_ADCIN_BAND)
 #define TEMP_SENS_INV_PLRTY_ADCIN_HB		(TEMP_SENS_INV_PLRTY_ADCIN + TEMP_SENS_INV_PLRTY_ADCIN_BAND)
 
-static AnalogSensor *sensors[MAX_SENSORS];
-static int sensorCount;
+static AnalogSensor *sensors;
 
 static VeVariantUnitFmt veUnitVolume = {3, "m3"};
 static VeVariantUnitFmt veUnitCelsius0Dec = {0, "C"};
@@ -619,9 +616,6 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	char *p;
 	char *type;
 
-	if (sensorCount == MAX_SENSORS)
-		return NULL;
-
 	if (s->type == SENSOR_TYPE_TANK) {
 		sensor = calloc(1, sizeof(struct TankSensor));
 		type = "tank";
@@ -639,8 +633,6 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 	for (p = devid; *p; p++)
 		if (!isalnum(*p))
 			*p = '_';
-
-	sensors[sensorCount++] = sensor;
 
 	sensor->interface.devfd = s->devfd;
 	sensor->interface.adcPin = s->pin;
@@ -663,6 +655,9 @@ AnalogSensor *sensorCreate(SensorInfo *s)
 			 "com.victronenergy.%s.%s", type, devid);
 
 	createItems(sensor, devid, s);
+
+	sensor->next = sensors;
+	sensors = sensor;
 
 	return sensor;
 }
@@ -928,12 +923,11 @@ static void sensorDbusConnect(AnalogSensor *sensor)
 
 void sensorTick(void)
 {
-	int i;
+	AnalogSensor *sensor;
 	VeVariant v;
 
 	/* Read the ADC values */
-	for (i = 0; i < sensorCount; i++) {
-		AnalogSensor *sensor = sensors[i];
+	for (sensor = sensors; sensor; sensor = sensor->next) {
 		un32 val;
 
 		sensor->valid = adcRead(&val, sensor);
@@ -942,9 +936,7 @@ void sensorTick(void)
 	}
 
 	/* Handle ADC values */
-	for (i = 0; i < sensorCount; i++) {
-		AnalogSensor *sensor = sensors[i];
-
+	for (sensor = sensors; sensor; sensor = sensor->next) {
 		if (!sensor->valid)
 			continue;
 
