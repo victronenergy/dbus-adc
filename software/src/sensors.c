@@ -305,6 +305,9 @@ static void onTankEmptyChanged(struct VeItem *item)
 	if (!veVariantIsValid(veItemLocalValue(item, &v)))
 		return;
 
+	if (v.value.Float == tank->emptyVal)
+		return;
+
 	tank->emptyVal = v.value.Float;
 	updateTankLevels(tank);
 }
@@ -315,6 +318,9 @@ static void onTankFullChanged(struct VeItem *item)
 	VeVariant v;
 
 	if (!veVariantIsValid(veItemLocalValue(item, &v)))
+		return;
+
+	if (v.value.Float == tank->fullVal)
 		return;
 
 	tank->fullVal = v.value.Float;
