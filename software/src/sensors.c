@@ -290,6 +290,7 @@ static void onTankResConfigChanged(struct VeItem *item)
 	case TANK_STANDARD_CUSTOM:
 		tank->minVal = 0;
 		tank->maxVal = TANK_MAX_RESISTANCE;
+		break;
 	}
 
 	tank->standard = standard.value.SN32;
