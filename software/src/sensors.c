@@ -232,6 +232,15 @@ static void createControlItems(AnalogSensor *sensor, const char *devid,
 	veItemCreateBasic(root, name, veVariantStr(&v, sensor->ifaceName));
 }
 
+static void updateItem(struct VeItem *item, const VeVariant *val)
+{
+	VeVariant old;
+
+	veItemLocalValue(item, &old);
+	if (!veVariantIsEqual(&old, val))
+		veItemSet(item, val);
+}
+
 static void updateTankLevels(struct TankSensor *tank)
 {
 	VeVariant v;
@@ -256,8 +265,8 @@ static void updateTankLevels(struct TankSensor *tank)
 	if (!inRange(tank->fullVal, tank->minVal, tank->maxVal))
 		tank->fullVal = tank->maxVal;
 
-	veItemSet(tank->emptyRItem, veVariantFloat(&v, tank->emptyVal));
-	veItemSet(tank->fullRItem, veVariantFloat(&v, tank->fullVal));
+	updateItem(tank->emptyRItem, veVariantFloat(&v, tank->emptyVal));
+	updateItem(tank->fullRItem, veVariantFloat(&v, tank->fullVal));
 }
 
 /*
