@@ -612,7 +612,7 @@ static void createItems(AnalogSensor *sensor, const char *devid, SensorInfo *s)
 AnalogSensor *sensorCreate(SensorInfo *s)
 {
 	AnalogSensor *sensor;
-	char devid[64];
+	char devid[40];
 	char *p;
 	char *type;
 

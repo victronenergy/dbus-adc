@@ -42,7 +42,7 @@ typedef enum {
 } SensorType;
 
 typedef struct {
-	char service[64];
+	char service[72];
 	veBool connected;
 } SensorDbusInterface;
 
