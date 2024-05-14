@@ -1,11 +1,4 @@
-DBUS = 1
-#NMEA2K = 1
-
-#ifdef DBUS
 T = dbus-adc$(EXT)
-#else
-#T = foo$(EXT)
-#endif
 
 TARGETS += $T
 INSTALL_BIN += $T
@@ -16,20 +9,12 @@ $T_DEPS += $(call subtree_tgts,$(d)/ext/velib)
 SUBDIRS += src
 $T_DEPS += $(call subtree_tgts,$(d)/src)
 
-#ifdef DBUS
 DEFINES += DBUS
-override CFLAGS += $(shell pkg-config --cflags dbus-1)
-$T_LIBS += -lpthread -ldl `pkg-config --libs dbus-1` -levent -levent_pthreads
-#endif
+DBUS_CFLAGS += $(shell pkg-config --cflags dbus-1)
+DBUS_LIBS += $(shell pkg-config --libs dbus-1)
 
-ifdef POSIX
-$T_LIBS += -lpthread -ldl -lm
-endif
-
-ifdef WINDOWS
-CFLAGS += -DUNICODE -D_UNICODE
-$T_LIBS += -lwinmm -lShlwapi
-endif
+override CFLAGS += $(DBUS_CFLAGS)
+$T_LIBS += -lm -lpthread -levent -levent_pthreads $(DBUS_LIBS)
 
 INCLUDES += inc
 INCLUDES += ext/velib/inc
