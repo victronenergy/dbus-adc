@@ -13,7 +13,7 @@ DEFINES += DBUS
 DBUS_CFLAGS += $(shell pkg-config --cflags dbus-1)
 DBUS_LIBS += $(shell pkg-config --libs dbus-1)
 
-override CFLAGS += $(DBUS_CFLAGS)
+override CFLAGS += $(DBUS_CFLAGS) -Werror
 $T_LIBS += -lm -lpthread -levent -levent_pthreads $(DBUS_LIBS)
 
 INCLUDES += inc
