@@ -158,7 +158,7 @@ static struct VeSettingProperties alarmHighDelayProps = {
 };
 
 VeVariantEnumFmt const statusDef =
-		VE_ENUM_DEF("Ok", "Disconnected",  "Short circuited",
+		VE_ENUM_DEF("Ok", "Open circuit",  "Short circuited",
 					"Reverse polarity", "Unknown");
 VeVariantEnumFmt const fluidTypeDef =
 		VE_ENUM_DEF("Fuel", "Fresh water", "Waste water", "Live well",
