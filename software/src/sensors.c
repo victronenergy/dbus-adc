@@ -913,7 +913,7 @@ static void updateTemperature(AnalogSensor *sensor)
 updateState:
 	veItemOwnerSet(sensor->statusItem, veVariantUn32(&v, status));
 	if (status == SENSOR_STATUS_OK) {
-		veItemOwnerSet(temperature->temperatureItem, veVariantSn32(&v, tempC));
+		veItemOwnerSet(temperature->temperatureItem, veVariantFloat(&v, tempC));
 	} else {
 		veItemInvalidate(temperature->temperatureItem);
 		adcFilterReset(filter);
