@@ -88,7 +88,7 @@ static struct VeSettingProperties offsetProps = {
 
 static struct VeSettingProperties temperatureType = {
 	.type = VE_SN32,
-	.max.value.SN32 = INT32_MAX - 3,
+	.max.value.SN32 = 6,
 };
 
 static struct VeSettingProperties emptyStrType = {
