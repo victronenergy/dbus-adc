@@ -295,6 +295,7 @@ static void loadConfig(const char *file)
 {
 	SensorInfo s = { .devfd = -1 };
 	int isCompatible = 1;
+	int lastBoard = 0;
 	FILE *f;
 	char buf[128];
 	float vref = 0;
@@ -331,9 +332,13 @@ static void loadConfig(const char *file)
 			error(file, line, "trailing junk\n");
 
 		if (!strcmp(cmd, "board")) {
-			isCompatible = checkCompatible(arg);
+			if (!lastBoard || !isCompatible)
+				isCompatible = checkCompatible(arg);
+			lastBoard = 1;
 			continue;
 		}
+
+		lastBoard = 0;
 
 		if (!isCompatible)
 			continue;
