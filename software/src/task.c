@@ -291,6 +291,20 @@ static int openDev(const char *dev, const char *file, int line)
 	return fd;
 }
 
+static int openIio(const char *name, const char *file, int line)
+{
+	char buf[64];
+	int fd;
+
+	snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s", name);
+
+	fd = open(buf, O_RDONLY);
+	if (fd < 0)
+		error(file, line, "bad iio device '%s'\n", name);
+
+	return fd;
+}
+
 static void loadConfig(const char *file)
 {
 	SensorInfo s = { .devfd = -1 };
@@ -356,6 +370,13 @@ static void loadConfig(const char *file)
 		if (!strcmp(cmd, "device")) {
 			s.devfd = openDev(arg, file, line);
 			snprintf(s.dev, sizeof(s.dev), "%s", arg);
+			continue;
+		}
+
+		/* sysfs name of the device, for when /dev has no node for it */
+		if (!strcmp(cmd, "iio")) {
+			if (s.devfd < 0)
+				s.devfd = openIio(arg, file, line);
 			continue;
 		}
 
