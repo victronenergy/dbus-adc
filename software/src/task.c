@@ -2,6 +2,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <fnmatch.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -177,7 +178,7 @@ static int checkCompatible(const char *c)
 	int i;
 
 	for (i = 0; i < MAX_COMPAT && compatible[i]; i++)
-		if (!strcmp(c, compatible[i]))
+		if (!fnmatch(c, compatible[i], 0))
 			return 1;
 
 	return 0;
